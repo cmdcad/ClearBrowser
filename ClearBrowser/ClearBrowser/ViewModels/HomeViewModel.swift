@@ -19,7 +19,11 @@ final class HomeViewModel: ObservableObject {
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
     @Published var autoScrollSpeed: Double = 0.35 {
-        didSet { settings.autoScrollSpeed = autoScrollSpeed; saveSettings() }
+        didSet {
+            settings.autoScrollSpeed = autoScrollSpeed
+            saveSettings()
+            autoScrollManager.speed = CGFloat(autoScrollSpeed)
+        }
     }
     @Published var defaultSearchEngine: SearchEngine = .bing {
         didSet { settings.defaultSearchEngine = defaultSearchEngine; saveSettings() }
@@ -29,6 +33,7 @@ final class HomeViewModel: ObservableObject {
     @Published var aiQuery: String = ""
     @Published var aiResponse: String? = nil
     @Published var isAIWorking: Bool = false
+    @Published var showAIField: Bool = false
     @Published var navigationCommand: BrowserNavigationCommand? = nil
     @Published var requestURL: URL? = URL(string: "https://www.bing.com")
 
@@ -70,12 +75,14 @@ final class HomeViewModel: ObservableObject {
     }
 
     func toggleAutoScroll() {
+        // Only toggle the state here. `BrowserView.updateUIView` will start/stop
+        // the AutoScrollManager when the WKWebView's scrollView is available.
         isAutoScrolling.toggle()
-        if isAutoScrolling {
-            autoScrollManager.start()
-        } else {
-            autoScrollManager.stop()
-        }
+        print("[AutoScroll] toggleAutoScroll -> \(isAutoScrolling)")
+    }
+
+    func toggleAIField() {
+        showAIField.toggle()
     }
 
     func updateNavigationState(canGoBack: Bool, canGoForward: Bool, title: String?, url: URL?) {
@@ -85,6 +92,9 @@ final class HomeViewModel: ObservableObject {
         if let url = url {
             self.addressBarText = url.absoluteString
             self.currentURL = url
+            // persist last opened URL
+            settings.lastOpenedURL = url.absoluteString
+            saveSettings()
         }
     }
 
@@ -143,6 +153,11 @@ final class HomeViewModel: ObservableObject {
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
+        if let last = settings.lastOpenedURL, let url = URL(string: last) {
+            requestURL = url
+            currentURL = url
+            addressBarText = last
+        }
     }
 
     private func saveSettings() {

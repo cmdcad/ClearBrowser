@@ -11,7 +11,7 @@ import SwiftUI
 struct ClearBrowserApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView(viewModel: HomeViewModel())
         }
     }
 }

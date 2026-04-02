@@ -16,6 +16,7 @@ struct BrowserView: UIViewRepresentable {
         webView.scrollView.showsVerticalScrollIndicator = true
         webView.scrollView.bounces = true
         context.coordinator.autoScrollManager.scrollView = webView.scrollView
+        print("[AutoScroll] makeUIView assigned scrollView: \(webView.scrollView)")
 
         if let url = viewModel.requestURL {
             webView.load(URLRequest(url: url))
@@ -26,6 +27,7 @@ struct BrowserView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        print("[AutoScroll] updateUIView called. isAutoScrolling=\(viewModel.isAutoScrolling), scrollView=\(String(describing: context.coordinator.autoScrollManager.scrollView))")
         if let requested = viewModel.requestURL,
            requested != context.coordinator.lastLoadedURL {
             uiView.load(URLRequest(url: requested))
@@ -50,8 +52,10 @@ struct BrowserView: UIViewRepresentable {
 
         if viewModel.isAutoScrolling {
             context.coordinator.autoScrollManager.speed = CGFloat(viewModel.autoScrollSpeed)
+            print("[AutoScroll] requesting start() from updateUIView; speed=\(viewModel.autoScrollSpeed)")
             context.coordinator.autoScrollManager.start()
         } else {
+            print("[AutoScroll] requesting stop() from updateUIView")
             context.coordinator.autoScrollManager.stop()
         }
     }
@@ -65,11 +69,12 @@ struct BrowserView: UIViewRepresentable {
             self.viewModel = viewModel
             self.autoScrollManager = viewModel.autoScrollManager
             super.init()
-            self.autoScrollManager.didStop = { [weak viewModel] in
+                self.autoScrollManager.didStop = { [weak self] in
                 Task { @MainActor in
-                    viewModel?.isAutoScrolling = false
+                    print("[AutoScroll] didStop closure running; clearing viewModel.isAutoScrolling")
+                    self?.viewModel.isAutoScrolling = false
                 }
-            }
+                }
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -83,6 +88,7 @@ struct BrowserView: UIViewRepresentable {
                                             title: webView.title,
                                             url: webView.url)
             autoScrollManager.scrollView = webView.scrollView
+            print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

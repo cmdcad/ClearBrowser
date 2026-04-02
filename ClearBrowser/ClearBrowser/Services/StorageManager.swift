@@ -3,6 +3,7 @@ import Foundation
 struct BrowserSettings: Codable {
     var defaultSearchEngine: SearchEngine = .bing
     var autoScrollSpeed: Double = 0.35
+    var lastOpenedURL: String? = nil
 }
 
 final class StorageManager {

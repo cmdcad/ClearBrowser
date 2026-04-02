@@ -19,13 +19,15 @@ struct HomeView: View {
                 VStack(spacing: 14) {
                     searchBar
                     actionRow
-                    AIResponseView(
-                        query: $viewModel.aiQuery,
-                        response: viewModel.aiResponse,
-                        isWorking: viewModel.isAIWorking,
-                        onSubmit: viewModel.fetchAIResponse
-                    )
-                    .padding(.top, 4)
+                    if viewModel.showAIField {
+                        AIResponseView(
+                            query: $viewModel.aiQuery,
+                            response: viewModel.aiResponse,
+                            isWorking: viewModel.isAIWorking,
+                            onSubmit: viewModel.fetchAIResponse
+                        )
+                        .padding(.top, 4)
+                    }
 
                     BrowserView(viewModel: viewModel)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -44,8 +46,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle(viewModel.pageTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -86,8 +87,21 @@ struct HomeView: View {
                 ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
                     viewModel.selectedDrawer = .settings
                 }
-                ActionButton(label: viewModel.isAutoScrolling ? "Stop" : "Auto Scroll", symbol: viewModel.isAutoScrolling ? "pause.fill" : "play.fill", tint: .pink) {
+                // Use a direct Button here so we can trace taps reliably
+                Button(action: {
+                    print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
                     viewModel.toggleAutoScroll()
+                    print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
+                }) {
+                    Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                        .font(.title3)
+                        .frame(width: 44, height: 44)
+                        .background(Color.pink.opacity(0.12))
+                        .foregroundColor(.pink)
+                        .cornerRadius(10)
+                }
+                ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
+                    viewModel.toggleAIField()
                 }
             }
             .padding(.vertical, 4)
@@ -256,15 +270,13 @@ private struct ActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: symbol)
-                Text(label)
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
-            .background(tint.opacity(0.12))
-            .foregroundColor(tint)
-            .cornerRadius(14)
+            Image(systemName: symbol)
+                .font(.title3)
+                .frame(width: 44, height: 44)
+                .background(tint.opacity(0.12))
+                .foregroundColor(tint)
+                .cornerRadius(10)
+                .accessibilityLabel(Text(label))
         }
     }
 }
