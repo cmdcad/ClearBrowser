@@ -61,6 +61,7 @@ struct BrowserView: UIViewRepresentable {
         }
     }
 
+    @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
