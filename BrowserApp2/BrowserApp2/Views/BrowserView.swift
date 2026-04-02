@@ -1,31 +1,37 @@
 import SwiftUI
 import WebKit
 
+import SwiftUI
+import WebKit
+
 struct BrowserView: View {
     @EnvironmentObject var appState: AppState
     @State private var urlInput = ""
     
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                // Browser toolbar
-                BrowserToolbar()
-                    .environmentObject(appState)
-                
-                // URL input bar
-                URLInputBar(urlInput: $urlInput)
-                    .environmentObject(appState)
-                
-                // Web view
-                WebViewContainer()
-                    .environmentObject(appState)
-                
-                // Bottom action bar
-                BrowserBottomBar()
-                    .environmentObject(appState)
-            }
-            .background(Theme.primary.ignoresSafeArea())
+        VStack(spacing: 0) {
+            
+            // MARK: - Top Toolbar
+            BrowserToolbar()
+                .environmentObject(appState)
+            
+            // MARK: - URL Bar
+            URLInputBar(urlInput: $urlInput)
+                .environmentObject(appState)
+            
+            // MARK: - Web Content (FIXED AREA)
+            WebViewContainer()
+                .environmentObject(appState)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black) // prevents visual gaps
+            
+            // MARK: - Bottom Bar
+            BrowserBottomBar()
+                .environmentObject(appState)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.primary)
+        .ignoresSafeArea()
     }
 }
 
@@ -134,7 +140,6 @@ struct URLInputBar: View {
     }
 }
 
-// MARK: - Web View Container
 struct WebViewContainer: View {
     @EnvironmentObject var appState: AppState
     
@@ -142,23 +147,24 @@ struct WebViewContainer: View {
         ZStack {
             WebViewRepresentable()
                 .environmentObject(appState)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             if appState.isLoading {
-                VStack {
+                VStack(spacing: 8) {
                     ProgressView()
                         .tint(Theme.accent)
+                    
                     Text("Loading...")
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.system(size: 12))
                         .foregroundColor(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black.opacity(0.1))
+                .background(Color.black.opacity(0.15))
             }
         }
     }
 }
 
-// MARK: - WebView Representable
 struct WebViewRepresentable: UIViewRepresentable {
     @EnvironmentObject var appState: AppState
     
@@ -168,20 +174,27 @@ struct WebViewRepresentable: UIViewRepresentable {
         config.allowsInlineMediaPlayback = true
         
         let webView = WKWebView(frame: .zero, configuration: config)
+        
         webView.navigationDelegate = appState
         webView.uiDelegate = appState
-        webView.backgroundColor = UIColor(Theme.primary)
+        
+        // ✅ FIX: Remove spacing issues under bars
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        
+        // ✅ FIX: Prevent white flash / blank gaps
         webView.isOpaque = false
+        webView.backgroundColor = UIColor(Theme.primary)
+        webView.scrollView.backgroundColor = UIColor(Theme.primary)
         
         appState.webView = webView
         
-        // Load default page if needed
+        // MARK: - Default Page
         if appState.currentURL == nil {
             let html = """
             <!DOCTYPE html>
             <html style="background: #1a1a1f; color: #f2f2f4; font-family: -apple-system;">
             <body style="margin: 0; padding: 40px; text-align: center;">
-                <h1 style="font-size: 32px; margin: 0 0 16px 0;">Ready to browse</h1>
+                <h1 style="font-size: 32px; margin-bottom: 16px;">Ready to browse</h1>
                 <p style="color: #b2b2b4;">Enter a URL above or search to get started</p>
             </body>
             </html>
@@ -193,7 +206,7 @@ struct WebViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        // Update is handled via AppState
+        // Controlled via AppState
     }
 }
 

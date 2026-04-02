@@ -217,7 +217,7 @@ struct HomeView: View {
 
                 SectionHeader(title: "Auto-scroll speed")
                 HStack {
-                    Slider(value: $viewModel.autoScrollSpeed, in: 0.2...5.0, step: 0.1)
+                    Slider(value: $viewModel.autoScrollSpeed, in: 0.05...3.0, step: 0.05)
                     Text(String(format: "%.1fx", viewModel.autoScrollSpeed))
                         .font(.caption)
                         .foregroundColor(.secondary)
