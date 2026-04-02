@@ -215,10 +215,10 @@ struct HomeView: View {
                 }
                 .pickerStyle(.segmented)
 
-                SectionHeader(title: "Auto-scroll speed (pixels/second)")
+                SectionHeader(title: "Auto-scroll speed")
                 HStack {
-                    Slider(value: $viewModel.autoScrollSpeed, in: 1.0...500.0, step: 1.0)
-                    Text(String(format: "%.0f px/s", viewModel.autoScrollSpeed))
+                    Slider(value: $viewModel.autoScrollSpeed, in: 0.05...5.0, step: 0.05)
+                    Text(String(format: "%.2fx", viewModel.autoScrollSpeed))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

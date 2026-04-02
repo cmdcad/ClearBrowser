@@ -51,8 +51,8 @@ final class AutoScrollManager: ObservableObject {
 
         let elapsed = link.timestamp - (lastTimestamp ?? link.timestamp)
         lastTimestamp = link.timestamp
-        let clampedSpeed = max(1.0, min(speed, 500.0))
-        let distance = CGFloat(elapsed) * clampedSpeed
+        let clampedSpeed = max(0.05, min(speed, 5.0))
+        let distance = CGFloat(elapsed) * clampedSpeed * 220
 
         let maxYOffset = max(scrollView.contentSize.height - scrollView.bounds.height, 0)
         if maxYOffset <= 0 {

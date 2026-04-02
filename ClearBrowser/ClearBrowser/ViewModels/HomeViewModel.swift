@@ -18,11 +18,11 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
-    private var _rawAutoScrollSpeed: Double = 77.0  // pixels per second
+    private var _rawAutoScrollSpeed: Double = 0.35
     @Published var autoScrollSpeed: Double {
         get { _rawAutoScrollSpeed }
         set {
-            let clamped = min(max(newValue, 1.0), 500.0)
+            let clamped = min(max(newValue, 0.05), 5.0)
             if _rawAutoScrollSpeed != clamped {
                 _rawAutoScrollSpeed = clamped
                 settings.autoScrollSpeed = clamped
