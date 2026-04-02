@@ -4,6 +4,7 @@ final class AutoScrollManager: ObservableObject {
     weak var scrollView: UIScrollView?
     var speed: CGFloat = 0.35
     var didStop: (() -> Void)?
+    private(set) var isRunning: Bool = false
 
     private var displayLink: CADisplayLink?
     private var lastTimestamp: CFTimeInterval?
@@ -15,17 +16,26 @@ final class AutoScrollManager: ObservableObject {
             self.lastTimestamp = nil
             self.displayLink?.preferredFramesPerSecond = 60
             self.displayLink?.add(to: .main, forMode: .common)
+            self.isRunning = true
             print("[AutoScroll] start() called. scrollView: \(String(describing: self.scrollView)), speed: \(self.speed)")
         }
     }
 
     func stop() {
+        guard isRunning else {
+            print("[AutoScroll] stop() noop (not running)")
+            return
+        }
+
         displayLink?.invalidate()
         displayLink = nil
         lastTimestamp = nil
+        isRunning = false
+
         if let didStop = didStop {
             DispatchQueue.main.async { didStop() }
         }
+
         print("[AutoScroll] stop() called")
     }
 

@@ -55,10 +55,11 @@ struct BrowserView: UIViewRepresentable {
             context.coordinator.autoScrollManager.speed = CGFloat(viewModel.autoScrollSpeed)
             print("[AutoScroll] requesting start() from updateUIView; speed=\(viewModel.autoScrollSpeed)")
             context.coordinator.autoScrollManager.start()
-        } else {
+        } else if context.coordinator.autoScrollManager.isRunning {
             print("[AutoScroll] requesting stop() from updateUIView")
             context.coordinator.autoScrollManager.stop()
         }
+
     }
 
     @MainActor
