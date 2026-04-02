@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 
+@MainActor
 struct BrowserView: UIViewRepresentable {
     @ObservedObject var viewModel: HomeViewModel
 
