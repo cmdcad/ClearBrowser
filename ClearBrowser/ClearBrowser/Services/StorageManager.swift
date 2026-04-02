@@ -2,7 +2,7 @@ import Foundation
 
 struct BrowserSettings: Codable {
     var defaultSearchEngine: SearchEngine = .bing
-    var autoScrollSpeed: Double = 77.0  // pixels per second
+    var autoScrollSpeed: Double = 0.35
     var lastOpenedURL: String? = nil
 }
 
