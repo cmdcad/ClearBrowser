@@ -60,15 +60,17 @@ struct HomeView: View {
                 .textInputAutocapitalization(.never)
                 .submitLabel(.go)
 
-            Button(action: viewModel.loadAddress) {
-                Image(systemName: "arrow.up.right.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(Color.accentColor)
-                    .cornerRadius(14)
+              Button(action: viewModel.reload) {
+                Image(systemName: "arrow.clockwise")
+                    .frame(width: 16, height: 16)
             }
-            .accessibilityLabel("Go")
+            .buttonStyle(.bordered)
+
+            Button(action: viewModel.addBookmark) {
+                Image(systemName: "bookmark.fill")
+                    .frame(width: 16, height: 16)
+            }
+            .buttonStyle(.borderedProminent)
         }
     }
 
@@ -126,29 +128,18 @@ struct HomeView: View {
         HStack(spacing: 16) {
             Button(action: viewModel.goBack) {
                 Image(systemName: "chevron.left")
-                    .frame(width: 42, height: 42)
+                    .frame(width: 16, height: 16)
             }
             .disabled(!viewModel.canGoBack)
             .buttonStyle(.bordered)
 
             Button(action: viewModel.goForward) {
                 Image(systemName: "chevron.right")
-                    .frame(width: 42, height: 42)
+                    .frame(width: 16, height: 16)
             }
             .disabled(!viewModel.canGoForward)
             .buttonStyle(.bordered)
 
-            Button(action: viewModel.reload) {
-                Image(systemName: "arrow.clockwise")
-                    .frame(width: 42, height: 42)
-            }
-            .buttonStyle(.bordered)
-
-            Button(action: viewModel.addBookmark) {
-                Image(systemName: "bookmark.fill")
-                    .frame(width: 42, height: 42)
-            }
-            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .background(.ultraThinMaterial)
@@ -233,6 +224,7 @@ struct HomeView: View {
                 }
 
                 SectionHeader(title: "Account")
+                
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Create an account or log in to sync favorites and history across devices.")
                         .font(.footnote)
