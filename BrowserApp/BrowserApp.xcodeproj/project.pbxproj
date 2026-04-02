@@ -1,0 +1,191 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		111111111111111111111111 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999911 /* AppState.swift */; };
+		111111111111111111111112 /* BrowserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999912 /* BrowserApp.swift */; };
+		111111111111111111111113 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999913 /* ContentView.swift */; };
+		111111111111111111111114 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999914 /* HomeView.swift */; };
+		111111111111111111111115 /* DrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999915 /* DrawerView.swift */; };
+		111111111111111111111116 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999916 /* BrowserView.swift */; };
+		111111111111111111111117 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999917 /* AIService.swift */; };
+		111111111111111111111118 /* AutoScrollManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999918 /* AutoScrollManager.swift */; };
+		111111111111111111111119 /* SearchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999919 /* SearchManager.swift */; };
+		111111111111111111111120 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999920 /* StoreManager.swift */; };
+		111111111111111111111121 /* models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999921 /* models.swift */; };
+		111111111111111111111122 /* HomeViewVariants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999999999999999999999922 /* HomeViewVariants.swift */; };
+		111111111111111111111123 /* BrowserApp.app in Products */ = {isa = PBXBuildFile; fileRef = AAAAAAAAAAAAAAAAAAAAAAA1 /* BrowserApp.app */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		999999999999999999999911 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		999999999999999999999912 /* BrowserApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/BrowserApp.swift; sourceTree = "<group>"; };
+		999999999999999999999913 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ContentView.swift; sourceTree = "<group>"; };
+		999999999999999999999914 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/HomeView.swift; sourceTree = "<group>"; };
+		999999999999999999999915 /* DrawerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/DrawerView.swift; sourceTree = "<group>"; };
+		999999999999999999999916 /* BrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/BrowserView.swift; sourceTree = "<group>"; };
+		999999999999999999999917 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/AIService.swift; sourceTree = "<group>"; };
+		999999999999999999999918 /* AutoScrollManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/AutoScrollManager.swift; sourceTree = "<group>"; };
+		999999999999999999999919 /* SearchManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/SearchManager.swift; sourceTree = "<group>"; };
+		999999999999999999999920 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Managers/StoreManager.swift; sourceTree = "<group>"; };
+		999999999999999999999921 /* models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/models.swift; sourceTree = "<group>"; };
+		999999999999999999999922 /* HomeViewVariants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewVariants.swift; sourceTree = "<group>"; };
+		AAAAAAAAAAAAAAAAAAAAAA1 /* BrowserApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = BrowserApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		000000000000000000000000 /* BrowserApp */ = {
+			isa = PBXGroup;
+			children = (
+				999999999999999999999911 /* AppState.swift */,
+				999999999999999999999912 /* BrowserApp.swift */,
+				999999999999999999999913 /* ContentView.swift */,
+				999999999999999999999914 /* HomeView.swift */,
+				999999999999999999999915 /* DrawerView.swift */,
+				999999999999999999999916 /* BrowserView.swift */,
+				999999999999999999999917 /* AIService.swift */,
+				999999999999999999999918 /* AutoScrollManager.swift */,
+				999999999999999999999919 /* SearchManager.swift */,
+				999999999999999999999920 /* StoreManager.swift */,
+				999999999999999999999921 /* models.swift */,
+				999999999999999999999922 /* HomeViewVariants.swift */,
+				AAAAAAAAAAAAAAAAAAAAAA1 /* BrowserApp.app */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAAAAAAAAAAAAAAAAAAAAA1 /* BrowserApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXSourcesBuildPhase section */
+		333333333333333333333333 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				111111111111111111111111 /* AppState.swift in Sources */,
+				111111111111111111111112 /* BrowserApp.swift in Sources */,
+				111111111111111111111113 /* ContentView.swift in Sources */,
+				111111111111111111111114 /* HomeView.swift in Sources */,
+				111111111111111111111115 /* DrawerView.swift in Sources */,
+				111111111111111111111116 /* BrowserView.swift in Sources */,
+				111111111111111111111117 /* AIService.swift in Sources */,
+				111111111111111111111118 /* AutoScrollManager.swift in Sources */,
+				111111111111111111111119 /* SearchManager.swift in Sources */,
+				111111111111111111111120 /* StoreManager.swift in Sources */,
+				111111111111111111111121 /* models.swift in Sources */,
+				111111111111111111111122 /* HomeViewVariants.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		444444444444444444444444 /* BrowserApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 777777777777777777777777 /* Build configuration list for PBXNativeTarget "BrowserApp" */;
+			buildPhases = (
+				333333333333333333333333 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BrowserApp;
+			productName = BrowserApp;
+			productReference = AAAAAAAAAAAAAAAAAAAAAAA1 /* BrowserApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		555555555555555555555555 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2050;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 666666666666666666666666 /* Build configuration list for PBXProject "BrowserApp" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 000000000000000000000000 /* BrowserApp */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				444444444444444444444444 /* BrowserApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		888888888888888888888888 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.BrowserApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		999999999999999999999999 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.BrowserApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		666666666666666666666666 /* Build configuration list for PBXProject "BrowserApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				888888888888888888888888 /* Debug */,
+				999999999999999999999999 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		777777777777777777777777 /* Build configuration list for PBXNativeTarget "BrowserApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				888888888888888888888888 /* Debug */,
+				999999999999999999999999 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 555555555555555555555555 /* Project object */;
+}
