@@ -97,7 +97,7 @@ struct HomeView: View {
                 }) {
                     Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
                         .font(.title3)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 16, height: 16)
                         .background(Color.pink.opacity(0.12))
                         .foregroundColor(.pink)
                         .cornerRadius(10)
@@ -264,7 +264,7 @@ private struct ActionButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.title3)
-                .frame(width: 44, height: 44)
+                .frame(width: 16, height: 16)
                 .background(tint.opacity(0.12))
                 .foregroundColor(tint)
                 .cornerRadius(10)
