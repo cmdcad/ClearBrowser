@@ -92,6 +92,9 @@ final class HomeViewModel: ObservableObject {
         self.canGoForward = canGoForward
         self.pageTitle = title ?? url?.host ?? "ClearBrowser"
         if let url = url {
+            if url != currentURL {
+                addHistoryItem(title: title ?? url.host ?? "Untitled", url: url)
+            }
             self.addressBarText = url.absoluteString
             self.currentURL = url
             // persist last opened URL
