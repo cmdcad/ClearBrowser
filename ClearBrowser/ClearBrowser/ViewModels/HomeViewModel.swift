@@ -18,11 +18,17 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
-    @Published var autoScrollSpeed: Double = 0.35 {
-        didSet {
-            settings.autoScrollSpeed = autoScrollSpeed
-            saveSettings()
-            autoScrollManager.speed = CGFloat(autoScrollSpeed)
+    private var _rawAutoScrollSpeed: Double = 77.0  // pixels per second
+    @Published var autoScrollSpeed: Double {
+        get { _rawAutoScrollSpeed }
+        set {
+            let clamped = min(max(newValue, 1.0), 500.0)
+            if _rawAutoScrollSpeed != clamped {
+                _rawAutoScrollSpeed = clamped
+                settings.autoScrollSpeed = clamped
+                saveSettings()
+                autoScrollManager.speed = CGFloat(clamped)
+            }
         }
     }
     @Published var defaultSearchEngine: SearchEngine = .bing {
