@@ -186,8 +186,7 @@ final class HomeViewModel: ObservableObject {
         aiResponse = nil
 
         Task {
-            let pageContext = currentURL?.host
-            let response = await aiService.answer(query: query, pageContext: pageContext, apiKey: openAIKey)
+            let response = await aiService.answer(query: query, apiKey: openAIKey)
             await MainActor.run {
                 self.aiResponse = response
                 self.isAIWorking = false
