@@ -57,6 +57,13 @@ struct HomeView: View {
             }
             .navigationBarHidden(true)
         }
+        .sheet(item: $viewModel.authSheet) { type in
+            if type == .login {
+                LoginView(viewModel: viewModel)
+            } else {
+                RegisterView(viewModel: viewModel)
+            }
+        }
         .navigationViewStyle(StackNavigationViewStyle())
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             withAnimation(.easeOut(duration: 0.2)) { isKeyboardVisible = true }
@@ -77,13 +84,13 @@ struct HomeView: View {
 
               Button(action: viewModel.reload) {
                 Image(systemName: "arrow.clockwise")
-                    .frame(width: 16, height: 16)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.bordered)
 
             Button(action: viewModel.addBookmark) {
                 Image(systemName: "bookmark.fill")
-                    .frame(width: 16, height: 16)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.borderedProminent)
         }
@@ -98,25 +105,15 @@ struct HomeView: View {
                 ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
                     viewModel.selectedDrawer = .bookmarks
                 }
+
                 ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
                     viewModel.selectedDrawer = .history
                 }
+
                 ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
                     viewModel.selectedDrawer = .settings
-                }
-                // Use a direct Button here so we can trace taps reliably
-                Button(action: {
-                    print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
-                    viewModel.toggleAutoScroll()
-                    print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
-                }) {
-                    Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                        .font(.title3)
-                        .frame(width: 16, height: 16)
-                        .background(Color.pink.opacity(0.12))
-                        .foregroundColor(.pink)
-                        .cornerRadius(10)
-                }
+                }            
+
                 ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
                     viewModel.toggleAIField()
                 }
@@ -143,22 +140,36 @@ struct HomeView: View {
         HStack(spacing: 16) {
             Button(action: viewModel.goBack) {
                 Image(systemName: "chevron.left")
-                    .frame(width: 16, height: 16)
+                    .frame(width: 32, height: 32)
             }
             .disabled(!viewModel.canGoBack)
             .buttonStyle(.bordered)
 
+            Spacer()
+
+            Button(action: {
+                print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
+                viewModel.toggleAutoScroll()
+                print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
+            }) {
+                Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                    .font(.title3)
+                    .frame(width: 32, height: 32)
+                    .background(Color.pink.opacity(0.12))
+                    .foregroundColor(.pink)
+                    .cornerRadius(10)
+            }
+
+            Spacer()
+
             Button(action: viewModel.goForward) {
                 Image(systemName: "chevron.right")
-                    .frame(width: 16, height: 16)
+                    .frame(width: 32, height: 32)
             }
             .disabled(!viewModel.canGoForward)
             .buttonStyle(.bordered)
 
-        }
-        .padding(12)
-        .background(.ultraThinMaterial)
-        .cornerRadius(16)
+        } 
         .padding(12)
     }
 
@@ -172,25 +183,28 @@ struct HomeView: View {
                         .foregroundColor(.secondary)
                         .padding(.vertical, 30)
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.bookmarks) { item in
-                                Button(action: { viewModel.openBookmark(item) }) {
-                                    BookmarkRow(item: item)
-                                }
-                                .buttonStyle(.plain)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        withAnimation {
-                                            viewModel.removeBookmark(item)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                    List {
+                        ForEach(viewModel.bookmarks) { item in
+                            Button(action: { viewModel.openBookmark(item) }) {
+                                BookmarkRow(item: item)
+                                    .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        viewModel.removeBookmark(item)
                                     }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
                             }
                         }
                     }
+                    .listStyle(.plain)
                 }
             }
         case .history:
@@ -210,25 +224,28 @@ struct HomeView: View {
                         .foregroundColor(.secondary)
                         .padding(.vertical, 30)
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.history) { item in
-                                Button(action: { viewModel.openHistory(item) }) {
-                                    BookmarkRow(item: item)
-                                }
-                                .buttonStyle(.plain)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        withAnimation {
-                                            viewModel.removeHistoryItem(item)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                    List {
+                        ForEach(viewModel.history) { item in
+                            Button(action: { viewModel.openHistory(item) }) {
+                                BookmarkRow(item: item)
+                                    .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        viewModel.removeHistoryItem(item)
                                     }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
                             }
                         }
                     }
+                    .listStyle(.plain)
                 }
             }
         case .settings:
@@ -251,14 +268,27 @@ struct HomeView: View {
 
                 SectionHeader(title: "Account")
                 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Create an account or log in to sync favorites and history across devices.")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Button("Coming soon") {
-                        viewModel.selectedDrawer = nil
+                if viewModel.isLoggedIn {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Logged in as \(viewModel.currentUserEmail ?? "User")")
+                            .font(.footnote)
+                        Button("Log out") {
+                            viewModel.isLoggedIn = false
+                            viewModel.currentUserEmail = nil
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.borderedProminent)
+                } else {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Create an account or log in to sync favorites and history across devices.")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            Button("Log In") { viewModel.authSheet = .login }
+                            Button("Register") { viewModel.authSheet = .register }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
 
                 Spacer()
@@ -290,7 +320,7 @@ private struct ActionButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.title3)
-                .frame(width: 16, height: 16)
+                .frame(width: 32, height: 32)
                 .background(tint.opacity(0.12))
                 .foregroundColor(tint)
                 .cornerRadius(10)

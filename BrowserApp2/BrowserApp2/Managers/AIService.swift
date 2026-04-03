@@ -7,6 +7,13 @@ import UIKit
 class AIService {
     private let session = URLSession.shared
     
+    func answer(query: String, pageContext: String?, apiKey: String? = nil) async -> String {
+        if let key = apiKey, !key.isEmpty {
+            return await searchWithAPI(query, using: key)
+        }
+        return await search(query)
+    }
+
     // MARK: - Mock AI Response (replace with real API)
     
     func search(_ query: String) async -> String {

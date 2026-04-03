@@ -8,6 +8,11 @@ enum BrowserNavigationCommand {
     case stop
 }
 
+enum AuthSheetType: Identifiable {
+    case login, register
+    var id: Self { self }
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
     @Published var addressBarText: String = "https://www.bing.com"
@@ -18,6 +23,14 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
+
+    @Published var isLoggedIn = false
+    @Published var currentUserEmail: String? = nil
+    @Published var authSheet: AuthSheetType? = nil
+    @Published var openAIKey: String = "" {
+        didSet { UserDefaults.standard.set(openAIKey, forKey: "openAIKey") }
+    }
+
     private var _rawAutoScrollSpeed: Double = 0.35
     
     @Published var autoScrollSpeed: Double = 0.35 {
@@ -151,6 +164,21 @@ final class HomeViewModel: ObservableObject {
         storageManager.saveHistory(history)
     }
 
+    func login(email: String) {
+        isLoggedIn = true
+        currentUserEmail = email
+        authSheet = nil
+    }
+
+    func register(email: String, apiKey: String?) {
+        isLoggedIn = true
+        currentUserEmail = email
+        if let key = apiKey, !key.isEmpty {
+            self.openAIKey = key
+        }
+        authSheet = nil
+    }
+
     func fetchAIResponse() {
         let query = aiQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
@@ -159,7 +187,7 @@ final class HomeViewModel: ObservableObject {
 
         Task {
             let pageContext = currentURL?.host
-            let response = await aiService.answer(query: query, pageContext: pageContext)
+            let response = await aiService.answer(query: query, pageContext: pageContext, apiKey: openAIKey)
             await MainActor.run {
                 self.aiResponse = response
                 self.isAIWorking = false
@@ -173,6 +201,7 @@ final class HomeViewModel: ObservableObject {
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
+        openAIKey = UserDefaults.standard.string(forKey: "openAIKey") ?? ""
         if let last = settings.lastOpenedURL, let url = URL(string: last) {
             requestURL = url
             currentURL = url
