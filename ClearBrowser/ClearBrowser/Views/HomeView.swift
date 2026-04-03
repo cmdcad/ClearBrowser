@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
+    @State private var isKeyboardVisible = false
 
     private var drawerOpenBinding: Binding<Bool> {
         Binding<Bool>(
@@ -34,7 +36,14 @@ struct HomeView: View {
                         .cornerRadius(18)
                         .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 10)
                         .overlay(statusOverlay, alignment: .top)
-                        .overlay(navigationControls, alignment: .bottom)
+                        .overlay(
+                            Group {
+                                if !isKeyboardVisible {
+                                    navigationControls
+                                }
+                            },
+                            alignment: .bottom
+                        )
                         .padding(.top, 4)
                 }
                 .padding(.horizontal)
@@ -49,6 +58,12 @@ struct HomeView: View {
             .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.2)) { isKeyboardVisible = true }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeIn(duration: 0.2)) { isKeyboardVisible = false }
+        }
     }
 
     private var searchBar: some View {
@@ -78,7 +93,7 @@ struct HomeView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
-                    viewModel.loadAddress()
+                    viewModel.openSearchEngineHome()
                 }
                 ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
                     viewModel.selectedDrawer = .bookmarks
@@ -164,11 +179,13 @@ struct HomeView: View {
                                     BookmarkRow(item: item)
                                 }
                                 .buttonStyle(.plain)
-                                .contextMenu {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        viewModel.removeBookmark(item)
+                                        withAnimation {
+                                            viewModel.removeBookmark(item)
+                                        }
                                     } label: {
-                                        Label("Remove", systemImage: "trash")
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                             }
@@ -200,6 +217,15 @@ struct HomeView: View {
                                     BookmarkRow(item: item)
                                 }
                                 .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            viewModel.removeHistoryItem(item)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
                     }

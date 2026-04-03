@@ -60,6 +60,16 @@ final class HomeViewModel: ObservableObject {
         addHistoryItem(title: addressBarText, url: targetURL)
     }
 
+    func openSearchEngineHome() {
+        let urlString = defaultSearchEngine == .google ? "https://www.google.com" : "https://www.bing.com"
+        if let url = URL(string: urlString) {
+            addressBarText = urlString
+            requestURL = url
+            currentURL = url
+            addHistoryItem(title: defaultSearchEngine.title, url: url)
+        }
+    }
+
     func reload() {
         navigationCommand = .reload
     }
@@ -133,6 +143,11 @@ final class HomeViewModel: ObservableObject {
 
     func clearHistory() {
         history.removeAll()
+        storageManager.saveHistory(history)
+    }
+
+    func removeHistoryItem(_ item: BrowserItem) {
+        history.removeAll { $0.id == item.id }
         storageManager.saveHistory(history)
     }
 
