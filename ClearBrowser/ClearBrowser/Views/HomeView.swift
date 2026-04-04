@@ -263,7 +263,7 @@ private var drawerContent: some View {
                 Text("Recent history")
                     .font(.headline)
                 Spacer()
-                Button("Clear All") {
+                Button("Clear") {
                     viewModel.clearHistory()
                 }
                 .buttonStyle(.bordered)
