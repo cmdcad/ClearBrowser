@@ -19,17 +19,23 @@ struct HomeView: View {
         Color(uiColor: .systemGroupedBackground)
           .ignoresSafeArea()
 
-        VStack(spacing: 14) {
-          searchBar
-          actionRow
-          if viewModel.showAIField {
-            AIResponseView(
-              query: $viewModel.aiQuery,
-              response: viewModel.aiResponse,
-              isWorking: viewModel.isAIWorking,
-              onSubmit: viewModel.fetchAIResponse
-            )
-            .padding(.top, 4)
+        VStack(spacing: 0) {
+          if viewModel.isHeaderVisible {
+            VStack(spacing: 14) {
+              searchBar
+              actionRow
+              if viewModel.showAIField {
+                AIResponseView(
+                  query: $viewModel.aiQuery,
+                  response: viewModel.aiResponse,
+                  isWorking: viewModel.isAIWorking,
+                  onSubmit: viewModel.fetchAIResponse
+                )
+                .padding(.top, 4)
+              }
+            }
+            .padding(.bottom, 14)
+            .transition(.move(edge: .top).combined(with: .opacity))
           }
 
           BrowserView(viewModel: viewModel)
@@ -114,10 +120,11 @@ struct HomeView: View {
         viewModel.reload()
       }
 
-      ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
+      ActionButton(label: "Bookmarks", symbol: "bookmark.add.plus", tint: .green) {
         viewModel.selectedDrawer = .bookmarks
       }
     }
+    .padding(.horizontal, 16)
   }
 
   private var actionRow: some View {

@@ -13,6 +13,7 @@ struct BrowserView: UIViewRepresentable {
         let configuration = WKWebViewConfiguration()
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.scrollView.delegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.showsVerticalScrollIndicator = true
         webView.scrollView.bounces = true
@@ -63,7 +64,7 @@ struct BrowserView: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
         var lastLoadedURL: URL?
@@ -104,6 +105,30 @@ struct BrowserView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             viewModel.isLoading = false
+        }
+
+        // MARK: - UIScrollViewDelegate
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            // Only update visibility if the user is actively dragging
+            guard scrollView.isDragging else { return }
+            
+            let translation = scrollView.panGestureRecognizer.translation(in: scrollView.superview)
+            
+            if translation.y < -10 {
+                // Swiping Up (Scrolling Down) -> Hide Header
+                if viewModel.isHeaderVisible {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        viewModel.isHeaderVisible = false
+                    }
+                }
+            } else if translation.y > 10 {
+                // Swiping Down (Scrolling Up) -> Show Header
+                if !viewModel.isHeaderVisible {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        viewModel.isHeaderVisible = true
+                    }
+                }
+            }
         }
     }
 }
