@@ -82,17 +82,13 @@ struct HomeView: View {
                 .textInputAutocapitalization(.never)
                 .submitLabel(.go)
 
-              Button(action: viewModel.reload) {
-                Image(systemName: "arrow.clockwise")
-                    .frame(width: 32, height: 32)
+            ActionButton(label: "Bookmarks", symbol: "arrow.clockwise", tint: .blue) {
+                viewModel.reload()
             }
-            .buttonStyle(.bordered)
-
-            Button(action: viewModel.addBookmark) {
-                Image(systemName: "bookmark.fill")
-                    .frame(width: 32, height: 32)
+            
+            ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
+                viewModel.selectedDrawer = .bookmarks
             }
-            .buttonStyle(.borderedProminent)
         }
     }
 
@@ -187,21 +183,23 @@ struct HomeView: View {
                         ForEach(viewModel.bookmarks) { item in
                             Button(action: { viewModel.openBookmark(item) }) {
                                 BookmarkRow(item: item)
-                                    .padding(.vertical, 6)
+                                    .padding(.vertical, 6) 
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true)
+                                {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            viewModel.removeBookmark(item)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                } 
                             }
                             .buttonStyle(.plain)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        viewModel.removeBookmark(item)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
+                           
                         }
                     }
                     .listStyle(.plain)
@@ -338,24 +336,31 @@ private struct BookmarkRow: View {
                 .fill(Color.accentColor.opacity(0.2))
                 .frame(width: 44, height: 44)
                 .overlay(Image(systemName: "globe") .foregroundColor(.accentColor))
-
+            
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
                     .font(.body)
                     .foregroundColor(.primary)
                     .lineLimit(2)
+                
                 Text(item.url.host ?? item.url.absoluteString)
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
-
+            
             Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
+            
+            VStack {
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
         }
-        .padding(14)
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 4)
+            .padding(14)
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 4)
+        
     }
 }
