@@ -94,7 +94,8 @@ struct HomeView: View {
                             // Action buttons
                             HStack(spacing: Theme.Spacing.md) {
                                 Button(action: {
-                                    appState.handleInput(searchInput)
+                                    viewModel.addressBarText = searchInput
+                                    viewModel.loadAddress()
                                 }) {
                                     HStack(spacing: Theme.Spacing.sm) {
                                         Image(systemName: "magnifyingglass")
