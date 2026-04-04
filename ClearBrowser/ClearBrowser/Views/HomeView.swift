@@ -1,260 +1,96 @@
 import SwiftUI
-import WebKit
-import Foundation
+import UIKit
 
 struct HomeView: View {
-    @ObservedObject var viewModel: HomeViewModel
-    @State private var searchInput = ""
-    @State private var showAIResults = false
-    
-    // Fixed: Local state for AI search to prevent direct @EnvironmentObject mutation issues
-    @State private var aiSearchQuery = ""
-    
-    var body: some View {
-        ZStack {
-            Theme.primary.ignoresSafeArea()
-            
-            VStack(spacing: 0) { // Changed to 0 spacing to control spacing explicitly
-                // Professional Top Bar
-                VStack(spacing: 0) { // Inner VStack for title and divider
-                    HStack(alignment: .center) {
-                        // Left Spacer to center the title
-                        Spacer()
+  @StateObject var viewModel: HomeViewModel
+  @State private var isKeyboardVisible = false
 
-                        Text("ClearBrowser") // More descriptive and professional title
-                            .font(.title2) // Slightly smaller, more refined font size
-                            .fontWeight(.semibold) // Less bold, more elegant
-                            .foregroundColor(Theme.text)
-                        
-                        // Right Spacer to center the title
-                        Spacer()
-                        
-                        Button(action: { viewModel.selectedDrawer = .settings }) {
-                            Image(systemName: "gearshape.fill") // Solid icon for a cleaner look
-                                .font(.title3) // Standard icon size for toolbar
-                                .foregroundColor(Theme.accent)
-                                .padding(8) // Add padding for tappable area
-                                .contentShape(Rectangle()) // Ensures padded area is tappable
-                        }
-                    }
-                    .padding(.horizontal, Theme.Spacing.lg) // Horizontal padding
-                    .padding(.vertical, Theme.Spacing.lg)   // Increased vertical padding to maintain height
-                    .background(Theme.secondary.opacity(0.5))
-                    .overlay(Divider().background(Theme.textSecondary.opacity(0.3)), alignment: .bottom) // Subtle separator
-                }
+  private var drawerOpenBinding: Binding<Bool> {
+    Binding<Bool>(
+      get: { viewModel.selectedDrawer != nil },
+      set: { if !$0 { viewModel.selectedDrawer = nil } }
+    )
+  }
 
-                ScrollView { // This ScrollView now starts below the fixed top bar
-                    VStack(spacing: Theme.Spacing.xl) {
-                        // Hero section
-                        VStack(spacing: Theme.Spacing.md) {
-                            Text("Search the web")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundColor(Theme.text)
-                            
-                            Text("or enter a URL")
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(Theme.textSecondary)
-                        }
-                        .padding(.top, Theme.Spacing.xxl)
-                        
-                        // Professional Search Bar (same height, cleaner look)
-                        VStack(spacing: Theme.Spacing.md) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(Theme.textSecondary)
-                                    .font(.system(size: 18))
-                                
-                                TextField("Search or enter URL", text: $searchInput)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(Theme.text)
-                                    .font(.system(size: 17))
-                                    .autocapitalization(.none)
-                                    .disableAutocorrection(true)
-                                
-                                if !searchInput.isEmpty {
-                                    Button(action: { searchInput = "" }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(Theme.textSecondary)
-                                            .font(.system(size: 18))
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, Theme.Spacing.lg)
-                            .padding(.vertical, Theme.Spacing.md)   // Same height as before
-                            .background(
-                                Theme.secondary
-                                    .cornerRadius(Theme.Radius.md)
-                                    .shadow(color: Color.black.opacity(0.07), radius: 10, x: 0, y: 3)
-                            )
-                            .onSubmit {
-                                viewModel.addressBarText = searchInput
-                                viewModel.loadAddress()
-                            }
-                            
-                            // Action buttons
-                            HStack(spacing: Theme.Spacing.md) {
-                                Button(action: {
-                                    viewModel.addressBarText = searchInput
-                                    viewModel.loadAddress()
-                                }) {
-                                    HStack(spacing: Theme.Spacing.sm) {
-                                        Image(systemName: "magnifyingglass")
-                                        Text("Search")
-                                    }
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, Theme.Spacing.md)
-                                    .background(Theme.accent)
-                                    .cornerRadius(Theme.Radius.md)
-                                }
-                                
-                                Button(action: { viewModel.selectedDrawer = .bookmarks }) {
-                                    HStack(spacing: Theme.Spacing.sm) {
-                                        Image(systemName: "bookmark")
-                                        Text("Bookmarks")
-                                    }
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Theme.accent)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, Theme.Spacing.md)
-                                    .background(Theme.secondary)
-                                    .cornerRadius(Theme.Radius.md)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: Theme.Radius.md)
-                                            .stroke(Theme.accent, lineWidth: 1)
-                                    )
-                                }
-                            }
-                            
-                            HStack(spacing: Theme.Spacing.md) {
-                                Button(action: { viewModel.selectedDrawer = .history }) {
-                                    HStack(spacing: Theme.Spacing.sm) {
-                                        Image(systemName: "clock")
-                                        Text("History")
-                                    }
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Theme.accent)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, Theme.Spacing.md)
-                                    .background(Theme.secondary)
-                                    .cornerRadius(Theme.Radius.md)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: Theme.Radius.md)
-                                            .stroke(Theme.accent, lineWidth: 1)
-                                    )
-                                }
-                            }
-                        }
-                        .padding(.horizontal, Theme.Spacing.lg)
-                        
-                        // Quick stats
-                        HStack(spacing: Theme.Spacing.lg) {
-                            VStack(spacing: Theme.Spacing.sm) {
-                                Text("\(viewModel.bookmarks.count)")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Theme.accent)
-                                Text("Bookmarks")
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(Theme.textSecondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(Theme.Spacing.md)
-                            .background(Theme.secondary)
-                            .cornerRadius(Theme.Radius.md)
-                            
-                            VStack(spacing: Theme.Spacing.sm) {
-                                Text("\(viewModel.history.count)")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Theme.accent)
-                                Text("History")
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(Theme.textSecondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(Theme.Spacing.md)
-                            .background(Theme.secondary)
-                            .cornerRadius(Theme.Radius.md)
-                        }
-                        .padding(.horizontal, Theme.Spacing.lg)
-                        
-                        // AI Search Section (fixed)
-                        VStack(spacing: Theme.Spacing.md) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(Theme.accent)
-                                    .font(.system(size: 18))
-                                
-                                TextField("Ask AI about...", text: $aiSearchQuery)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(Theme.text)
-                                    .font(.system(size: 17))
-                            }
-                            .padding(.horizontal, Theme.Spacing.lg)
-                            .padding(.vertical, Theme.Spacing.md)
-                            .background(Theme.secondary)
-                            .cornerRadius(Theme.Radius.md)
-                            
-                            Button(action: {
-                                if !aiSearchQuery.isEmpty {
-                                    viewModel.aiQuery = aiSearchQuery
-                                    viewModel.fetchAIResponse()
-                                    showAIResults = true
-                                }
-                            }) {
-                                if viewModel.isAIWorking {
-                                    HStack(spacing: Theme.Spacing.sm) {
-                                        ProgressView()
-                                            .tint(Theme.accent)
-                                        Text("Thinking...")
-                                    }
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                } else {
-                                    Text("Get AI Response")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Theme.Spacing.md)
-                            .background(Theme.accent)
-                            .cornerRadius(Theme.Radius.md)
-                            .disabled(viewModel.isAIWorking || aiSearchQuery.isEmpty)
-                            
-                            if let response = viewModel.aiResponse, showAIResults {
-                                VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                                    HStack {
-                                        Text("AI Response")
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(Theme.textSecondary)
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: { showAIResults = false }) {
-                                            Image(systemName: "xmark")
-                                                .foregroundColor(Theme.textSecondary)
-                                        }
-                                    }
-                                    
-                                    Text(response)
-                                        .font(.system(size: 14, weight: .regular))
-                                        .foregroundColor(Theme.text)
-                                        .lineLimit(nil)
-                                }
-                                .padding(Theme.Spacing.lg)
-                                .background(Theme.secondary)
-                                .cornerRadius(Theme.Radius.md)
-                            }
-                        }
-                        .padding(.horizontal, Theme.Spacing.lg)
-                        .padding(.bottom, Theme.Spacing.xl)
+  var body: some View {
+      
+    NavigationView {
+      ZStack {
+        Color(uiColor: .systemGroupedBackground)
+          .ignoresSafeArea()
+
+        VStack(spacing: 0) {
+          if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
+            headerContent
+              .padding(.bottom, 14)
+              .transition(.move(edge: .top).combined(with: .opacity))
+          }
+
+          BrowserView(viewModel: viewModel)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .cornerRadius(18)
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 10)
+            .overlay(statusOverlay, alignment: .top)
+            .overlay(
+              Group {
+                if !isKeyboardVisible {
+                  Button(action: {
+                    print(
+                    "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
+                    )
+                    viewModel.toggleAutoScroll()
+                    print(
+                    "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
+                    )
+                    }) {
+                        Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                            .font(.title3)
+                            .frame(width: 32, height: 32)
+                            .background(.white)
+                            .foregroundColor(.pink)
+                            .cornerRadius(10)
                     }
+                    .padding(.bottom, 20)
                 }
-            }
+              },
+              alignment: .bottom
+            )
+            .padding(.top, viewModel.toolbarPosition == .top ? 4 : 0)
+            .padding(.bottom, viewModel.toolbarPosition == .bottom ? 4 : 0)
+
+          if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
+            headerContent
+              .padding(.top, 14)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+        }  
+
+        if viewModel.selectedDrawer != nil {
+          DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
+            drawerContent
+          }
         }
+      }
+      .navigationBarHidden(true)
     }
- 
+    .sheet(item: $viewModel.authSheet) { type in
+      if type == .login {
+        LoginView(viewModel: viewModel)
+      } else {
+        RegisterView(viewModel: viewModel)
+      }
+    }
+    .navigationViewStyle(StackNavigationViewStyle())
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
+    { _ in
+      withAnimation(.easeOut(duration: 0.2)) { isKeyboardVisible = true }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
+    { _ in
+      withAnimation(.easeIn(duration: 0.2)) { isKeyboardVisible = false }
+    }
+  }
+
   private var headerContent: some View {
     VStack(spacing: 14) {
       searchBar
