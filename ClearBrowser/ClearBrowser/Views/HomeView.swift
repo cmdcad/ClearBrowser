@@ -222,8 +222,10 @@ private var drawerContent: some View {
                 Text("All bookmarks")
                     .font(.headline)
                 Spacer()
-                Button("Clear All") {
-                    viewModel.clearBookmarks()
+                Button(action: {
+                    viewModel.addBookmark()
+                }) {
+                    Image(systemName: "plus")
                 }
                 .buttonStyle(.bordered)
             }

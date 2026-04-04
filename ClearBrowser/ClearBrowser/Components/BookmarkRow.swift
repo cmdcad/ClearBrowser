@@ -30,6 +30,10 @@ struct BookmarkRow: View {
             .buttonStyle(.plain)
         }
         .padding(8)
-        .frame(height: 72)
+        .frame(height: 72) 
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 }
