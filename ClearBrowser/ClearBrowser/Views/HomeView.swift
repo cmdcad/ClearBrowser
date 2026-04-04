@@ -120,16 +120,6 @@ struct HomeView: View {
       }
 
 
-       HStack(spacing: 12) {
-            ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
-            viewModel.openSearchEngineHome()
-            }
-
-            ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
-            viewModel.selectedDrawer = .bookmarks
-            } 
-       }
-            .padding(.leading, 32)
     }
   }
 
@@ -158,7 +148,14 @@ struct HomeView: View {
 
         Spacer()
 
-        navigationControls
+        HStack(spacing: 12) {   
+            ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
+            viewModel.goBack()
+            } 
+            ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
+            viewModel.goForward()
+            } 
+        } 
       }
       .padding(.vertical, 4)
     }
@@ -177,17 +174,7 @@ struct HomeView: View {
       Spacer()
     }
   }
-
-  private var navigationControls: some View {
-    HStack(spacing: 12) {   
-        ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
-          viewModel.goBack()
-        } 
-        ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
-          viewModel.goForward()
-        } 
-    } 
-  }
+ 
 
   @ViewBuilder
   private var drawerContent: some View {
