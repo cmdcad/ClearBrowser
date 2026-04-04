@@ -1,5 +1,4 @@
 import SwiftUI
-
 import UIKit
 
 struct HomeView: View {
@@ -52,7 +51,7 @@ struct HomeView: View {
         .padding(.top, 8)
 
         if viewModel.selectedDrawer != nil {
-          DrawerView(title: viewModel.selectedDrawer?.rawValue ?? "", isOpen: drawerOpenBinding) {
+          DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
             drawerContent
           }
         }
@@ -77,6 +76,15 @@ struct HomeView: View {
     }
   }
 
+  private var drawerTitle: String {
+    switch viewModel.selectedDrawer {
+    case .bookmarks: return "Bookmarks"
+    case .history: return "History"
+    case .settings: return "Settings"
+    case .none: return ""
+    }
+  }
+
   private var searchBar: some View {
     HStack(spacing: 12) {
       TextField(
@@ -88,7 +96,7 @@ struct HomeView: View {
       .textInputAutocapitalization(.never)
       .submitLabel(.go)
 
-      ActionButton(label: "Bookmarks", symbol: "arrow.clockwise", tint: .blue) {
+      ActionButton(label: "Reload", symbol: "arrow.clockwise", tint: .blue) {
         viewModel.reload()
       }
 
@@ -182,8 +190,6 @@ struct HomeView: View {
 
   @ViewBuilder
   private var drawerContent: some View {
-      @State var isDeleting: Bool = false
-      
     switch viewModel.selectedDrawer {
     case .bookmarks:
       VStack(alignment: .leading, spacing: 16) {
@@ -255,13 +261,6 @@ struct HomeView: View {
                   Label("Delete", systemImage: "trash")
                 }
                 .tint(.red)
-                .actionSheet(
-                  isPresented: isDeleting,
-                  content: {
-                    SwipeToDeleteView(onDelete: {
-                      viewModel.removeHistoryItem(item)
-                    })
-                  })
               }
             }
             .onDelete(perform: viewModel.removeHistoryItems)
@@ -383,33 +382,4 @@ private struct BookmarkRow: View {
     .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 4)
 
   }
-}
-struct SwipeToDeleteView: View {
-    @State private var isDeleting = false
-    let onDelete: () -> Void
-    
-    var body: some View {
-        ZStack {
-            Rectangle()
-                .frame(height: 40)
-                .foregroundColor(.red)
-                .opacity(isDeleting ? 1 : 0)
-            
-            HStack {
-                Text("Delete")
-                    .foregroundColor(.white)
-                Spacer()
-            }
-            .padding()
-            .frame(height: 40)
-            .transition(AnyTransition.opacity.combined(with: .move(edge: .trailing)))
-            .onTapGesture {
-                isDeleting = true
-            }
-            .onLongPressGesture(perform: { _ in
-                onDelete()
-                isDeleting = false
-            })
-        }
-    }
 }

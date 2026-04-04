@@ -164,6 +164,16 @@ final class HomeViewModel: ObservableObject {
         storageManager.saveHistory(history)
     }
 
+    func removeHistoryItems(at offsets: IndexSet) {
+        history.remove(atOffsets: offsets)
+        storageManager.saveHistory(history)
+    }
+
+    func moveHistoryItem(from source: IndexSet, to destination: Int) {
+        history.move(fromOffsets: source, toOffset: destination)
+        storageManager.saveHistory(history)
+    }
+
     func login(email: String) {
         isLoggedIn = true
         currentUserEmail = email
