@@ -83,7 +83,7 @@ struct RegisterView: View {
                 Text(errorMessage ?? "An unknown error occurred")
             }
     }
-    
+    }
     // MARK: - Actions
     func handleRegister() {
         guard isFormValid else { return }
@@ -398,4 +398,3 @@ private struct RegisterButton: View {
     }
 }
 
-}
