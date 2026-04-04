@@ -60,7 +60,8 @@ struct HomeView: View {
 
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
             headerContent
-              .padding(.top, 14)
+              .padding(.top, 8)
+              .padding(.bottom, 8)
               .transition(.move(edge: .bottom).combined(with: .opacity))
           }
         }  
@@ -281,68 +282,109 @@ private var drawerContent: some View {
         
     case .settings:
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
                 SettingsSection(title: "Search") {
-                    Picker("Search Engine", selection: $viewModel.defaultSearchEngine) {
-                        ForEach(SearchEngine.allCases) { engine in
-                            Text(engine.title).tag(engine)
+                    VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                        Label("Search Engine", systemImage: "magnifyingglass.circle.fill")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.text)
+                        
+                        Picker("Search Engine", selection: $viewModel.defaultSearchEngine) {
+                            ForEach(SearchEngine.allCases) { engine in
+                                Text(engine.title).tag(engine)
+                            }
                         }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
                 }
 
                 SettingsSection(title: "Appearance") {
-                    Picker("Toolbar Position", selection: $viewModel.toolbarPosition) {
-                        ForEach(ToolbarPosition.allCases) { pos in
-                            Text(pos.title).tag(pos)
+                    VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                        Label("Toolbar Position", systemImage: "dock.rectangle")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.text)
+                            
+                        Picker("Toolbar Position", selection: $viewModel.toolbarPosition) {
+                            ForEach(ToolbarPosition.allCases) { pos in
+                                Text(pos.title).tag(pos)
+                            }
                         }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
                 }
 
                 SettingsSection(title: "Auto-Scroll") {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                         HStack {
-                            Text("Speed")
+                            Label("Scroll Speed", systemImage: "gauge.with.needle.fill")
+                                .font(.subheadline)
                             Spacer()
                             Text(String(format: "%.2f", viewModel.autoScrollSpeed))
-                                .foregroundColor(.secondary)
+                                .font(.caption.monospacedDigit())
+                                .foregroundColor(Theme.textSecondary)
                         }
+                        
                         Slider(value: $viewModel.autoScrollSpeed, in: 0.1...1.0)
+                            .tint(Theme.accent)
                     }
                 }
 
                 SettingsSection(title: "Account") {
                     if viewModel.isLoggedIn {
-                        HStack {
-                            Image(systemName: "person.circle.fill")
-                                .foregroundColor(.blue)
-                            VStack(alignment: .leading) {
-                                Text("Signed in as")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(viewModel.currentUserEmail ?? "")
-                                    .font(.subheadline)
+                        VStack(spacing: Theme.Spacing.md) {
+                            HStack(spacing: Theme.Spacing.md) {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.system(size: 38))
+                                    .foregroundColor(Theme.accent)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(viewModel.currentUserEmail ?? "User")
+                                        .font(.headline)
+                                        .foregroundColor(Theme.text)
+                                    Text("Logged in")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
+                                Spacer()
                             }
-                            Spacer()
-                            Button("Log Out") {
+                            
+                            Divider().background(Theme.border)
+                            
+                            Button(role: .destructive, action: {
                                 viewModel.isLoggedIn = false
                                 viewModel.currentUserEmail = nil
+                            }) {
+                                Label("Log Out", systemImage: "arrow.right.circle")
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
                             }
-                            .foregroundColor(.red)
+                            .buttonStyle(.bordered)
+                            .tint(.red)
                         }
                     } else {
-                        Button("Sign In / Register") {
-                            viewModel.authSheet = .login
+                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                            Text("Sync your bookmarks and history across devices.")
+                                .font(.footnote)
+                                .foregroundColor(Theme.textSecondary)
+                            
+                            Button(action: { viewModel.authSheet = .login }) {
+                                Label("Sign In / Register", systemImage: "person.badge.key.fill")
+                                    .fontWeight(.semibold)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(Theme.accent)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(Theme.Radius.sm)
+                            }
                         }
-                        .foregroundColor(.blue)
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.vertical, Theme.Spacing.lg)
         }
     case .none:
         EmptyView()
     }
 }
 }
+ 

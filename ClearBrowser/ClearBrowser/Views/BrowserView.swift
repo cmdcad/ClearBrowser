@@ -114,21 +114,43 @@ struct BrowserView: UIViewRepresentable {
             
             let translation = scrollView.panGestureRecognizer.translation(in: scrollView.superview)
             
-            if translation.y < -10 {
-                // Swiping Up (Scrolling Down) -> Hide Header
-                if viewModel.isHeaderVisible {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        viewModel.isHeaderVisible = false
+            if viewModel.toolbarPosition == .top {
+                // Top Bar Logic
+                if translation.y < -10 {
+                    // Swiping Up (Scrolling Down) -> Hide Header
+                    if viewModel.isHeaderVisible {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.isHeaderVisible = false
+                        }
+                    }
+                } else if translation.y > 10 {
+                    // Swiping Down (Scrolling Up) -> Show Header
+                    if !viewModel.isHeaderVisible {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.isHeaderVisible = true
+                        }
                     }
                 }
-            } else if translation.y > 10 {
-                // Swiping Down (Scrolling Up) -> Show Header
-                if !viewModel.isHeaderVisible {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        viewModel.isHeaderVisible = true
+            } else {
+                // Bottom Bar Logic
+                if translation.y > 10 {
+                    // Swiping Down (Scrolling Up) -> Hide Header
+                    if viewModel.isHeaderVisible {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.isHeaderVisible = false
+                        }
+                    }
+                } else if translation.y < -10 {
+                    // Swiping Up (Scrolling Down) -> Show Header
+                    if !viewModel.isHeaderVisible {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.isHeaderVisible = true
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
