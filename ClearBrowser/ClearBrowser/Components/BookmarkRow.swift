@@ -31,6 +31,5 @@ struct BookmarkRow: View {
         }
         .padding(8)
         .frame(height: 72)
-        .background(Color(.systemBackground))
     }
 }

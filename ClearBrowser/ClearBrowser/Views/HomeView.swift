@@ -22,7 +22,6 @@ struct HomeView: View {
         VStack(spacing: 0) {
           if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
             headerContent
-              .padding(.bottom, 14)
               .transition(.move(edge: .top).combined(with: .opacity))
           }
 
@@ -100,7 +99,7 @@ struct HomeView: View {
           .padding(.horizontal, Theme.Spacing.lg)
       }
       .padding(.vertical, Theme.Spacing.md)
-      .background(Theme.secondary.opacity(0.75))
+      .background(Theme.secondary.opacity(0.95))
       
       if viewModel.showAIField {
         AIResponseView(
@@ -111,7 +110,7 @@ struct HomeView: View {
         )
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.md)
-        .background(Theme.secondary.opacity(0.50))
+        .background(Theme.secondary.opacity(0.95))
       }
       
       Divider()

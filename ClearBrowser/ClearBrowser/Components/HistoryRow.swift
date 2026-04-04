@@ -30,7 +30,6 @@ struct HistoryRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .frame(height: 72)
-        .background(Color(.systemBackground))
         .cornerRadius(14)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
