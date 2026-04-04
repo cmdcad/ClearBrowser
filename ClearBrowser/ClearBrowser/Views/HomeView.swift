@@ -384,3 +384,32 @@ private struct BookmarkRow: View {
 
   }
 }
+struct SwipeToDeleteView: View {
+    @State private var isDeleting = false
+    let onDelete: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .frame(height: 40)
+                .foregroundColor(.red)
+                .opacity(isDeleting ? 1 : 0)
+            
+            HStack {
+                Text("Delete")
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding()
+            .frame(height: 40)
+            .transition(AnyTransition.opacity.combined(with: .move(edge: .trailing)))
+            .onTapGesture {
+                isDeleting = true
+            }
+            .onLongPressGesture(perform: { _ in
+                onDelete()
+                isDeleting = false
+            })
+        }
+    }
+}
