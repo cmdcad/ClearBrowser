@@ -20,7 +20,11 @@ struct RegisterView: View {
     }
     
     private var isPasswordValid: Bool {
-        password.count >= 8 && password == confirmPassword
+        password.count >= 8 &&
+        password == confirmPassword &&
+        password.contains(where: { $0.isUppercase }) &&
+        password.contains(where: { $0.isLowercase }) &&
+        password.contains(where: { $0.isNumber })
     }
     
     private var isFormValid: Bool {
@@ -31,24 +35,22 @@ struct RegisterView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                ScrollView {
-                    VStack(spacing: 24) {
+                Form {
+                    Section {
                         HeaderSection()
-                        
-                        Form {
-                            AccountDetailsSection(
-                                email: $email,
-                                password: $password,
-                                confirmPassword: $confirmPassword,
-                                showPassword: $showPassword
-                            )
-                            
-                            AIConfigurationSection(openAIKey: $openAIKey)
-                        }
-                        .scrollContentBackground(.hidden)
+                            .listRowBackground(Color.clear)
                     }
-                    .padding(.vertical, 16)
+
+                    AccountDetailsSection(
+                        email: $email,
+                        password: $password,
+                        confirmPassword: $confirmPassword,
+                        showPassword: $showPassword
+                    )
+                    
+                    AIConfigurationSection(openAIKey: $openAIKey)
                 }
+                .scrollContentBackground(.hidden)
                 
                 if isLoading {
                     ProgressView()
@@ -72,7 +74,10 @@ struct RegisterView: View {
                     )
                 }
             }
-            .alert("Registration Error", isPresented: .constant(errorMessage != nil)) {
+            .alert("Registration Error", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
                 Button("OK") { errorMessage = nil }
             } message: {
                 Text(errorMessage ?? "An unknown error occurred")
@@ -80,7 +85,7 @@ struct RegisterView: View {
     }
     
     // MARK: - Actions
-    private func handleRegister() {
+    func handleRegister() {
         guard isFormValid else { return }
         
         isLoading = true
@@ -88,7 +93,7 @@ struct RegisterView: View {
         // Simulate async operation
         Task {
             do {
-                viewModel.register(email: email, password: password, apiKey: openAIKey)
+                viewModel.register(email: email, apiKey: openAIKey)
                 await MainActor.run {
                     dismiss()
                 }
@@ -119,7 +124,6 @@ private struct HeaderSection: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
     }
 }
 
@@ -394,7 +398,4 @@ private struct RegisterButton: View {
     }
 }
 
-// MARK: - Preview
-#Preview {
-    RegisterView(viewModel: HomeViewModel())
 }
