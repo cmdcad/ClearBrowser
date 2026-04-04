@@ -92,10 +92,15 @@ struct HomeView: View {
   }
 
   private var headerContent: some View {
-    VStack(spacing: 14) {
-      searchBar
-      actionRow
-        .padding(.horizontal, 16)
+    VStack(spacing: 0) {
+      VStack(spacing: Theme.Spacing.md) {
+        searchBar
+        actionRow
+          .padding(.horizontal, Theme.Spacing.lg)
+      }
+      .padding(.vertical, Theme.Spacing.md)
+      .background(Theme.secondary.opacity(0.95))
+      
       if viewModel.showAIField {
         AIResponseView(
           query: $viewModel.aiQuery,
@@ -103,9 +108,13 @@ struct HomeView: View {
           isWorking: viewModel.isAIWorking,
           onSubmit: viewModel.fetchAIResponse
         )
-        .padding(.top, 4)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.bottom, Theme.Spacing.md)
+        .background(Theme.secondary.opacity(0.95))
       }
+      
+      Divider()
+        .background(Theme.border)
     }
   }
 
@@ -119,62 +128,72 @@ struct HomeView: View {
   }
 
   private var searchBar: some View {
-    HStack(spacing: 12) {
-      TextField(
-        "Search or enter URL", text: $viewModel.addressBarText, onCommit: viewModel.loadAddress
+    HStack(spacing: Theme.Spacing.md) {
+      HStack(spacing: Theme.Spacing.sm) {
+        Image(systemName: "magnifyingglass")
+          .font(.system(size: 14, weight: .medium))
+          .foregroundColor(Theme.textSecondary)
+        
+        TextField(
+          "Search or enter URL",
+          text: $viewModel.addressBarText,
+          onCommit: viewModel.loadAddress
+        )
+        .font(.subheadline)
+        .foregroundColor(Theme.text)
+        .keyboardType(.URL)
+        .autocorrectionDisabled(true)
+        .textInputAutocapitalization(.never)
+        .submitLabel(.go)
+      }
+      .padding(.horizontal, Theme.Spacing.md)
+      .padding(.vertical, 8)
+      .background(Theme.primary.opacity(0.6))
+      .cornerRadius(Theme.Radius.md)
+      .overlay(
+        RoundedRectangle(cornerRadius: Theme.Radius.md)
+          .stroke(Theme.border, lineWidth: 0.5)
       )
-      .textFieldStyle(.roundedBorder)
-      .keyboardType(.URL)
-      .autocorrectionDisabled(true)
-      .textInputAutocapitalization(.never)
-      .submitLabel(.go)
 
       ActionButton(label: "Reload", symbol: "arrow.clockwise", tint: .blue) {
         viewModel.reload()
       }
-
-      ActionButton(label: "Bookmarks", symbol: "bookmark.add.plus", tint: .green) {
-        viewModel.selectedDrawer = .bookmarks
-      }
     }
-    .padding(.horizontal, 16)
+    .padding(.horizontal, Theme.Spacing.lg)
   }
 
   private var actionRow: some View {
-    //ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 12) {
-        ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
-          viewModel.openSearchEngineHome()
+    HStack(spacing: Theme.Spacing.md) {
+      ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
+        viewModel.openSearchEngineHome()
+      }
+
+      ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
+        viewModel.selectedDrawer = .bookmarks
+      }
+
+      ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
+        viewModel.selectedDrawer = .history
+      }
+
+      ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
+        viewModel.selectedDrawer = .settings
+      }
+
+      ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
+        viewModel.toggleAIField()
+      }
+
+      Spacer()
+
+      HStack(spacing: Theme.Spacing.md) {
+        ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
+          viewModel.goBack()
         }
-
-        ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
-          viewModel.selectedDrawer = .bookmarks
+        ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
+          viewModel.goForward()
         }
-
-        ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
-          viewModel.selectedDrawer = .history
-        }
-
-        ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
-          viewModel.selectedDrawer = .settings
-        }
-
-        ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
-          viewModel.toggleAIField()
-        }
-
-        Spacer()
-
-        HStack(spacing: 12) {   
-            ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
-            viewModel.goBack()
-            } 
-            ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
-            viewModel.goForward()
-            } 
-        } 
-    //   }
-    //   .padding(.vertical, 4)
+      }
     }
   }
 
