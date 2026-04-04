@@ -192,10 +192,10 @@ struct HomeView: View {
       Spacer()
 
       HStack(spacing: Theme.Spacing.md) {
-        ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
+        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
           viewModel.goBack()
         }
-        ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
+        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
           viewModel.goForward()
         }
       }
@@ -246,6 +246,7 @@ private var drawerContent: some View {
                         Button(action: { viewModel.openBookmark(item) }) { // Tap to open bookmark
                             BookmarkRow(item: item)
                         }
+                            .buttonStyle(.plain)
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     withAnimation {

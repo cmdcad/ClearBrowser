@@ -178,12 +178,14 @@ final class HomeViewModel: ObservableObject {
         selectedDrawer = nil
         addressBarText = item.url.absoluteString
         requestURL = item.url
+        addHistoryItem(title: item.title, url: item.url)
     }
 
     func openHistory(_ item: BrowserItem) {
         selectedDrawer = nil
         addressBarText = item.url.absoluteString
         requestURL = item.url
+        addHistoryItem(title: item.title, url: item.url)
     }
 
     func clearHistory() {

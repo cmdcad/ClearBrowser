@@ -53,6 +53,6 @@ struct AIResponseView: View {
                 .transition(.opacity)
             }
         }
-        .padding(.horizontl, 16)
+        .padding(.horizontal, 16)
     }
 }
