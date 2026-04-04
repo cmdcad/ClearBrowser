@@ -13,6 +13,12 @@ enum AuthSheetType: Identifiable {
     var id: Self { self }
 }
 
+enum ToolbarPosition: String, CaseIterable, Identifiable {
+    case top, bottom
+    var id: Self { self }
+    var title: String { self.rawValue.capitalized }
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
     @Published var addressBarText: String = "https://www.bing.com"
@@ -23,6 +29,11 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
+    @Published var isHeaderVisible = true
+
+    @Published var toolbarPosition: ToolbarPosition = .top {
+        didSet { saveSettings() }
+    }
 
     @Published var isLoggedIn = false
     @Published var currentUserEmail: String? = nil
@@ -211,6 +222,12 @@ final class HomeViewModel: ObservableObject {
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
         openAIKey = UserDefaults.standard.string(forKey: "openAIKey") ?? ""
+
+        if let pos = UserDefaults.standard.string(forKey: "toolbarPosition"),
+           let position = ToolbarPosition(rawValue: pos) {
+            toolbarPosition = position
+        }
+
         if let last = settings.lastOpenedURL, let url = URL(string: last) {
             requestURL = url
             currentURL = url

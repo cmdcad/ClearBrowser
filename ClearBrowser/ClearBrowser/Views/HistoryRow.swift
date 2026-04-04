@@ -1,0 +1,40 @@
+import SwiftUI
+
+struct HistoryRow: View {
+    let item: BrowserItem
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title ?? "Untitled")
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                
+                Text(item.url.absoluteString)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(height: 72)
+        .background(Color(.systemBackground))
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
