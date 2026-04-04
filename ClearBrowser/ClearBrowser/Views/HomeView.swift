@@ -118,8 +118,6 @@ struct HomeView: View {
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
         viewModel.selectedDrawer = .bookmarks
       }
-
-
     }
   }
 
