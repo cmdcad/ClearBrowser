@@ -48,14 +48,15 @@ struct HomeView: View {
                     print(
                     "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
                     )
-                }) {
-                    Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                        .font(.title3)
-                        .frame(width: 32, height: 32)
-                        .background(.white)
-                        .foregroundColor(.pink)
-                        .cornerRadius(10)
-                }
+                    }) {
+                        Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                            .font(.title3)
+                            .frame(width: 32, height: 32)
+                            .background(.white)
+                            .foregroundColor(.pink)
+                            .cornerRadius(10)
+                    }
+                    .padding(.bottom, 20)
                 }
               },
               alignment: .bottom
@@ -122,7 +123,7 @@ struct HomeView: View {
   }
 
   private var actionRow: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
+    //ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 12) {
         ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
           viewModel.openSearchEngineHome()
@@ -154,8 +155,8 @@ struct HomeView: View {
             viewModel.goForward()
             } 
         } 
-      }
-      .padding(.vertical, 4)
+    //   }
+    //   .padding(.vertical, 4)
     }
   }
 
@@ -265,6 +266,7 @@ struct HomeView: View {
         .pickerStyle(.segmented)
 
         SectionHeader(title: "Auto-scroll speed")
+
         HStack {
           Slider(value: $viewModel.autoScrollSpeed, in: 0.05...5.0, step: 0.05)
           Text(String(format: "%.2fx", viewModel.autoScrollSpeed))
