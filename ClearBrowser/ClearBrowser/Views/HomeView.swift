@@ -50,11 +50,11 @@ struct HomeView: View {
                     )
                 }) {
                     Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                    .font(.title3)
-                    .frame(width: 32, height: 32)
-                    .background(Color.pink.opacity(0.12))
-                    .foregroundColor(.pink)
-                    .cornerRadius(10)
+                        .font(.title3)
+                        .frame(width: 32, height: 32)
+                        .background(.white)
+                        .foregroundColor(.pink)
+                        .cornerRadius(10)
                 }
                 }
               },
@@ -121,7 +121,15 @@ struct HomeView: View {
 
       Spacer()
 
-      navigationControls
+       HStack(spacing: 12) {
+            ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
+            viewModel.openSearchEngineHome()
+            }
+
+            ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
+            viewModel.selectedDrawer = .bookmarks
+            } 
+       }
     }
   }
 
@@ -147,6 +155,10 @@ struct HomeView: View {
         ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
           viewModel.toggleAIField()
         }
+
+        Spacer()
+
+        navigationControls
       }
       .padding(.vertical, 4)
     }
@@ -167,25 +179,14 @@ struct HomeView: View {
   }
 
   private var navigationControls: some View {
-    HStack(spacing: 16) {
-      Spacer()
-
-      Button(action: viewModel.goBack) {
-        Image(systemName: "chevron.left")
-          .frame(width: 32, height: 32)
-      }
-      .disabled(!viewModel.canGoBack)
-      .buttonStyle(.bordered) 
-
-      Button(action: viewModel.goForward) {
-        Image(systemName: "chevron.right")
-          .frame(width: 32, height: 32)
-      }
-      .disabled(!viewModel.canGoForward)
-      .buttonStyle(.bordered)
-
-    }
-    .padding(12)
+    HStack(spacing: 12) {   
+        ActionButton(label: "back", symbol: "chevron.left", tint: .purple) {
+          viewModel.goBack()
+        } 
+        ActionButton(label: "forward", symbol: "chevron.right", tint: .teal) {
+          viewModel.goForward()
+        } 
+    } 
   }
 
   @ViewBuilder
