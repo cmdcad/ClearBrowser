@@ -184,23 +184,22 @@ struct HomeView: View {
                         ForEach(viewModel.bookmarks) { item in
                             Button(action: { viewModel.openBookmark(item) }) {
                                 BookmarkRow(item: item)
-                                    .padding(.vertical, 6) 
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true)
-                                {
-                                    Button(role: .destructive) {
-                                        withAnimation {
-                                            viewModel.removeBookmark(item)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                } 
+                                    .padding(.vertical, 6)  
                             }
                             .buttonStyle(.plain)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                           
+                            .listRowSeparator(.hidden) 
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true)
+                            {
+                                Button(role: .destructive) {
+                                    withAnimation {
+                                        viewModel.removeBookmark(item)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .listStyle(.plain)
