@@ -123,6 +123,7 @@ struct HomeView: View {
     case .bookmarks: return "Bookmarks"
     case .history: return "History"
     case .settings: return "Settings"
+    case .favorites: return "Favorites"
     case .none: return ""
     }
   }
@@ -162,10 +163,10 @@ struct HomeView: View {
     .padding(.horizontal, Theme.Spacing.lg)
   }
 
-  private var actionRow: some View {
+  private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
     HStack(spacing: Theme.Spacing.md) {
-      ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
-        viewModel.openSearchEngineHome()
+      ActionButton(label: "Favorite", symbol: "star.fill", tint: .yellow) {
+        viewModel.addFavorite()
       }
 
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
@@ -182,6 +183,10 @@ struct HomeView: View {
 
       ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
         viewModel.toggleAIField()
+      }
+      
+      ActionButton(label: "Favorites", symbol: "star.circle", tint: .blue) {
+        viewModel.selectedDrawer = .favorites
       }
 
       Spacer()
@@ -223,7 +228,7 @@ private var drawerContent: some View {
                     .font(.headline)
                 Spacer()
                 Button(action: {
-                    viewModel.addBookmark()
+                    viewModel.addBookmark() // Add current page as bookmark
                 }) {
                     Image(systemName: "plus")
                 }
@@ -238,7 +243,9 @@ private var drawerContent: some View {
             } else {
                 List {
                     ForEach(viewModel.bookmarks) { item in
-                        BookmarkRow(item: item)
+                        Button(action: { viewModel.openBookmark(item) }) { // Tap to open bookmark
+                            BookmarkRow(item: item)
+                        }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     withAnimation {
@@ -264,7 +271,9 @@ private var drawerContent: some View {
                     .font(.headline)
                 Spacer()
                 Button("Clear") {
-                    viewModel.clearHistory()
+                    withAnimation { // Added animation
+                        viewModel.clearHistory()
+                    }
                 }
                 .buttonStyle(.bordered)
             }
@@ -277,13 +286,63 @@ private var drawerContent: some View {
             } else {
                 List {
                     ForEach(viewModel.history) { item in
-                        HistoryRow(item: item) { 
-                            withAnimation {
-                                viewModel.removeHistoryItem(item)
+                        Button(action: { viewModel.openHistory(item) }) {
+                            HistoryRow(item: item)
+                        }
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                withAnimation { viewModel.removeHistoryItem(item) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
                         }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+        
+    case .favorites: // New favorites drawer content
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("All favorites")
+                    .font(.headline)
+                Spacer()
+                Button(action: {
+                    viewModel.addFavorite() // Add current page as favorite
+                }) {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.bordered)
+            }
+
+            if viewModel.favorites.isEmpty {
+                Text("No favorites yet.")
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 40)
+                    .frame(maxWidth: .infinity)
+            } else {
+                List {
+                    ForEach(viewModel.favorites) { item in
+                        Button(action: { viewModel.openFavorite(item) }) { // Tap to open favorite
+                            BookmarkRow(item: item) // Reusing BookmarkRow for display
+                        }
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    viewModel.removeFavorite(item)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                         .listRowSeparator(.hidden)
                     }
                 }

@@ -9,7 +9,7 @@ enum BrowserNavigationCommand {
 }
 
 enum AuthSheetType: Identifiable {
-    case login, register
+    case login, register // No change needed here
     var id: Self { self }
 }
 
@@ -37,6 +37,7 @@ final class HomeViewModel: ObservableObject {
 
     @Published var isLoggedIn = false
     @Published var currentUserEmail: String? = nil
+    @Published var favorites: [BrowserItem] = [] // New: Favorites list
     @Published var authSheet: AuthSheetType? = nil
     @Published var openAIKey: String = "" {
         didSet { UserDefaults.standard.set(openAIKey, forKey: "openAIKey") }
@@ -159,6 +160,26 @@ final class HomeViewModel: ObservableObject {
         addHistoryItem(title: item.title, url: item.url)
     }
 
+    func addFavorite() {
+        guard let url = currentURL else { return }
+        let item = BrowserItem(title: pageTitle, url: url)
+        if !favorites.contains(where: { $0.url == url }) {
+            favorites.insert(item, at: 0)
+            storageManager.saveFavorites(favorites)
+        }
+    }
+
+    func removeFavorite(_ item: BrowserItem) {
+        favorites.removeAll { $0.id == item.id }
+        storageManager.saveFavorites(favorites)
+    }
+
+    func openFavorite(_ item: BrowserItem) {
+        selectedDrawer = nil
+        addressBarText = item.url.absoluteString
+        requestURL = item.url
+    }
+
     func openHistory(_ item: BrowserItem) {
         selectedDrawer = nil
         addressBarText = item.url.absoluteString
@@ -221,6 +242,7 @@ final class HomeViewModel: ObservableObject {
     private func loadPersistentData() {
         bookmarks = storageManager.loadBookmarks()
         history = storageManager.loadHistory()
+        favorites = storageManager.loadFavorites() // New: Load favorites
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed

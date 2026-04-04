@@ -10,6 +10,7 @@ final class StorageManager {
     private enum Key {
         static let bookmarks = "ClearBrowser.bookmarks"
         static let history = "ClearBrowser.history"
+        static let favorites = "ClearBrowser.favorites"
         static let settings = "ClearBrowser.settings"
     }
 
@@ -41,6 +42,17 @@ final class StorageManager {
     func saveHistory(_ items: [BrowserItem]) {
         guard let data = try? encoder.encode(items) else { return }
         defaults.set(data, forKey: Key.history)
+    }
+
+    func loadFavorites() -> [BrowserItem] {
+        guard let data = defaults.data(forKey: Key.favorites),
+              let items = try? decoder.decode([BrowserItem].self, from: data) else { return [] }
+        return items
+    }
+
+    func saveFavorites(_ items: [BrowserItem]) {
+        guard let data = try? encoder.encode(items) else { return }
+        defaults.set(data, forKey: Key.favorites)
     }
 
     func loadSettings() -> BrowserSettings {

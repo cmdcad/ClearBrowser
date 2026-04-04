@@ -2,8 +2,7 @@ import SwiftUI
 
 struct BookmarkRow: View {
     let item: BrowserItem
-    var onDelete: (() -> Void)? = nil
-    
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -18,16 +17,6 @@ struct BookmarkRow: View {
                     .lineLimit(1)
             }
             
-            Spacer()
-            
-            Button(action: {
-                onDelete?()
-            }) {
-                Image(systemName: "trash")
-                    .foregroundColor(.red)
-                    .font(.title3)
-            }
-            .buttonStyle(.plain)
         }
         .padding(8)
         .frame(height: 72) 

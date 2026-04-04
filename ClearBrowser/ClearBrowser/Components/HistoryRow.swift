@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HistoryRow: View {
     let item: BrowserItem
-    let onDelete: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -19,13 +18,6 @@ struct HistoryRow: View {
             }
             
             Spacer()
-            
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .foregroundColor(.red)
-                    .font(.title3)
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
