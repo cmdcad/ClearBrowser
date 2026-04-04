@@ -102,6 +102,7 @@ struct HomeView: View {
                 ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
                     viewModel.openSearchEngineHome()
                 }
+                
                 ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
                     viewModel.selectedDrawer = .bookmarks
                 }
