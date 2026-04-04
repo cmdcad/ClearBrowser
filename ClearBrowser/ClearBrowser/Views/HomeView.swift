@@ -14,6 +14,7 @@ struct HomeView: View {
   }
 
   var body: some View {
+      
     NavigationView {
       ZStack {
         Color(uiColor: .systemGroupedBackground)
@@ -181,6 +182,8 @@ struct HomeView: View {
 
   @ViewBuilder
   private var drawerContent: some View {
+      @State var isDeleting: Bool = false
+      
     switch viewModel.selectedDrawer {
     case .bookmarks:
       VStack(alignment: .leading, spacing: 16) {
@@ -253,7 +256,7 @@ struct HomeView: View {
                 }
                 .tint(.red)
                 .actionSheet(
-                  isPresented: $isDeleting,
+                  isPresented: isDeleting,
                   content: {
                     SwipeToDeleteView(onDelete: {
                       viewModel.removeHistoryItem(item)
