@@ -119,7 +119,6 @@ struct HomeView: View {
         viewModel.selectedDrawer = .bookmarks
       }
 
-      Spacer()
 
        HStack(spacing: 12) {
             ActionButton(label: "Search", symbol: "magnifyingglass", tint: .blue) {
@@ -130,6 +129,7 @@ struct HomeView: View {
             viewModel.selectedDrawer = .bookmarks
             } 
        }
+            .padding(.leading, 32)
     }
   }
 
@@ -156,8 +156,9 @@ struct HomeView: View {
           viewModel.toggleAIField()
         }
 
+      Spacer()
+      
         navigationControls
-            .padding(.leading, 32)
       }
       .padding(.vertical, 4)
     }
