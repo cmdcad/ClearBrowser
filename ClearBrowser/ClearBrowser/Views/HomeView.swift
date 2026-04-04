@@ -156,9 +156,8 @@ struct HomeView: View {
           viewModel.toggleAIField()
         }
 
-        Spacer()
-
         navigationControls
+            .padding(.leading, 32)
       }
       .padding(.vertical, 4)
     }
