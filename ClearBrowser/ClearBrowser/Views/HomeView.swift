@@ -40,7 +40,22 @@ struct HomeView: View {
             .overlay(
               Group {
                 if !isKeyboardVisible {
-                  navigationControls
+                  Button(action: {
+                    print(
+                    "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
+                    )
+                    viewModel.toggleAutoScroll()
+                    print(
+                    "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
+                    )
+                }) {
+                    Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                    .font(.title3)
+                    .frame(width: 32, height: 32)
+                    .background(Color.pink.opacity(0.12))
+                    .foregroundColor(.pink)
+                    .cornerRadius(10)
+                }
                 }
               },
               alignment: .bottom
@@ -103,6 +118,10 @@ struct HomeView: View {
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
         viewModel.selectedDrawer = .bookmarks
       }
+
+      Spacer()
+
+      navigationControls
     }
   }
 
@@ -149,33 +168,14 @@ struct HomeView: View {
 
   private var navigationControls: some View {
     HStack(spacing: 16) {
+      Spacer()
+
       Button(action: viewModel.goBack) {
         Image(systemName: "chevron.left")
           .frame(width: 32, height: 32)
       }
       .disabled(!viewModel.canGoBack)
-      .buttonStyle(.bordered)
-
-      Spacer()
-
-      Button(action: {
-        print(
-          "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
-        )
-        viewModel.toggleAutoScroll()
-        print(
-          "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
-        )
-      }) {
-        Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-          .font(.title3)
-          .frame(width: 32, height: 32)
-          .background(Color.pink.opacity(0.12))
-          .foregroundColor(.pink)
-          .cornerRadius(10)
-      }
-
-      Spacer()
+      .buttonStyle(.bordered) 
 
       Button(action: viewModel.goForward) {
         Image(systemName: "chevron.right")
