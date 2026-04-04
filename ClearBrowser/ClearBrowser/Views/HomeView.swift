@@ -3,7 +3,7 @@ import WebKit
 import Foundation
 
 struct HomeView: View {
-    @EnvironmentObject var appState: AppState
+    @ObservedObject var viewModel: HomeViewModel
     @State private var searchInput = ""
     @State private var showAIResults = false
     
@@ -29,7 +29,7 @@ struct HomeView: View {
                         // Right Spacer to center the title
                         Spacer()
                         
-                        Button(action: { appState.openDrawer(.settings) }) {
+                        Button(action: { viewModel.selectedDrawer = .settings }) {
                             Image(systemName: "gearshape.fill") // Solid icon for a cleaner look
                                 .font(.title3) // Standard icon size for toolbar
                                 .foregroundColor(Theme.accent)
@@ -87,7 +87,8 @@ struct HomeView: View {
                                     .shadow(color: Color.black.opacity(0.07), radius: 10, x: 0, y: 3)
                             )
                             .onSubmit {
-                                appState.handleInput(searchInput)
+                                viewModel.addressBarText = searchInput
+                                viewModel.loadAddress()
                             }
                             
                             // Action buttons
@@ -107,7 +108,7 @@ struct HomeView: View {
                                     .cornerRadius(Theme.Radius.md)
                                 }
                                 
-                                Button(action: { appState.openDrawer(.bookmarks) }) {
+                                Button(action: { viewModel.selectedDrawer = .bookmarks }) {
                                     HStack(spacing: Theme.Spacing.sm) {
                                         Image(systemName: "bookmark")
                                         Text("Bookmarks")
@@ -126,7 +127,7 @@ struct HomeView: View {
                             }
                             
                             HStack(spacing: Theme.Spacing.md) {
-                                Button(action: { appState.openDrawer(.history) }) {
+                                Button(action: { viewModel.selectedDrawer = .history }) {
                                     HStack(spacing: Theme.Spacing.sm) {
                                         Image(systemName: "clock")
                                         Text("History")
@@ -149,7 +150,7 @@ struct HomeView: View {
                         // Quick stats
                         HStack(spacing: Theme.Spacing.lg) {
                             VStack(spacing: Theme.Spacing.sm) {
-                                Text("\(appState.bookmarks.count)")
+                                Text("\(viewModel.bookmarks.count)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(Theme.accent)
                                 Text("Bookmarks")
@@ -162,7 +163,7 @@ struct HomeView: View {
                             .cornerRadius(Theme.Radius.md)
                             
                             VStack(spacing: Theme.Spacing.sm) {
-                                Text("\(appState.history.count)")
+                                Text("\(viewModel.history.count)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(Theme.accent)
                                 Text("History")
@@ -195,12 +196,12 @@ struct HomeView: View {
                             
                             Button(action: {
                                 if !aiSearchQuery.isEmpty {
-                                    appState.searchQuery = aiSearchQuery
-                                    appState.performAISearch(aiSearchQuery)
+                                    viewModel.aiQuery = aiSearchQuery
+                                    viewModel.fetchAIResponse()
                                     showAIResults = true
                                 }
                             }) {
-                                if appState.aiLoading {
+                                if viewModel.isAIWorking {
                                     HStack(spacing: Theme.Spacing.sm) {
                                         ProgressView()
                                             .tint(Theme.accent)
@@ -218,9 +219,9 @@ struct HomeView: View {
                             .padding(.vertical, Theme.Spacing.md)
                             .background(Theme.accent)
                             .cornerRadius(Theme.Radius.md)
-                            .disabled(appState.aiLoading || aiSearchQuery.isEmpty)
+                            .disabled(viewModel.isAIWorking || aiSearchQuery.isEmpty)
                             
-                            if let response = appState.aiResponse, showAIResults {
+                            if let response = viewModel.aiResponse, showAIResults {
                                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                                     HStack {
                                         Text("AI Response")
