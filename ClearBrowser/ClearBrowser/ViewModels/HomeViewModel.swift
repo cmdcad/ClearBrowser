@@ -169,7 +169,10 @@ final class HomeViewModel: ObservableObject {
         history.removeAll()
         storageManager.saveHistory(history)
     }
-
+    func clearBookmarks() {
+        bookmarks.removeAll()
+        storageManager.saveBookmarks(bookmarks)
+    }
     func removeHistoryItem(_ item: BrowserItem) {
         history.removeAll { $0.id == item.id }
         storageManager.saveHistory(history)

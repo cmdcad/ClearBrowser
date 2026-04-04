@@ -8,6 +8,8 @@ struct AIResponseView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Divider()
+                .padding(.vertical, 8)
             HStack {
                 TextField("Ask the AI assistant...", text: $query)
                     .textFieldStyle(.roundedBorder)
@@ -51,9 +53,6 @@ struct AIResponseView: View {
                 .transition(.opacity)
             }
         }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(18)
-        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 6)
+        .padding(.horizontl, 16)
     }
 }

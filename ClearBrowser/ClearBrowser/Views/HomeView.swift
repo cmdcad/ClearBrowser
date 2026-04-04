@@ -100,7 +100,7 @@ struct HomeView: View {
           .padding(.horizontal, Theme.Spacing.lg)
       }
       .padding(.vertical, Theme.Spacing.md)
-      .background(Theme.secondary.opacity(0.95))
+      .background(Theme.secondary.opacity(0.75))
       
       if viewModel.showAIField {
         AIResponseView(
@@ -111,7 +111,7 @@ struct HomeView: View {
         )
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.md)
-        .background(Theme.secondary.opacity(0.95))
+        .background(Theme.secondary.opacity(0.50))
       }
       
       Divider()
@@ -219,6 +219,16 @@ private var drawerContent: some View {
     switch viewModel.selectedDrawer {
     case .bookmarks:
         VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("All bookmarks")
+                    .font(.headline)
+                Spacer()
+                Button("Clear All") {
+                    viewModel.clearBookmarks()
+                }
+                .buttonStyle(.bordered)
+            }
+
             if viewModel.bookmarks.isEmpty {
                 Text("No bookmarks yet.")
                     .foregroundColor(.secondary)
@@ -287,7 +297,6 @@ private var drawerContent: some View {
                     VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                         Label("Search Engine", systemImage: "magnifyingglass.circle.fill")
                             .font(.subheadline)
-                            .foregroundColor(Theme.text)
                         
                         Picker("Search Engine", selection: $viewModel.defaultSearchEngine) {
                             ForEach(SearchEngine.allCases) { engine in
@@ -302,7 +311,6 @@ private var drawerContent: some View {
                     VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                         Label("Toolbar Position", systemImage: "dock.rectangle")
                             .font(.subheadline)
-                            .foregroundColor(Theme.text)
                             
                         Picker("Toolbar Position", selection: $viewModel.toolbarPosition) {
                             ForEach(ToolbarPosition.allCases) { pos in

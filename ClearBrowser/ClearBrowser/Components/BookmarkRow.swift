@@ -6,11 +6,6 @@ struct BookmarkRow: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.accentColor.opacity(0.2))
-                .frame(width: 44, height: 44)
-                .overlay(Image(systemName: "globe").foregroundColor(.accentColor))
-            
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.title)
                     .font(.body)
@@ -34,10 +29,8 @@ struct BookmarkRow: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(14)
-        .frame(height: 80)
+        .padding(8)
+        .frame(height: 72)
         .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
