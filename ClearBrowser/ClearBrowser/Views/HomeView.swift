@@ -14,27 +14,36 @@ struct HomeView: View {
         ZStack {
             Theme.primary.ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                // Top bar
-                HStack {
-                    Text("Browser")
-                        .font(.system(size: 28, weight: .bold, design: .default))
-                        .foregroundColor(Theme.text)
-                    
-                    Spacer()
-                    
-                    Button(action: { appState.openDrawer(.settings) }) {
-                        Image(systemName: "gear")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(Theme.accent)
-                            .frame(width: 44, height: 44)
+            VStack(spacing: 0) { // Changed to 0 spacing to control spacing explicitly
+                // Professional Top Bar
+                VStack(spacing: 0) { // Inner VStack for title and divider
+                    HStack(alignment: .center) {
+                        // Left Spacer to center the title
+                        Spacer()
+
+                        Text("ClearBrowser") // More descriptive and professional title
+                            .font(.title2) // Slightly smaller, more refined font size
+                            .fontWeight(.semibold) // Less bold, more elegant
+                            .foregroundColor(Theme.text)
+                        
+                        // Right Spacer to center the title
+                        Spacer()
+                        
+                        Button(action: { appState.openDrawer(.settings) }) {
+                            Image(systemName: "gearshape.fill") // Solid icon for a cleaner look
+                                .font(.title3) // Standard icon size for toolbar
+                                .foregroundColor(Theme.accent)
+                                .padding(8) // Add padding for tappable area
+                                .contentShape(Rectangle()) // Ensures padded area is tappable
+                        }
                     }
+                    .padding(.horizontal, Theme.Spacing.lg) // Horizontal padding
+                    .padding(.vertical, Theme.Spacing.lg)   // Increased vertical padding to maintain height
+                    .background(Theme.secondary.opacity(0.5))
+                    .overlay(Divider().background(Theme.textSecondary.opacity(0.3)), alignment: .bottom) // Subtle separator
                 }
-                .padding(.horizontal, Theme.Spacing.lg)
-                .padding(.vertical, Theme.Spacing.md)
-                .background(Theme.secondary.opacity(0.5))
-                
-                ScrollView {
+
+                ScrollView { // This ScrollView now starts below the fixed top bar
                     VStack(spacing: Theme.Spacing.xl) {
                         // Hero section
                         VStack(spacing: Theme.Spacing.md) {
