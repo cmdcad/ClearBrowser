@@ -2,6 +2,10 @@ import Foundation
 import SwiftUI
 import AuthenticationServices
 
+enum URLParseError: Error {
+    case invalidURL
+}
+
 enum BrowserNavigationCommand {
     case back
     case forward
@@ -96,10 +100,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     func loadAddress() {
-        guard let targetURL = searchManager.pageURL(for: addressBarText, defaultSearchEngine: defaultSearchEngine) else {
-            return
-        }
-
+        let targetURL = resolveInput(addressBarText)
         currentURL = targetURL
         requestURL = targetURL
         addHistoryItem(title: addressBarText, url: targetURL)
@@ -309,6 +310,52 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     private func saveSettings() {
         storageManager.saveSettings(settings)
+    }
+
+    private func parseOrThrow(_ input: String) throws -> URL {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Regex matches: yahoo.com, www.yahoo.com, http://yahoo.com, https://www.x.com
+        let pattern = #"^(https?:\/\/)?(www\.)?([A-Za-z0-9-]+\.[A-Za-z]{2,})(\/.*)?$"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            throw URLParseError.invalidURL
+        }
+
+        let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+
+        guard let match = regex.firstMatch(in: trimmed, range: range) else {
+            throw URLParseError.invalidURL
+        }
+
+        // Extract components
+        let protocolRange = Range(match.range(at: 1), in: trimmed)
+        let wwwRange = Range(match.range(at: 2), in: trimmed)
+        let domainRange = Range(match.range(at: 3), in: trimmed)
+        let pathRange = Range(match.range(at: 4), in: trimmed)
+
+        let proto = protocolRange != nil ? String(trimmed[protocolRange!]) : "https://"
+        let www = wwwRange != nil ? String(trimmed[wwwRange!]) : ""
+        let domain = domainRange != nil ? String(trimmed[domainRange!]) : ""
+        let path = pathRange != nil ? String(trimmed[pathRange!]) : ""
+
+        let finalString = "\(proto)\(www)\(domain)\(path)"
+
+        guard let url = URL(string: finalString) else {
+            throw URLParseError.invalidURL
+        }
+
+        return url
+    }
+
+    private func resolveInput(_ input: String) -> URL {
+        do {
+            return try parseOrThrow(input)
+        } catch {
+            // Fallback: treat input as a search query using the configured engine
+            let query = input.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? input
+            return URL(string: defaultSearchEngine.queryURL + query)!
+        }
     }
 
     private func addHistoryItem(title: String, url: URL) {

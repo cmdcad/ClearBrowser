@@ -98,7 +98,7 @@ struct HomeView: View {
         actionRow
           .padding(.horizontal, Theme.Spacing.lg)
       }
-      .padding(.vertical, Theme.Spacing.md)
+      .padding(.top, Theme.Spacing.md)
       .background(Theme.secondary.opacity(0.95))
       
       if viewModel.showAIField {
@@ -156,8 +156,14 @@ struct HomeView: View {
           .stroke(Theme.border, lineWidth: 0.5)
       )
 
-      ActionButton(label: "Reload", symbol: "arrow.clockwise", tint: .blue) {
-        viewModel.reload()
+      if viewModel.isLoading {
+        ActionButton(label: "Stop", symbol: "xmark", tint: .red) {
+          viewModel.stopLoading()
+        }
+      } else {
+        ActionButton(label: "Reload", symbol: "arrow.clockwise", tint: .blue) {
+          viewModel.reload()
+        }
       }
     }
     .padding(.horizontal, Theme.Spacing.lg)
@@ -177,6 +183,10 @@ struct HomeView: View {
         viewModel.selectedDrawer = .history
       }
 
+      ActionButton(label: "Favorites", symbol: "star.circle", tint: .blue) {
+        viewModel.selectedDrawer = .favorites
+      }
+    
       ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
         viewModel.selectedDrawer = .settings
       }
@@ -185,9 +195,6 @@ struct HomeView: View {
         viewModel.toggleAIField()
       }
       
-      ActionButton(label: "Favorites", symbol: "star.circle", tint: .blue) {
-        viewModel.selectedDrawer = .favorites
-      }
 
       Spacer()
 
