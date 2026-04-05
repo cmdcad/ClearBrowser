@@ -1,22 +1,17 @@
 import Foundation
 
-enum SearchEngine: String, CaseIterable, Codable, Identifiable {
-    case bing
-    case google
 
-    var id: String { rawValue }
 
-    var title: String {
-        switch self {
-        case .bing: return "Bing"
-        case .google: return "Google"
-        }
-    }
 
+enum SearchEngine: String, CaseIterable, Identifiable, Codable {
+    case google, bing, duckduckgo
+    var id: String { self.rawValue }
+    var title: String { self.rawValue.capitalized }
     var queryURL: String {
         switch self {
-        case .bing: return "https://www.bing.com/search?q="
         case .google: return "https://www.google.com/search?q="
+        case .bing: return "https://www.bing.com/search?q="
+        case .duckduckgo: return "https://duckduckgo.com/?q="
         }
     }
 }

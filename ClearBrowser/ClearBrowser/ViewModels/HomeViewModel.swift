@@ -18,23 +18,8 @@ enum AuthSheetType: Identifiable {
     var id: Self { self }
 }
 
-enum DrawerType: String, Identifiable {
-    case bookmarks, history, settings, favorites
-    var id: String { self.rawValue }
-}
 
-enum SearchEngine: String, CaseIterable, Identifiable, Codable {
-    case google, bing, duckduckgo
-    var id: String { self.rawValue }
-    var title: String { self.rawValue.capitalized }
-    var queryURL: String {
-        switch self {
-        case .google: return "https://www.google.com/search?q="
-        case .bing: return "https://www.bing.com/search?q="
-        case .duckduckgo: return "https://duckduckgo.com/?q="
-        }
-    }
-}
+
 
 enum ToolbarPosition: String, CaseIterable, Identifiable {
     case top, bottom
