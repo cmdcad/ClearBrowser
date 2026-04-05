@@ -125,7 +125,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func toggleAIField() {
-        showAIField.toggle()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            showAIField.toggle()
+        }
     }
 
     func updateNavigationState(canGoBack: Bool, canGoForward: Bool, title: String?, url: URL?) {
@@ -160,10 +162,12 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func openBookmark(_ item: BrowserItem) {
-        selectedDrawer = nil
-        addressBarText = item.url.absoluteString
-        requestURL = item.url
-        addHistoryItem(title: item.title, url: item.url)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            selectedDrawer = nil
+            addressBarText = item.url.absoluteString
+            requestURL = item.url
+            addHistoryItem(title: item.title, url: item.url)
+        }
     }
 
     func addFavorite() {
@@ -181,17 +185,21 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func openFavorite(_ item: BrowserItem) {
-        selectedDrawer = nil
-        addressBarText = item.url.absoluteString
-        requestURL = item.url
-        addHistoryItem(title: item.title, url: item.url)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            selectedDrawer = nil
+            addressBarText = item.url.absoluteString
+            requestURL = item.url
+            addHistoryItem(title: item.title, url: item.url)
+        }
     }
 
     func openHistory(_ item: BrowserItem) {
-        selectedDrawer = nil
-        addressBarText = item.url.absoluteString
-        requestURL = item.url
-        addHistoryItem(title: item.title, url: item.url)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            selectedDrawer = nil
+            addressBarText = item.url.absoluteString
+            requestURL = item.url
+            addHistoryItem(title: item.title, url: item.url)
+        }
     }
 
     func clearHistory() {
@@ -224,9 +232,25 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     func loginWithGoogle() {
-        // Note: Replace with your actual Google Client ID and registered Redirect URI scheme
-        let authURL = URL(string: "https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&response_type=code&scope=email%20profile&redirect_uri=com.clearbrowser.auth:/oauth2redirect")!
-        let callbackScheme = "com.clearbrowser.auth"
+        // IMPORTANT: 
+        // 1. Go to Google Cloud Console -> Credentials.
+        // 2. Create an "iOS" Client ID (NOT a "Web" client ID).
+        // 3. Use the "Bundle ID" of your app.
+        // 4. Use the "iOS Redirect URI" provided by Google (usually the reverse DNS of the Client ID).
+        
+        let clientID = "YOUR_IOS_CLIENT_ID_HERE.apps.googleusercontent.com"
+        let redirectURI = "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_HERE:/oauth2redirect"
+        let callbackScheme = "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_HERE"
+
+        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
+        components.queryItems = [
+            URLQueryItem(name: "client_id", value: clientID),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "scope", value: "email profile"),
+            URLQueryItem(name: "redirect_uri", value: redirectURI)
+        ]
+
+        guard let authURL = components.url else { return }
 
         let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
             if let error = error {

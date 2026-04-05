@@ -8,7 +8,11 @@ struct HomeView: View {
   private var drawerOpenBinding: Binding<Bool> {
     Binding<Bool>(
       get: { viewModel.selectedDrawer != nil },
-      set: { if !$0 { viewModel.selectedDrawer = nil } }
+      set: { if !$0 { 
+          withAnimation(.easeInOut(duration: 0.25)) {
+              viewModel.selectedDrawer = nil 
+          }
+      } }
     )
   }
 
@@ -27,35 +31,48 @@ struct HomeView: View {
 
           BrowserView(viewModel: viewModel)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .cornerRadius(18)
-            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 10)
+            .background(Theme.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, Theme.Spacing.sm)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .overlay(statusOverlay, alignment: .top)
             .overlay(
               Group {
                 if !isKeyboardVisible {
-                  Button(action: {
-                    print(
-                    "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
-                    )
-                    viewModel.toggleAutoScroll()
-                    print(
-                    "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
-                    )
-                    }) {
-                        Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                            .font(.title3)
-                            .frame(width: 32, height: 32)
-                            .background(.white)
-                            .foregroundColor(.pink)
-                            .cornerRadius(10)
+                     HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
+                        viewModel.goBack()
+                        }
+
+                        Button(action: {
+                        print(
+                        "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
+                        )
+                        viewModel.toggleAutoScroll()
+                        print(
+                        "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
+                        )
+                        }) {
+                            Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                                .font(.title3)
+                                .frame(width: 32, height: 32)
+                                .background(.white)
+                                .foregroundColor(.pink)
+                                .cornerRadius(10)
+                        }
+                        .padding(.bottom, 20)
+
+
+                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
+                        viewModel.goForward()
+                        }
                     }
-                    .padding(.bottom, 20)
+                  
                 }
               },
               alignment: .bottom
             )
-            .padding(.top, viewModel.toolbarPosition == .top ? 4 : 0)
-            .padding(.bottom, viewModel.toolbarPosition == .bottom ? 4 : 0)
+            .padding(.vertical, Theme.Spacing.sm)
 
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
             headerContent
@@ -69,6 +86,7 @@ struct HomeView: View {
           DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
             drawerContent
           }
+          .transition(.move(edge: .trailing).combined(with: .opacity))
         }
       }
       .navigationBarHidden(true)
@@ -112,6 +130,7 @@ struct HomeView: View {
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.md)
         .background(Theme.secondary.opacity(0.95))
+        .transition(.move(edge: .top).combined(with: .opacity))
       }
        
     }
@@ -175,19 +194,27 @@ struct HomeView: View {
       }
 
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
-        viewModel.selectedDrawer = .bookmarks
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+          viewModel.selectedDrawer = .bookmarks
+        }
       }
 
       ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
-        viewModel.selectedDrawer = .history
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+          viewModel.selectedDrawer = .history
+        }
       }
 
       ActionButton(label: "Favorites", symbol: "star.circle", tint: .blue) {
-        viewModel.selectedDrawer = .favorites
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+          viewModel.selectedDrawer = .favorites
+        }
       }
     
       ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
-        viewModel.selectedDrawer = .settings
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+          viewModel.selectedDrawer = .settings
+        }
       }
 
       ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
@@ -197,14 +224,7 @@ struct HomeView: View {
 
       Spacer()
 
-      HStack(spacing: Theme.Spacing.md) {
-        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
-          viewModel.goBack()
-        }
-        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
-          viewModel.goForward()
-        }
-      }
+     
     }
   }
 
