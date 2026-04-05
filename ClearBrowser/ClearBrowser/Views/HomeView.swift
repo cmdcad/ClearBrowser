@@ -99,6 +99,7 @@ struct HomeView: View {
           .padding(.horizontal, Theme.Spacing.lg)
       }
       .padding(.top, Theme.Spacing.md)
+      .padding(.bottom, !viewModel.showAIField ? Theme.Spacing.md   : 0)
       .background(Theme.secondary.opacity(0.95))
       
       if viewModel.showAIField {
@@ -112,9 +113,7 @@ struct HomeView: View {
         .padding(.bottom, Theme.Spacing.md)
         .background(Theme.secondary.opacity(0.95))
       }
-      
-      Divider()
-        .background(Theme.border)
+       
     }
   }
 
