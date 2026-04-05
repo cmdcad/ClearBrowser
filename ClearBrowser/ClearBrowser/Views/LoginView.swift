@@ -58,6 +58,21 @@ struct LoginView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .listRowBackground(Color.clear)
+
+                    Section {
+                        Button(action: {
+                            viewModel.loginWithGoogle()
+                        }) {
+                            HStack {
+                                Image(systemName: "g.circle.fill")
+                                Text("Sign in with Google")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
                 }
                 .scrollContentBackground(.hidden)
 

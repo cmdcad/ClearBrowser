@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AuthenticationServices
 
 enum BrowserNavigationCommand {
     case back
@@ -13,6 +14,24 @@ enum AuthSheetType: Identifiable {
     var id: Self { self }
 }
 
+enum DrawerType: String, Identifiable {
+    case bookmarks, history, settings, favorites
+    var id: String { self.rawValue }
+}
+
+enum SearchEngine: String, CaseIterable, Identifiable, Codable {
+    case google, bing, duckduckgo
+    var id: String { self.rawValue }
+    var title: String { self.rawValue.capitalized }
+    var queryURL: String {
+        switch self {
+        case .google: return "https://www.google.com/search?q="
+        case .bing: return "https://www.bing.com/search?q="
+        case .duckduckgo: return "https://duckduckgo.com/?q="
+        }
+    }
+}
+
 enum ToolbarPosition: String, CaseIterable, Identifiable {
     case top, bottom
     var id: Self { self }
@@ -20,7 +39,7 @@ enum ToolbarPosition: String, CaseIterable, Identifiable {
 }
 
 @MainActor
-final class HomeViewModel: ObservableObject {
+final class HomeViewModel: NSObject, ObservableObject {
     @Published var addressBarText: String = "https://www.bing.com"
     @Published var currentURL: URL? = URL(string: "https://www.bing.com")
     @Published var pageTitle: String = "ClearBrowser"
@@ -70,11 +89,12 @@ final class HomeViewModel: ObservableObject {
     private let aiService = AIService()
     private var settings = BrowserSettings()
 
-    init() {
+    override init() {
+        super.init()
         loadPersistentData()
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
     }
-
+    
     func loadAddress() {
         guard let targetURL = searchManager.pageURL(for: addressBarText, defaultSearchEngine: defaultSearchEngine) else {
             return
@@ -216,6 +236,31 @@ final class HomeViewModel: ObservableObject {
         currentUserEmail = email
         authSheet = nil
     }
+    
+    func loginWithGoogle() {
+        // Note: Replace with your actual Google Client ID and registered Redirect URI scheme
+        let authURL = URL(string: "https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&response_type=code&scope=email%20profile&redirect_uri=com.clearbrowser.auth:/oauth2redirect")!
+        let callbackScheme = "com.clearbrowser.auth"
+
+        let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
+            if let error = error {
+                print("Authentication error: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let _ = callbackURL else { return }
+            
+            // In a real app, you would parse the 'code' from the callbackURL and 
+            // exchange it for a token via your backend or Google's token endpoint.
+            Task { @MainActor in
+                self?.login(email: "google.user@example.com")
+            }
+        }
+
+        session.presentationContextProvider = self
+        session.prefersEphemeralWebBrowserSession = false // Allows sharing cookies with Safari
+        session.start()
+    }
 
     func register(email: String, apiKey: String?) {
         isLoggedIn = true
@@ -272,5 +317,13 @@ final class HomeViewModel: ObservableObject {
         history.insert(item, at: 0)
         history = Array(history.prefix(50))
         storageManager.saveHistory(history)
+    }
+}
+
+extension HomeViewModel: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        return UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first ?? ASPresentationAnchor()
     }
 }
