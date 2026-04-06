@@ -5,6 +5,18 @@ struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
   @State private var isKeyboardVisible = false
 
+  @State private var bottomBarOffset: CGFloat = 60   // Start partially hidden (adjust this value)
+  @State private var lastDragValue: CGFloat = 0
+  @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
+
+  @State private var hideTimer: Timer?
+
+  // After showing the bar (in .onEnded or onTap)
+  hideTimer?.invalidate()
+  hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
+      withAnimation { bottomBarOffset = 70 }
+  }
+
   private var drawerOpenBinding: Binding<Bool> {
     Binding<Bool>(
       get: { viewModel.selectedDrawer != nil },
@@ -36,42 +48,82 @@ struct HomeView: View {
             .padding(.horizontal, Theme.Spacing.sm)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .overlay(statusOverlay, alignment: .top)
-            .overlay(
-              Group {
+  
+            // New draggable bottom bar:
+            .overlay(alignment: .bottom) {
                 if !isKeyboardVisible {
-                     HStack(spacing: Theme.Spacing.md, alignment: .center) {
-                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
-                        viewModel.goBack()
+                    VStack(spacing: 0) {
+                        // Optional grip/handle for better UX (makes it clear it's draggable)
+                        Capsule()
+                            .fill(Color.gray.opacity(0.6))
+                            .frame(width: 36, height: 5)
+                            .padding(.top, 8)
+                            .padding(.bottom, 4)
+
+                        HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                            ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
+                                viewModel.goBack()
+                            }
+
+                            Button(action: {
+                                print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
+                                viewModel.toggleAutoScroll()
+                                print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
+                            }) {
+                                Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                                    .font(.title3)
+                                    .frame(width: 44, height: 44)   // Slightly larger for easier tap
+                                    .background(.white)
+                                    .foregroundColor(.green.opacity(0.5)) //or lighter color: eg. .green.opacity(0.5)
+                                    .cornerRadius(12)
+                            }
+
+                            ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
+                                viewModel.goForward()
+                            }
                         }
-
-                        Button(action: {
-                        print(
-                        "[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)"
-                        )
-                        viewModel.toggleAutoScroll()
-                        print(
-                        "[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)"
-                        )
-                        }) {
-                            Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                                .font(.title3)
-                                .frame(width: 32, height: 32)
-                                .background(.white)
-                                .foregroundColor(.pink)
-                                .cornerRadius(10)
-                        }
-                        .padding(.bottom, 20)
-
-
-                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
-                        viewModel.goForward()
+                        .padding(.horizontal, Theme.Spacing.lg)
+                        .padding(.bottom, 20)   // Keep your original bottom padding
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(Theme.primary.opacity(0.95))
+                            .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+                    )
+                    .offset(y: bottomBarOffset)   // This controls the hiding
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let dragAmount = value.translation.height
+                                // Only allow downward drag to hide (positive = down)
+                                // Clamp so it doesn't go too far up or down
+                                bottomBarOffset = min(max(bottomBarOffset + dragAmount * 0.8, 0), 80)  // 80 = max hidden offset
+                                lastDragValue = dragAmount
+                            }
+                            .onEnded { value in
+                                let velocity = value.velocity.height
+                                
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                    if velocity > 300 || bottomBarOffset > 40 {
+                                        // Swipe down → hide (push further down)
+                                        bottomBarOffset = 70   // Adjust this for how much is still visible when hidden
+                                        isBottomBarExpanded = false
+                                    } else {
+                                        // Swipe up or small drag → show fully
+                                        bottomBarOffset = 0
+                                        isBottomBarExpanded = true
+                                    }
+                                }
+                            }
+                    )
+                    // Optional: Tap the grip or bar to toggle
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                            bottomBarOffset = bottomBarOffset > 30 ? 0 : 70
                         }
                     }
-                  
                 }
-              },
-              alignment: .bottom
-            )
+            }
             .padding(.vertical, Theme.Spacing.sm)
 
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
