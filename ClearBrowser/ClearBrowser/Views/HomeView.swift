@@ -39,7 +39,7 @@ struct HomeView: View {
             .overlay(
               Group {
                 if !isKeyboardVisible {
-                     HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                     HStack(alignment: .center, spacing: Theme.Spacing.md) {
                         ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
                         viewModel.goBack()
                         }
