@@ -4,31 +4,29 @@ import UIKit
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
   @State private var isKeyboardVisible = false
-  
+
   @State private var bottomBarOffset: CGFloat = 60   // Start partially hidden (adjust this value)
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
   @State private var hideTimer: Timer?
 
-  /*
-   // After showing the bar (in .onEnded or onTap)
-   hideTimer?.invalidate()
-   hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
-       withAnimation { bottomBarOffset = 70 }
-   }
-   */
+  // After showing the bar (in .onEnded or onTap)
+  hideTimer?.invalidate()
+  hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
+      withAnimation { bottomBarOffset = 70 }
+  }
 
-   private var drawerOpenBinding: Binding<Bool> {
-     Binding<Bool>(
-       get: { viewModel.selectedDrawer != nil },
-       set: { if !$0 {
-           withAnimation(.easeInOut(duration: 0.25)) {
-               viewModel.selectedDrawer = nil
-           }
-       } }
-     )
-   }
+  private var drawerOpenBinding: Binding<Bool> {
+    Binding<Bool>(
+      get: { viewModel.selectedDrawer != nil },
+      set: { if !$0 { 
+          withAnimation(.easeInOut(duration: 0.25)) {
+              viewModel.selectedDrawer = nil 
+          }
+      } }
+    )
+  }
 
   var body: some View {
       
@@ -53,82 +51,93 @@ struct HomeView: View {
   
             // New draggable bottom bar:
             .overlay(alignment: .bottom) {
-                if !isKeyboardVisible {
-                    VStack(spacing: 0) {
-                        // Optional grip/handle for better UX (makes it clear it's draggable)
-                        Capsule()
-                            .fill(Color.gray.opacity(0.6))
-                            .frame(width: 36, height: 5)
-                            .padding(.top, 8)
-                            .padding(.bottom, 4)
+            if !isKeyboardVisible {
+                VStack(spacing: 0) {
 
-                        HStack(alignment: .center, spacing: Theme.Spacing.md ) {
-                            ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
-                                viewModel.goBack()
-                            }
+                    // MARK: - Grip Handle (More Grippable)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.secondary.opacity(0.35))
+                        .frame(width: 40, height: 5)
+                        .padding(.top, 8)
+                        .padding(.bottom, 6)
+                        .contentShape(Rectangle()) // Makes entire area tappable
 
-                            Button(action: {
-                                print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
-                                viewModel.toggleAutoScroll()
-                                print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
-                            }) {
-                                Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                                    .font(.title3)
-                                    .frame(width: 44, height: 44)   // Slightly larger for easier tap
-                                    .background(.white)
-                                    .foregroundColor(.green.opacity(0.5)) //or lighter color: eg. .green.opacity(0.5)
-                                    .cornerRadius(12)
-                            }
-
-                            ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
-                                viewModel.goForward()
-                            }
+                    // MARK: - Bottom Bar Buttons
+                    HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
+                            viewModel.goBack()
                         }
-                        .padding(.horizontal, Theme.Spacing.lg)
-                        .padding(.bottom, 20)   // Keep your original bottom padding
+
+                        Button(action: {
+                            print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
+                            viewModel.toggleAutoScroll()
+                            print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
+                        }) {
+                            Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+                                .font(.title3)
+                                .frame(width: 44, height: 44)
+                                .background(.white)
+                                .foregroundColor(.green.opacity(0.5))
+                                .cornerRadius(12)
+                        }
+
+                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
+                            viewModel.goForward()
+                        }
                     }
-                    .padding(.top, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(Theme.primary.opacity(0.95))
-                            .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-                    )
-                    .offset(y: bottomBarOffset)   // This controls the hiding
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                let dragAmount = value.translation.height
-                                // Only allow downward drag to hide (positive = down)
-                                // Clamp so it doesn't go too far up or down
-                                bottomBarOffset = min(max(bottomBarOffset + dragAmount * 0.8, 0), 80)  // 80 = max hidden offset
-                                lastDragValue = dragAmount
-                            }
-                            .onEnded { value in
-                                let velocity = value.velocity.height
-                                
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                    if velocity > 300 || bottomBarOffset > 40 {
-                                        // Swipe down → hide (push further down)
-                                        bottomBarOffset = 70   // Adjust this for how much is still visible when hidden
-                                        isBottomBarExpanded = false
-                                    } else {
-                                        // Swipe up or small drag → show fully
-                                        bottomBarOffset = 0
-                                        isBottomBarExpanded = true
-                                    }
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.bottom, 20)
+                }
+                .padding(.top, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(Theme.primary.opacity(0.95))
+                        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+                )
+
+                // MARK: - Offset (Controls Visibility)
+                .offset(y: bottomBarOffset)
+
+                // MARK: - Drag Gesture
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let dragAmount = value.translation.height
+
+                            // Clamp between fully visible (0) and max hidden (75)
+                            bottomBarOffset = min(
+                                max(bottomBarOffset + dragAmount * 0.8, 0),
+                                75
+                            )
+
+                            lastDragValue = dragAmount
+                        }
+                        .onEnded { value in
+                            let velocity = value.velocity.height
+
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                if velocity > 300 || bottomBarOffset > 40 {
+                                    // Hide (resting hidden position = 65)
+                                    bottomBarOffset = 65
+                                    isBottomBarExpanded = false
+                                } else {
+                                    // Show fully
+                                    bottomBarOffset = 0
+                                    isBottomBarExpanded = true
                                 }
                             }
-                    )
-                    // Optional: Tap the grip or bar to toggle
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                            bottomBarOffset = bottomBarOffset > 30 ? 0 : 70
                         }
+                )
+
+                // MARK: - Tap to Toggle
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                        bottomBarOffset = bottomBarOffset > 30 ? 0 : 65
                     }
                 }
             }
-            .padding(.vertical, Theme.Spacing.sm)
-
+        }
+        .padding(.vertical, Theme.Spacing.sm)
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
             headerContent
               .padding(.top, 8)
@@ -206,7 +215,7 @@ struct HomeView: View {
       HStack(spacing: Theme.Spacing.sm) {
         Image(systemName: "magnifyingglass")
           .font(.system(size: 14, weight: .medium))
-          .foregroundColor(Theme.textSecondary)
+          .foregroundColor(.secondary)
         
         TextField(
           "Search or enter URL",
@@ -214,7 +223,7 @@ struct HomeView: View {
           onCommit: viewModel.loadAddress
         )
         .font(.subheadline)
-        .foregroundColor(Theme.text)
+        .foregroundColor(.primary)
         .keyboardType(.URL)
         .autocorrectionDisabled(true)
         .textInputAutocapitalization(.never)
@@ -315,6 +324,7 @@ private var drawerContent: some View {
                 }
                 .buttonStyle(.bordered)
             }
+            .padding(.horizontal, 20)
 
             if viewModel.bookmarks.isEmpty {
                 Text("No bookmarks yet.")
@@ -325,7 +335,17 @@ private var drawerContent: some View {
                 List {
                     ForEach(viewModel.bookmarks) { item in
                         Button(action: { viewModel.openBookmark(item) }) { // Tap to open bookmark
-                            BookmarkRow(item: item)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.primary)
+                                Text(item.url.absoluteString)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 20)
                         }
                             .buttonStyle(.plain)
                             .swipeActions(edge: .trailing) {
@@ -359,6 +379,7 @@ private var drawerContent: some View {
                 }
                 .buttonStyle(.bordered)
             }
+            .padding(.horizontal, 20)
             
             if viewModel.history.isEmpty {
                 Text("No history yet.")
@@ -369,7 +390,17 @@ private var drawerContent: some View {
                 List {
                     ForEach(viewModel.history) { item in
                         Button(action: { viewModel.openHistory(item) }) {
-                            HistoryRow(item: item)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.primary)
+                                Text(item.url.absoluteString)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 20)
                         }
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
@@ -401,6 +432,7 @@ private var drawerContent: some View {
                 }
                 .buttonStyle(.bordered)
             }
+            .padding(.horizontal, 20)
 
             if viewModel.favorites.isEmpty {
                 Text("No favorites yet.")
@@ -411,7 +443,17 @@ private var drawerContent: some View {
                 List {
                     ForEach(viewModel.favorites) { item in
                         Button(action: { viewModel.openFavorite(item) }) { // Tap to open favorite
-                            BookmarkRow(item: item) // Reusing BookmarkRow for display
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.primary)
+                                Text(item.url.absoluteString)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 20)
                         }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
@@ -531,6 +573,7 @@ private var drawerContent: some View {
                 }
             }
             .padding(.vertical, Theme.Spacing.lg)
+            .padding(.horizontal, 20)
         }
     case .none:
         EmptyView()
