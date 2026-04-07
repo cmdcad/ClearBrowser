@@ -4,29 +4,31 @@ import UIKit
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
   @State private var isKeyboardVisible = false
-
+  
   @State private var bottomBarOffset: CGFloat = 60   // Start partially hidden (adjust this value)
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
   @State private var hideTimer: Timer?
 
-  // After showing the bar (in .onEnded or onTap)
-  hideTimer?.invalidate()
-  hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
-      withAnimation { bottomBarOffset = 70 }
-  }
+  /*
+   // After showing the bar (in .onEnded or onTap)
+   hideTimer?.invalidate()
+   hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
+       withAnimation { bottomBarOffset = 70 }
+   }
+   */
 
-  private var drawerOpenBinding: Binding<Bool> {
-    Binding<Bool>(
-      get: { viewModel.selectedDrawer != nil },
-      set: { if !$0 { 
-          withAnimation(.easeInOut(duration: 0.25)) {
-              viewModel.selectedDrawer = nil 
-          }
-      } }
-    )
-  }
+   private var drawerOpenBinding: Binding<Bool> {
+     Binding<Bool>(
+       get: { viewModel.selectedDrawer != nil },
+       set: { if !$0 {
+           withAnimation(.easeInOut(duration: 0.25)) {
+               viewModel.selectedDrawer = nil
+           }
+       } }
+     )
+   }
 
   var body: some View {
       
@@ -60,7 +62,7 @@ struct HomeView: View {
                             .padding(.top, 8)
                             .padding(.bottom, 4)
 
-                        HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                        HStack(alignment: .center, spacing: Theme.Spacing.md ) {
                             ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
                                 viewModel.goBack()
                             }
@@ -85,6 +87,7 @@ struct HomeView: View {
                         .padding(.horizontal, Theme.Spacing.lg)
                         .padding(.bottom, 20)   // Keep your original bottom padding
                     }
+                    .padding(.top, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 18)
                             .fill(Theme.primary.opacity(0.95))
