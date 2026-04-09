@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import AuthenticationServices
+import FirebaseAuth
 
 enum URLParseError: Error {
     case invalidURL
@@ -48,7 +49,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var favorites: [BrowserItem] = [] // New: Favorites list
     @Published var authSheet: AuthSheetType? = nil
     @Published var openAIKey: String = "" {
-        didSet { UserDefaults.standard.set(openAIKey, forKey: "openAIKey") }
+        didSet {
+            KeychainHelper.standard.save(openAIKey, service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey")
+        }
     }
 
     private var _rawAutoScrollSpeed: Double = 0.35
@@ -225,10 +228,18 @@ final class HomeViewModel: NSObject, ObservableObject {
         storageManager.saveHistory(history)
     }
 
-    func login(email: String) {
-        isLoggedIn = true
-        currentUserEmail = email
-        authSheet = nil
+    func login(email: String, password: String) {
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
+            Task { @MainActor in
+                if let error = error {
+                    print("Firebase login error: \(error.localizedDescription)")
+                    return
+                }
+                self?.isLoggedIn = true
+                self?.currentUserEmail = result?.user.email
+                self?.authSheet = nil
+            }
+        }
     }
     
     func loginWithGoogle() {
@@ -260,10 +271,13 @@ final class HomeViewModel: NSObject, ObservableObject {
             
             guard let _ = callbackURL else { return }
             
-            // In a real app, you would parse the 'code' from the callbackURL and 
+            // In a real app, you would parse the 'code' from the callbackURL and
             // exchange it for a token via your backend or Google's token endpoint.
             Task { @MainActor in
-                self?.login(email: "google.user@example.com")
+                // Fallback: mark signed in for demo purposes
+                self?.isLoggedIn = true
+                self?.currentUserEmail = "google.user@example.com"
+                self?.authSheet = nil
             }
         }
 
@@ -272,13 +286,21 @@ final class HomeViewModel: NSObject, ObservableObject {
         session.start()
     }
 
-    func register(email: String, apiKey: String?) {
-        isLoggedIn = true
-        currentUserEmail = email
-        if let key = apiKey, !key.isEmpty {
-            self.openAIKey = key
+    func register(email: String, password: String, apiKey: String?) {
+        Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
+            Task { @MainActor in
+                if let error = error {
+                    print("Firebase register error: \(error.localizedDescription)")
+                    return
+                }
+                self?.isLoggedIn = true
+                self?.currentUserEmail = result?.user.email
+                if let key = apiKey, !key.isEmpty {
+                    self?.openAIKey = key
+                }
+                self?.authSheet = nil
+            }
         }
-        authSheet = nil
     }
 
     func fetchAIResponse() {
@@ -288,7 +310,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         aiResponse = nil
 
         Task {
-            let response = await aiService.answer(query: query, pageContext: openAIKey)
+            let response = await aiService.answer(query: query)
             await MainActor.run {
                 self.aiResponse = response
                 self.isAIWorking = false
@@ -303,7 +325,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
-        openAIKey = UserDefaults.standard.string(forKey: "openAIKey") ?? ""
+        openAIKey = KeychainHelper.standard.read(service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey") ?? ""
 
         if let pos = UserDefaults.standard.string(forKey: "toolbarPosition"),
            let position = ToolbarPosition(rawValue: pos) {

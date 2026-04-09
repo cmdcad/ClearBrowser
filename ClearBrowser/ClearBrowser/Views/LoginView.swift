@@ -117,7 +117,7 @@ struct LoginView: View {
             // Simulate network delay for UI feedback
             try? await Task.sleep(nanoseconds: 500_000_000)
             await MainActor.run {
-                viewModel.login(email: email)
+                viewModel.login(email: email, password: password)
                 isLoading = false
                 dismiss()
             }

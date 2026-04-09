@@ -93,7 +93,7 @@ struct RegisterView: View {
         // Simulate async operation
         Task {
             do {
-                viewModel.register(email: email, apiKey: openAIKey)
+                viewModel.register(email: email, password: password, apiKey: openAIKey)
                 await MainActor.run {
                     dismiss()
                 }
