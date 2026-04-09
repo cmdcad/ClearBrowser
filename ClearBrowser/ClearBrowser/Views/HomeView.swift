@@ -9,13 +9,7 @@ struct HomeView: View {
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
-  @State private var hideTimer: Timer?
-
-  // After showing the bar (in .onEnded or onTap)
-  hideTimer?.invalidate()
-  hideTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
-      withAnimation { bottomBarOffset = 70 }
-  }
+   
 
   private var drawerOpenBinding: Binding<Bool> {
     Binding<Bool>(
@@ -63,7 +57,7 @@ struct HomeView: View {
                         .contentShape(Rectangle()) // Makes entire area tappable
 
                     // MARK: - Bottom Bar Buttons
-                    HStack(spacing: Theme.Spacing.md, alignment: .center) {
+                    HStack(alignment: .center, spacing: Theme.Spacing.md) {
                         ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
                             viewModel.goBack()
                         }
