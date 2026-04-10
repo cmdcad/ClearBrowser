@@ -9,12 +9,7 @@ struct HomeView: View {
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
-<<<<<<< HEAD
-   
-=======
-  @State private var hideTimer: Timer?
- 
->>>>>>> 12efe2531fbdbe4bef8b471ced1b59ff0b0ac5a3
+
 
   private var drawerOpenBinding: Binding<Bool> {
     Binding<Bool>(

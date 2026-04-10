@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
 		8125D2382F7EC0C200A5937E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */; };
 		8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8125D2342F7EC0C200A5937E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -175,6 +177,7 @@
 		AB652DE92F7EC6BB00816346 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */,
 				AB652DEA2F7EC6CB00816346 /* AIService.swift */,
 				AB652DEB2F7EC6CB00816346 /* AutoScrollManager.swift */,
 				AB652DEC2F7EC6CB00816346 /* SearchManager.swift */,
@@ -280,6 +283,7 @@
 				8125D26C2F80788500A5937E /* RegisterView.swift in Sources */,
 				8125D24A2F7EC27500A5937E /* BrowserItem.swift in Sources */,
 				8188EF4C2F817E1E00C70F7E /* RoundedCorner.swift in Sources */,
+				5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */,
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
