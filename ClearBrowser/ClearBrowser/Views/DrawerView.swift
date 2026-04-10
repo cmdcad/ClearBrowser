@@ -45,7 +45,7 @@ struct DrawerView<Content: View>: View {
 
                     // Content area
                     content
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(.horizontal)
                         .padding(.bottom, safeAreaBottomPadding())
                 }
@@ -57,6 +57,7 @@ struct DrawerView<Content: View>: View {
                 .cornerRadius(18, corners: [.topLeft, .topRight])
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .shadow(color: Color.black.opacity(0.18), radius: 20, x: 0, y: -8)
+                .frame(maxHeight: UIScreen.main.bounds.height * 0.85)
             }
         }
         .ignoresSafeArea(edges: .bottom)
