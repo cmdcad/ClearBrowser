@@ -249,9 +249,13 @@ final class HomeViewModel: NSObject, ObservableObject {
         // 3. Use the "Bundle ID" of your app.
         // 4. Use the "iOS Redirect URI" provided by Google (usually the reverse DNS of the Client ID).
         
-        let clientID = "YOUR_IOS_CLIENT_ID_HERE.apps.googleusercontent.com"
-        let redirectURI = "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_HERE:/oauth2redirect"
-        let callbackScheme = "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID_HERE"
+        // 1. Replace this with your actual Client ID from the Google Cloud Console.
+        let clientID = "226339545279-8umskbk1khqkn9i33bt4r11mnvqhoi4j.apps.googleusercontent.com"
+        
+        // 2. Derive the callback scheme and redirect URI automatically to avoid mismatches.
+        let clientIDPrefix = clientID.components(separatedBy: ".").first ?? ""
+        let callbackScheme = "com.googleusercontent.apps.\(clientIDPrefix)"
+        let redirectURI = "\(callbackScheme):/oauth2redirect"
 
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
