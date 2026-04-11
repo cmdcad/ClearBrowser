@@ -86,11 +86,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		5B6293022F89D36900272F64 /* Helpers */ = {
+		5B6293022F89D36900272F64 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			path = Helpers;
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		5B6293032F89E96F00272F64 /* Browser */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Browser;
 			sourceTree = "<group>";
 		};
 		8125D2242F7EC0BD00A5937E = {
@@ -120,8 +127,9 @@
 				8125D2362F7EC0C200A5937E /* Preview Content */,
 				8125D2672F7F010C00A5937E /* icon1.png */,
 				8125D2342F7EC0C200A5937E /* Assets.xcassets */,
-				5B6293022F89D36900272F64 /* Helpers */,
+				5B6293022F89D36900272F64 /* Auth */,
 				8188EF512F830A4200C70F7E /* Info.plist */,
+				5B6293032F89E96F00272F64 /* Browser */,
 				5B6293002F89D06400272F64 /* GoogleService-Info.plist */,
 				8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */,
 				8125D23E2F7EC11E00A5937E /* ClearBrowser-Bridging-Header.h */,
@@ -164,6 +172,7 @@
 		AB652DDD2F7EC67200816346 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				8125D2412F7EC12E00A5937E /* ContentView.swift */,
 				8125D2692F80788100A5937E /* LoginView.swift */,
 				8125D26A2F80788300A5937E /* RegisterView.swift */,
 				AB652DDE2F7EC67C00816346 /* AIResponseView.swift */,
@@ -176,7 +185,6 @@
 		AB652DE62F7EC69000816346 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				8125D2412F7EC12E00A5937E /* ContentView.swift */,
 				AB652DE72F7EC6A500816346 /* HomeViewModel.swift */,
 			);
 			path = ViewModels;

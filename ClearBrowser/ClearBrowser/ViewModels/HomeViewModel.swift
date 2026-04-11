@@ -252,7 +252,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         // 4. Use the "iOS Redirect URI" provided by Google (usually the reverse DNS of the Client ID).
         
         // 1. Replace this with your actual Client ID from the Google Cloud Console.
-        let clientID = "226339545279-8umskbk1khqkn9i33bt4r11mnvqhoi4j.googleusercontent.com"
+        let clientID = "226339545279-8umskbk1khqkn9i33bt4r11mnvqhoi4j.apps.googleusercontent.com"
         
         // 2. Derive the callback scheme and redirect URI automatically to avoid mismatches.
         let clientIDPrefix = clientID.components(separatedBy: ".").first ?? ""
