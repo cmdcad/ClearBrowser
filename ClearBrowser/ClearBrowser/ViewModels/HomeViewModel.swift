@@ -282,9 +282,9 @@ final class HomeViewModel: NSObject, ObservableObject {
             Task { @MainActor in
                 // Placeholder for real Google Auth integration
                 self?.isLoggedIn = true
-                self?.currentUserEmail = "authenticated.user@gmail.com"
+                self?.currentUserEmail = "demo.user@example.com"
                 self?.displayName = "Verified User"
-                self?.profileImageUrl = URL(string: "https://lh3.googleusercontent.com/a/ACg8ocL...")
+                self?.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=Verified+User&background=random")
                 self?.authSheet = nil
             }
         }
@@ -311,16 +311,21 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func updateProfile(name: String) {
-        guard let user = Auth.auth().currentUser else { return }
+        // Update local state immediately so the UI responds
+        self.displayName = name
+        
+        // Attempt Firebase update if a real user exists
+        guard let user = Auth.auth().currentUser else { 
+            print("Note: Local state updated, but no Firebase user found (using mock login).")
+            return 
+        }
+        
         let changeRequest = user.createProfileChangeRequest()
         changeRequest.displayName = name
         changeRequest.commitChanges { [weak self] error in
             if let error = error {
                 print("Error updating profile: \(error.localizedDescription)")
                 return
-            }
-            Task { @MainActor in
-                self?.displayName = name
             }
         }
     }
@@ -333,7 +338,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             await MainActor.run {
                 // Simulate a returned storage URL
-                self.profileImageUrl = URL(string: "https://api.dicebear.com/7.x/avataaars/svg?seed=ClearBrowser")
+                self.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=CB&background=0D8ABC&color=fff")
                 print("Profile picture updated")
             }
         }
