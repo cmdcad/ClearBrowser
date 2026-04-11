@@ -286,7 +286,6 @@ struct HomeView: View {
         }
       }
     }
-  }
 
   private var statusOverlay: some View {
     VStack {
