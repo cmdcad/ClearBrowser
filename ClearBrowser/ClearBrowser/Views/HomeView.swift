@@ -208,48 +208,47 @@ struct HomeView: View {
   }
 
   private var searchBar: some View {
-    HStack(spacing: Theme.Spacing.md) {
-      HStack(spacing: Theme.Spacing.sm) {
-        Image(systemName: "magnifyingglass")
-          .font(.system(size: 14, weight: .medium))
-          .foregroundColor(.secondary)
-        
-        TextField(
-          "Search or enter URL",
-          text: $viewModel.addressBarText,
-          onCommit: viewModel.loadAddress
-        )
-        .font(.subheadline)
-        .foregroundColor(.primary)
-        .keyboardType(.URL)
-        .autocorrectionDisabled(true)
-        .textInputAutocapitalization(.never)
-        .submitLabel(.go)
-      }
-      .padding(.horizontal, Theme.Spacing.md)
-      .padding(.vertical, 8)
-      .background(Theme.primary.opacity(0.6))
-      .cornerRadius(Theme.Radius.md)
-      .overlay(
-        RoundedRectangle(cornerRadius: Theme.Radius.md)
-          .stroke(Theme.border, lineWidth: 0.5)
-      )
-
-      if viewModel.isLoading {
-        ActionButton(label: "Stop", symbol: "xmark", tint: .red) {
-          viewModel.stopLoading()
-        }
-      } else {
-        ActionButton(label: "Reload", symbol: "arrow.clockwise", tint: .blue) {
-          viewModel.reload()
-        }
-      }
-    }
+           ZStack(alignment: .bottom) {
+            HStack(spacing: Theme.Spacing.sm) {
+                Image(systemName: viewModel.currentURL?.scheme == "https" ? "lock.fill" : "info.circle")
+                    .font(.system(size: 12))
+                    .foregroundColor(viewModel.currentURL?.scheme == "https" ? .green : .secondary)
+                
+                TextField("Search or enter URL", text: $viewModel.addressBarText, onCommit: viewModel.loadAddress)
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .keyboardType(.URL)
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.never)
+                
+                if viewModel.isLoading {
+                    Button(action: { viewModel.stopLoading() }) {
+                        Image(systemName: "xmark").foregroundColor(.secondary)
+                    }
+                } else {
+                    Button(action: { viewModel.reload() }) {
+                        Image(systemName: "arrow.clockwise").foregroundColor(.blue)
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
+            .cornerRadius(14)
+            
+            if viewModel.isLoading {
+                ProgressView(value: 0.7) // Ideally bind to actual WKWebView progress
+                    .progressViewStyle(.linear)
+                    .frame(height: 2)
+                    .padding(.horizontal, 4)
+            }
+        } 
+  
     .padding(.horizontal, Theme.Spacing.lg)
   }
 
   private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
-    HStack(spacing: Theme.Spacing.md) {
+       ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 24) {
       ActionButton(label: "Favorite", symbol: "star.fill", tint: .yellow) {
         viewModel.addFavorite()
       }

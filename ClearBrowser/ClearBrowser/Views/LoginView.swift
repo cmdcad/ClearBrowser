@@ -2,86 +2,46 @@ import SwiftUI
 
 struct LoginView: View {
     @ObservedObject var viewModel: HomeViewModel
-    @State private var email = ""
-    @State private var password = ""
-    @State private var showPassword = false
     @State private var isLoading = false
     @State private var errorMessage: String?
 
     @Environment(\.dismiss) var dismiss
 
-    private var isEmailValid: Bool {
-        email.contains("@") && email.contains(".")
-    }
-
-    private var isFormValid: Bool {
-        isEmailValid && !password.isEmpty
-    }
-
     var body: some View {
         NavigationStack {
-            ZStack {
-                Form {
-                    Section {
-                        LoginHeaderSection()
-                            .listRowBackground(Color.clear)
-                    }
-
-                    Section(header: Label("Credentials", systemImage: "lock.fill")) {
-                        VStack(spacing: 12) {
-                            LoginEmailField(email: $email)
-
-                            LoginPasswordField(
-                                label: "Password",
-                                text: $password,
-                                isSecure: !showPassword
-                            )
-
-                            HStack {
-                                Image(systemName: showPassword ? "eye.slash" : "eye")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-
-                                Toggle("Show Password", isOn: $showPassword)
-                            }
-                            .font(.subheadline)
+            VStack(spacing: 40) {
+                Spacer()
+                
+                LoginHeaderSection()
+                
+                VStack(spacing: 16) {
+                    Button(action: {
+                        handleGoogleLogin()
+                    }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "g.circle.fill")
+                                .font(.title2)
+                            Text("Continue with Google")
+                                .fontWeight(.semibold)
                         }
-                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
-
-                    Section {
-                        Button("Forgot Password?") {
-                            // Implementation for forgot password can go here
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    .listRowBackground(Color.clear)
-
-                    Section {
-                        Button(action: {
-                            viewModel.loginWithGoogle()
-                        }) {
-                            HStack {
-                                Image(systemName: "g.circle.fill")
-                                Text("Sign in with Google")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.blue)
-                    }
+                    .padding(.horizontal, 30)
+                    
+                    Text("By continuing, you agree to our Terms of Service.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                 }
-                .scrollContentBackground(.hidden)
-
-                if isLoading {
-                    ProgressView()
-                        .tint(.blue)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.3))
-                }
+                
+                Spacer()
+                Spacer()
             }
             .navigationTitle("Log In")
             .navigationBarTitleDisplayMode(.inline)
@@ -89,13 +49,16 @@ struct LoginView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    LoginButton(
-                        isValid: isFormValid,
-                        isLoading: isLoading,
-                        action: handleLogin
-                    )
+            }
+            .overlay {
+                if isLoading {
+                    ZStack {
+                        Color.black.opacity(0.2).ignoresSafeArea()
+                        ProgressView()
+                            .padding(20)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                    }
                 }
             }
             .alert("Login Error", isPresented: Binding(
@@ -109,18 +72,12 @@ struct LoginView: View {
         }
     }
 
-    private func handleLogin() {
-        guard isFormValid else { return }
+    private func handleGoogleLogin() {
         isLoading = true
-
         Task {
-            // Simulate network delay for UI feedback
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            await MainActor.run {
-                viewModel.login(email: email, password: password)
-                isLoading = false
-                dismiss()
-            }
+            viewModel.loginWithGoogle()
+            isLoading = false
+            dismiss()
         }
     }
 }
@@ -144,66 +101,5 @@ private struct LoginHeaderSection: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-    }
-}
-
-private struct LoginEmailField: View {
-    @Binding var email: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "envelope")
-                .foregroundColor(.secondary)
-                .frame(width: 20)
-            
-            TextField("Email Address", text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.none)
-                .autocorrectionDisabled(true)
-        }
-    }
-}
-
-private struct LoginPasswordField: View {
-    let label: String
-    @Binding var text: String
-    let isSecure: Bool
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "lock")
-                .foregroundColor(.secondary)
-                .frame(width: 20)
-            
-            if isSecure {
-                SecureField(label, text: $text)
-            } else {
-                TextField(label, text: $text)
-                    .textInputAutocapitalization(.none)
-                    .autocorrectionDisabled(true)
-            }
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-}
-
-private struct LoginButton: View {
-    let isValid: Bool
-    let isLoading: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        if isLoading {
-            ProgressView()
-        } else {
-            Button("Log In", action: action)
-                .disabled(!isValid)
-        }
     }
 }
