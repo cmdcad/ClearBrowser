@@ -96,6 +96,7 @@
 		5B6293032F89E96F00272F64 /* Browser */ = {
 			isa = PBXGroup;
 			children = (
+				AB652DDF2F7EC67C00816346 /* BrowserView.swift */,
 			);
 			path = Browser;
 			sourceTree = "<group>";
@@ -176,7 +177,6 @@
 				8125D2692F80788100A5937E /* LoginView.swift */,
 				8125D26A2F80788300A5937E /* RegisterView.swift */,
 				AB652DDE2F7EC67C00816346 /* AIResponseView.swift */,
-				AB652DDF2F7EC67C00816346 /* BrowserView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
 			);
 			path = Views;

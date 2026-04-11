@@ -1,18 +1,10 @@
-//
-//  ContentView.swift
-//  ClearBrowser
-//
-//  Created by user946737 on 4/2/26.
-//
-
+ 
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var viewModel = HomeViewModel()
+    
     var body: some View {
-        Text("Welcome")
+        HomeView(viewModel: viewModel)
     }
-}
-
-#Preview {
-    ContentView()
 }
