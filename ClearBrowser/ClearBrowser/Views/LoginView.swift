@@ -125,4 +125,85 @@ struct LoginView: View {
     }
 }
 
-// Header and helper subviews omitted for brevity but would be moved here as well...
+// MARK: - Helper Subviews
+
+private struct LoginHeaderSection: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "lock.circle.fill")
+                .font(.system(size: 44))
+                .foregroundColor(.blue)
+            
+            Text("Welcome Back")
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Text("Sign in to your account")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+    }
+}
+
+private struct LoginEmailField: View {
+    @Binding var email: String
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "envelope")
+                .foregroundColor(.secondary)
+                .frame(width: 20)
+            
+            TextField("Email Address", text: $email)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.none)
+                .autocorrectionDisabled(true)
+        }
+    }
+}
+
+private struct LoginPasswordField: View {
+    let label: String
+    @Binding var text: String
+    let isSecure: Bool
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "lock")
+                .foregroundColor(.secondary)
+                .frame(width: 20)
+            
+            if isSecure {
+                SecureField(label, text: $text)
+            } else {
+                TextField(label, text: $text)
+                    .textInputAutocapitalization(.none)
+                    .autocorrectionDisabled(true)
+            }
+            
+            if !text.isEmpty {
+                Button(action: { text = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+}
+
+private struct LoginButton: View {
+    let isValid: Bool
+    let isLoading: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        if isLoading {
+            ProgressView()
+        } else {
+            Button("Log In", action: action)
+                .disabled(!isValid)
+        }
+    }
+}
