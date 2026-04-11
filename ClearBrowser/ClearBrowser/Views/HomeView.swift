@@ -283,8 +283,8 @@ struct HomeView: View {
       
 
       Spacer()
-
-     
+        }
+      }
     }
   }
 
@@ -300,6 +300,7 @@ struct HomeView: View {
       }
       Spacer()
     }
+  }
   }
  
 
