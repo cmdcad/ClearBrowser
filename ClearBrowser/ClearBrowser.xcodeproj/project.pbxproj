@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */; };
+		5B6293012F89D06500272F64 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B6293002F89D06400272F64 /* GoogleService-Info.plist */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
 		8125D2382F7EC0C200A5937E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */; };
 		8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */; };
@@ -40,6 +41,7 @@
 
 /* Begin PBXFileReference section */
 		5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		5B6293002F89D06400272F64 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8125D2342F7EC0C200A5937E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				8125D2672F7F010C00A5937E /* icon1.png */,
 				8125D2342F7EC0C200A5937E /* Assets.xcassets */,
 				8188EF512F830A4200C70F7E /* Info.plist */,
+				5B6293002F89D06400272F64 /* GoogleService-Info.plist */,
 				8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */,
 				8125D23E2F7EC11E00A5937E /* ClearBrowser-Bridging-Header.h */,
 			);
@@ -246,6 +249,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8125D2382F7EC0C200A5937E /* Preview Assets.xcassets in Resources */,
+				5B6293012F89D06500272F64 /* GoogleService-Info.plist in Resources */,
 				8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */,
 				8125D2682F7F010E00A5937E /* icon1.png in Resources */,
 			);
