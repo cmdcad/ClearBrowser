@@ -86,6 +86,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5B6293022F89D36900272F64 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
 		8125D2242F7EC0BD00A5937E = {
 			isa = PBXGroup;
 			children = (
@@ -113,6 +120,7 @@
 				8125D2362F7EC0C200A5937E /* Preview Content */,
 				8125D2672F7F010C00A5937E /* icon1.png */,
 				8125D2342F7EC0C200A5937E /* Assets.xcassets */,
+				5B6293022F89D36900272F64 /* Helpers */,
 				8188EF512F830A4200C70F7E /* Info.plist */,
 				5B6293002F89D06400272F64 /* GoogleService-Info.plist */,
 				8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */,
