@@ -74,6 +74,7 @@ struct BrowserView: UIViewRepresentable {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
         var lastLoadedURL: URL?
+        private var progressObservation: NSKeyValueObservation?
 
         init(viewModel: HomeViewModel) {
             self.viewModel = viewModel
@@ -85,6 +86,21 @@ struct BrowserView: UIViewRepresentable {
                     self?.viewModel.isAutoScrolling = false
                 }
                 }
+        }
+
+        deinit {
+            progressObservation?.invalidate()
+        }
+
+        func setupProgressObservation(for webView: WKWebView) {
+            // Use KVO to monitor the loading progress of the WKWebView
+            progressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, change in
+                guard let progress = change.newValue else { return }
+                // Switch to the MainActor to update the published loadingProgress
+                Task { @MainActor in
+                    self?.viewModel.loadingProgress = progress
+                }
+            }
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
