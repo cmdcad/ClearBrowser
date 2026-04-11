@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import SwiftUI
 import AuthenticationServices
 import FirebaseAuth
@@ -46,6 +47,8 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     @Published var isLoggedIn = false
     @Published var currentUserEmail: String? = nil
+    @Published var displayName: String? = nil
+    @Published var profileImageUrl: URL? = nil
     @Published var favorites: [BrowserItem] = [] // New: Favorites list
     @Published var authSheet: AuthSheetType? = nil
     @Published var openAIKey: String = "" {
@@ -235,8 +238,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                     print("Firebase login error: \(error.localizedDescription)")
                     return
                 }
-                self?.isLoggedIn = true
-                self?.currentUserEmail = result?.user.email
+                self?.syncUser(result?.user)
                 self?.authSheet = nil
             }
         }
@@ -250,7 +252,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         // 4. Use the "iOS Redirect URI" provided by Google (usually the reverse DNS of the Client ID).
         
         // 1. Replace this with your actual Client ID from the Google Cloud Console.
-        let clientID = "226339545279-8umskbk1khqkn9i33bt4r11mnvqhoi4j.apps.googleusercontent.com"
+        let clientID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
         
         // 2. Derive the callback scheme and redirect URI automatically to avoid mismatches.
         let clientIDPrefix = clientID.components(separatedBy: ".").first ?? ""
@@ -276,11 +278,13 @@ final class HomeViewModel: NSObject, ObservableObject {
             guard let _ = callbackURL else { return }
             
             // In a real app, you would parse the 'code' from the callbackURL and
-            // exchange it for a token via your backend or Google's token endpoint.
+            // exchange it for a token via Firebase Google Auth.
             Task { @MainActor in
-                // Fallback: mark signed in for demo purposes
+                // Placeholder for real Google Auth integration
                 self?.isLoggedIn = true
-                self?.currentUserEmail = "google.user@example.com"
+                self?.currentUserEmail = "authenticated.user@gmail.com"
+                self?.displayName = "Verified User"
+                self?.profileImageUrl = URL(string: "https://lh3.googleusercontent.com/a/ACg8ocL...")
                 self?.authSheet = nil
             }
         }
@@ -297,14 +301,61 @@ final class HomeViewModel: NSObject, ObservableObject {
                     print("Firebase register error: \(error.localizedDescription)")
                     return
                 }
-                self?.isLoggedIn = true
-                self?.currentUserEmail = result?.user.email
                 if let key = apiKey, !key.isEmpty {
                     self?.openAIKey = key
                 }
+                self?.syncUser(result?.user)
                 self?.authSheet = nil
             }
         }
+    }
+
+    func updateProfile(name: String) {
+        guard let user = Auth.auth().currentUser else { return }
+        let changeRequest = user.createProfileChangeRequest()
+        changeRequest.displayName = name
+        changeRequest.commitChanges { [weak self] error in
+            if let error = error {
+                print("Error updating profile: \(error.localizedDescription)")
+                return
+            }
+            Task { @MainActor in
+                self?.displayName = name
+            }
+        }
+    }
+
+    func uploadProfilePicture(_ image: UIImage) {
+        // In a real app, you'd upload to Firebase Storage and get a URL.
+        // For now, we simulate a successful upload.
+        print("Uploading image...")
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await MainActor.run {
+                // Simulate a returned storage URL
+                self.profileImageUrl = URL(string: "https://api.dicebear.com/7.x/avataaars/svg?seed=ClearBrowser")
+                print("Profile picture updated")
+            }
+        }
+    }
+
+    func logout() {
+        try? Auth.auth().signOut()
+        syncUser(nil)
+    }
+
+    private func syncUser(_ user: User?) {
+        guard let user = user else {
+            isLoggedIn = false
+            currentUserEmail = nil
+            displayName = nil
+            profileImageUrl = nil
+            return
+        }
+        isLoggedIn = true
+        currentUserEmail = user.email
+        displayName = user.displayName
+        profileImageUrl = user.photoURL
     }
 
     func fetchAIResponse() {
@@ -323,6 +374,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     private func loadPersistentData() {
+        if let user = Auth.auth().currentUser {
+            syncUser(user)
+        }
+
         bookmarks = storageManager.loadBookmarks()
         history = storageManager.loadHistory()
         favorites = storageManager.loadFavorites() // New: Load favorites

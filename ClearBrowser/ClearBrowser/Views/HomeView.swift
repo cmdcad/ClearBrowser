@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import PhotosUI
 
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
@@ -9,6 +10,8 @@ struct HomeView: View {
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
+  @State private var editedDisplayName: String = ""
+  @State private var photoPickerItem: PhotosPickerItem?
 
 
   private var drawerOpenBinding: Binding<Bool> {
@@ -515,31 +518,76 @@ private var drawerContent: some View {
                     }
                 }
 
-                SettingsSection(title: "Account") {
+                if viewModel.isLoggedIn {
+                    SettingsSection(title: "AI Configuration") {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                            HStack {
+                                Image(systemName: "key.fill")
+                                    .foregroundColor(.secondary)
+                                SecureField("OpenAI API Key", text: $viewModel.openAIKey)
+                                    .textInputAutocapitalization(.none)
+                                    .autocorrectionDisabled(true)
+                            }
+                            Text("Your key is stored securely in the system Keychain and never shared.")
+                                .font(.caption2)
+                                .foregroundColor(Theme.textSecondary)
+                        }
+                    }
+                }
+
+                SettingsSection(title: viewModel.isLoggedIn ? "Profile" : "Account") {
                     if viewModel.isLoggedIn {
                         VStack(spacing: Theme.Spacing.md) {
-                            HStack(spacing: Theme.Spacing.md) {
-                                Image(systemName: "person.crop.circle.fill")
-                                    .font(.system(size: 38))
-                                    .foregroundColor(Theme.accent)
+                            VStack(spacing: Theme.Spacing.md) {
+                                PhotosPicker(selection: $photoPickerItem, matching: .images) {
+                                    if let url = viewModel.profileImageUrl {
+                                        AsyncImage(url: url) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: {
+                                            ProgressView()
+                                        }
+                                        .frame(width: 80, height: 80)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Image(systemName: "person.crop.circle.fill")
+                                            .resizable()
+                                            .frame(width: 80, height: 80)
+                                            .foregroundColor(Theme.accent)
+                                    }
+                                }
+                                .onChange(of: photoPickerItem) { newItem in
+                                    Task {
+                                        if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                           let image = UIImage(data: data) {
+                                            viewModel.uploadProfilePicture(image)
+                                        }
+                                    }
+                                }
                                 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(viewModel.currentUserEmail ?? "User")
+                                VStack(spacing: 4) {
+                                    TextField("Display Name", text: $editedDisplayName)
                                         .font(.headline)
-                                        .foregroundColor(Theme.text)
-                                    Text("Logged in")
+                                        .multilineTextAlignment(.center)
+                                        .textFieldStyle(.roundedBorder)
+                                        .onAppear {
+                                            editedDisplayName = viewModel.displayName ?? ""
+                                        }
+                                    
+                                    Text(viewModel.currentUserEmail ?? "")
                                         .font(.caption)
                                         .foregroundColor(Theme.textSecondary)
                                 }
-                                Spacer()
+                                
+                                Button("Save Changes") {
+                                    viewModel.updateProfile(name: editedDisplayName)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(editedDisplayName == viewModel.displayName || editedDisplayName.isEmpty)
                             }
                             
                             Divider().background(Theme.border)
                             
-                            Button(role: .destructive, action: {
-                                viewModel.isLoggedIn = false
-                                viewModel.currentUserEmail = nil
-                            }) {
+                            Button(role: .destructive, action: { viewModel.logout() }) {
                                 Label("Log Out", systemImage: "arrow.right.circle")
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
