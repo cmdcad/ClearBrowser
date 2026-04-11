@@ -301,7 +301,6 @@ struct HomeView: View {
       Spacer()
     }
   }
-  }
  
 
 // MARK: - Drawer Content (Improved)
