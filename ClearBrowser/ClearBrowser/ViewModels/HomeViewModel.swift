@@ -3,6 +3,7 @@ import UIKit
 import SwiftUI
 import AuthenticationServices
 import FirebaseAuth
+import FirebaseStorage
 
 enum URLParseError: Error {
     case invalidURL
@@ -37,6 +38,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var canGoBack = false
     @Published var canGoForward = false
     @Published var isLoading = false
+    @Published var loadingProgress: Double = 0.0
     @Published var selectedDrawer: DrawerType? = nil
     @Published var isAutoScrolling = false
     @Published var isHeaderVisible = true
@@ -94,6 +96,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         let targetURL = resolveInput(addressBarText)
         currentURL = targetURL
         requestURL = targetURL
+        loadingProgress = 0.0
         addHistoryItem(title: addressBarText, url: targetURL)
     }
 
@@ -280,11 +283,15 @@ final class HomeViewModel: NSObject, ObservableObject {
             // In a real app, you would parse the 'code' from the callbackURL and
             // exchange it for a token via Firebase Google Auth.
             Task { @MainActor in
-                // Placeholder for real Google Auth integration
+                // Simulation: In production, use Firebase OAuthProvider or GoogleSignIn SDK
                 self?.isLoggedIn = true
-                self?.currentUserEmail = "demo.user@example.com"
-                self?.displayName = "Verified User"
-                self?.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=Verified+User&background=random")
+                let email = "demo.user@example.com"
+                self?.currentUserEmail = email
+                
+                // Derive a name from the email for a more realistic mock experience
+                let defaultName = email.components(separatedBy: "@").first?.capitalized ?? "User"
+                self?.displayName = defaultName
+                self?.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=\(defaultName)&background=random")
                 self?.authSheet = nil
             }
         }
@@ -311,35 +318,57 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func updateProfile(name: String) {
-        // Update local state immediately so the UI responds
-        self.displayName = name
-        
-        // Attempt Firebase update if a real user exists
-        guard let user = Auth.auth().currentUser else { 
-            print("Note: Local state updated, but no Firebase user found (using mock login).")
-            return 
-        }
-        
-        let changeRequest = user.createProfileChangeRequest()
-        changeRequest.displayName = name
-        changeRequest.commitChanges { [weak self] error in
-            if let error = error {
-                print("Error updating profile: \(error.localizedDescription)")
-                return
+        Task {
+            // Update local state immediately so the UI responds
+            self.displayName = name
+            
+            // Attempt Firebase update if a real user exists
+            guard let user = Auth.auth().currentUser else { 
+                print("Note: Local state updated, but no Firebase user found (using mock login).")
+                return 
+            }
+            
+            let changeRequest = user.createProfileChangeRequest()
+            changeRequest.displayName = name
+            
+            do {
+                try await changeRequest.commitChanges()
+                print("Firebase profile name updated successfully.")
+            } catch {
+                print("Error updating Firebase profile: \(error.localizedDescription)")
             }
         }
     }
 
     func uploadProfilePicture(_ image: UIImage) {
-        // In a real app, you'd upload to Firebase Storage and get a URL.
-        // For now, we simulate a successful upload.
-        print("Uploading image...")
+        guard let user = Auth.auth().currentUser else { 
+            print("Cannot upload: No Firebase user logged in.")
+            return 
+        }
+        
+        guard let imageData = image.jpegData(compressionQuality: 0.7) else { return }
+        
+        let storageRef = Storage.storage().reference().child("profile_images/\(user.uid).jpg")
+        
         Task {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            await MainActor.run {
-                // Simulate a returned storage URL
-                self.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=CB&background=0D8ABC&color=fff")
-                print("Profile picture updated")
+            do {
+                // 1. Upload to Firebase Storage
+                let _ = try await storageRef.putDataAsync(imageData)
+                
+                // 2. Get the download URL
+                let downloadURL = try await storageRef.downloadURL()
+                
+                // 3. Update the user's profile in Firebase Auth
+                let changeRequest = user.createProfileChangeRequest()
+                changeRequest.photoURL = downloadURL
+                try await changeRequest.commitChanges()
+                
+                await MainActor.run {
+                    self.profileImageUrl = downloadURL
+                    print("Profile picture updated successfully.")
+                }
+            } catch {
+                print("Error uploading profile picture: \(error.localizedDescription)")
             }
         }
     }
