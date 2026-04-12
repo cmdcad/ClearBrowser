@@ -6,7 +6,7 @@ struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
   @State private var isKeyboardVisible = false
 
-  @State private var bottomBarOffset: CGFloat = 60   // Start partially hidden (adjust this value)
+  @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
 
@@ -52,7 +52,7 @@ struct HomeView: View {
                         .fill(Color.secondary.opacity(0.35))
                         .frame(width: 40, height: 5)
                         .padding(.top, 8)
-                        .padding(.bottom, 6)
+                        .padding(.bottom, 4)
                         .contentShape(Rectangle()) // Makes entire area tappable
 
                     // MARK: - Bottom Bar Buttons
@@ -83,7 +83,7 @@ struct HomeView: View {
                 }
                 .padding(.top, 4)
                 .background(
-                    RoundedRectangle(cornerRadius: 18)
+                    RoundedRectangle(cornerRadius: 45) // Increased for a deeper "crescent" curve
                         .fill(Theme.primary.opacity(0.95))
                         .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
                 )
@@ -97,10 +97,10 @@ struct HomeView: View {
                         .onChanged { value in
                             let dragAmount = value.translation.height
 
-                            // Clamp between fully visible (0) and max hidden (75)
+                            // Clamp between fully visible (0) and max hidden (85)
                             bottomBarOffset = min(
                                 max(bottomBarOffset + dragAmount * 0.8, 0),
-                                75
+                                85
                             )
 
                             lastDragValue = dragAmount
@@ -110,8 +110,8 @@ struct HomeView: View {
 
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                                 if velocity > 300 || bottomBarOffset > 40 {
-                                    // Hide (resting hidden position = 65)
-                                    bottomBarOffset = 65
+                                    // Hide (resting hidden position lowered to 75)
+                                    bottomBarOffset = 75
                                     isBottomBarExpanded = false
                                 } else {
                                     // Show fully
@@ -125,7 +125,7 @@ struct HomeView: View {
                 // MARK: - Tap to Toggle
                 .onTapGesture {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                        bottomBarOffset = bottomBarOffset > 30 ? 0 : 65
+                        bottomBarOffset = bottomBarOffset > 30 ? 0 : 75
                     }
                 }
             }
