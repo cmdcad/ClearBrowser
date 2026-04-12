@@ -9,16 +9,35 @@ struct DrawerContentView: View {
     @State private var photoPickerItem: PhotosPickerItem?
     @State private var selectedItemForInfo: BrowserItem?
 
+    private enum BookmarkFilter: String, CaseIterable, Identifiable {
+        case all = "All"
+        case favorites = "Favorites"
+        var id: Self { self }
+    }
+    @State private var bookmarkFilter: BookmarkFilter = .all
+
     var body: some View {
         switch viewModel.selectedDrawer {
         case .bookmarks:
-            drawerList(title: "All Bookmarks", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark)
+            VStack(spacing: 0) {
+                Picker("Filter", selection: $bookmarkFilter) {
+                    ForEach(BookmarkFilter.allCases) { filter in
+                        Text(filter.rawValue).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+
+                if bookmarkFilter == .all {
+                    drawerList(title: "All Bookmarks", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark)
+                } else {
+                    drawerList(title: "Favorited Pages", items: viewModel.favorites, onAdd: viewModel.addFavorite, onOpen: viewModel.openFavorite, onDelete: viewModel.removeFavorite)
+                }
+            }
             
         case .history:
             drawerList(title: "Recent History", items: viewModel.history, onAdd: nil, onOpen: viewModel.openHistory, onDelete: viewModel.removeHistoryItem, onClear: viewModel.clearHistory)
-            
-        case .favorites:
-            drawerList(title: "All Favorites", items: viewModel.favorites, onAdd: viewModel.addFavorite, onOpen: viewModel.openFavorite, onDelete: viewModel.removeFavorite)
             
         case .settings:
             settingsContent

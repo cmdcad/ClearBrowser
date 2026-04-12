@@ -245,8 +245,8 @@ struct HomeView: View {
   private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
-      ActionButton(label: "Favorite", symbol: "star.fill", tint: .yellow) {
-        viewModel.addFavorite()
+      ActionButton(label: "Favorite", symbol: viewModel.isCurrentPageFavorited ? "star.fill" : "star", tint: .yellow) {
+        viewModel.toggleFavorite()
       }
 
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
@@ -261,12 +261,6 @@ struct HomeView: View {
         }
       }
 
-      ActionButton(label: "Favorites", symbol: "star.circle", tint: .blue) {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-          viewModel.selectedDrawer = .favorites
-        }
-      }
-    
       ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
           viewModel.selectedDrawer = .settings
@@ -275,6 +269,14 @@ struct HomeView: View {
 
       ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
         viewModel.toggleAIField()
+      }
+
+      ActionButton(label: "Share", symbol: "square.and.arrow.up", tint: .blue) {
+        viewModel.shareCurrentPage()
+      }
+
+      ActionButton(label: "Private", symbol: viewModel.isPrivateMode ? "eye.slash.fill" : "eye", tint: .gray) {
+        viewModel.isPrivateMode.toggle()
       }
       
 

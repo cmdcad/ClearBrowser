@@ -43,6 +43,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var isAutoScrolling = false
     @Published var isHeaderVisible = true
 
+    @Published var isPrivateMode = false
     @Published var toolbarPosition: ToolbarPosition = .top {
         didSet { saveSettings() }
     }
@@ -176,6 +177,20 @@ final class HomeViewModel: NSObject, ObservableObject {
             addressBarText = item.url.absoluteString
             requestURL = item.url
             addHistoryItem(title: item.title, url: item.url)
+        }
+    }
+
+    var isCurrentPageFavorited: Bool {
+        guard let url = currentURL else { return false }
+        return favorites.contains(where: { $0.url == url })
+    }
+
+    func toggleFavorite() {
+        guard let url = currentURL else { return }
+        if isCurrentPageFavorited {
+            removeFavorite(BrowserItem(title: pageTitle, url: url))
+        } else {
+            addFavorite()
         }
     }
 
@@ -410,6 +425,18 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
 
+    func shareCurrentPage() {
+        guard let url = currentURL else { return }
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            // For iPad compatibility
+            activityVC.popoverPresentationController?.sourceView = rootVC.view
+            rootVC.present(activityVC, animated: true)
+        }
+    }
+
     private func loadPersistentData() {
         if let user = Auth.auth().currentUser {
             syncUser(user)
@@ -486,6 +513,8 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     private func addHistoryItem(title: String, url: URL) {
+        guard !isPrivateMode else { return } // Do not save history in private mode
+        
         let item = BrowserItem(title: title, url: url)
         history.removeAll { $0.url == url }
         history.insert(item, at: 0)
