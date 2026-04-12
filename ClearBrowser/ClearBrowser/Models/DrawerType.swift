@@ -7,6 +7,6 @@ import Foundation
 //    case favorites = "Favorites"
 //}
 enum DrawerType: String, Identifiable {
-    case bookmarks, history, settings, favorites
+    case bookmarks, history, settings
     var id: String { self.rawValue }
 }
