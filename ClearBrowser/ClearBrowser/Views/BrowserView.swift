@@ -80,10 +80,11 @@ struct BrowserView: UIViewRepresentable {
             self.viewModel = viewModel
             self.autoScrollManager = viewModel.autoScrollManager
             super.init()
-                self.autoScrollManager.didStop = { [weak self] in
+                self.autoScrollManager.didStop = { [weak viewModel] in
+                guard let viewModel = viewModel else { return }
                 Task { @MainActor in
                     print("[AutoScroll] didStop closure running; clearing viewModel.isAutoScrolling")
-                    self?.viewModel.isAutoScrolling = false
+                    viewModel.isAutoScrolling = false
                 }
                 }
         }
@@ -95,10 +96,10 @@ struct BrowserView: UIViewRepresentable {
         func setupProgressObservation(for webView: WKWebView) {
             // Use KVO to monitor the loading progress of the WKWebView
             progressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, change in
-                guard let progress = change.newValue else { return }
+                guard let progress = change.newValue, let viewModel = self?.viewModel else { return }
                 // Switch to the MainActor to update the published loadingProgress
                 Task { @MainActor in
-                    self?.viewModel.loadingProgress = progress
+                    viewModel.loadingProgress = progress
                 }
             }
         }
