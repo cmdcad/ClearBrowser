@@ -208,7 +208,6 @@ struct HomeView: View {
     case .bookmarks: return "Bookmarks"
     case .history: return "History"
     case .settings: return "Settings"
-    case .favorites: return "Favorites"
     case .none: return ""
     }
   }
