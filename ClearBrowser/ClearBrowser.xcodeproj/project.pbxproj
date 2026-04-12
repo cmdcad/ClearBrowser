@@ -13,7 +13,7 @@
 		5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6293062F89EBAC00272F64 /* SettingsSection.swift */; };
 		5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */; };
 		5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */; };
-		5B9FA6202F8B50480045E944 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA61F2F8B50470045E944 /* BrowserView.swift */; };
+		5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA6212F8BEC930045E944 /* BrowserView.swift */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
 		8125D2382F7EC0C200A5937E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */; };
 		8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */; };
@@ -32,7 +32,6 @@
 		AB218ADD2F87FAF400BDB9B3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AB218ADC2F87FAF400BDB9B3 /* FirebaseFirestore */; };
 		AB218ADF2F87FAF400BDB9B3 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = AB218ADE2F87FAF400BDB9B3 /* FirebaseStorage */; };
 		AB652DE22F7EC67C00816346 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DE12F7EC67C00816346 /* HomeView.swift */; };
-		AB652DE32F7EC67C00816346 /* BrowserView2.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DDF2F7EC67C00816346 /* BrowserView2.swift */; };
 		AB652DE52F7EC67C00816346 /* AIResponseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DDE2F7EC67C00816346 /* AIResponseView.swift */; };
 		AB652DE82F7EC6A500816346 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DE72F7EC6A500816346 /* HomeViewModel.swift */; };
 		AB652DEE2F7EC6CB00816346 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DEA2F7EC6CB00816346 /* AIService.swift */; };
@@ -48,7 +47,7 @@
 		5B6293062F89EBAC00272F64 /* SettingsSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SettingsSection.swift; path = ClearBrowser/Views/SettingsSection.swift; sourceTree = SOURCE_ROOT; };
 		5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerContentView.swift; sourceTree = "<group>"; };
 		5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerView.swift; sourceTree = "<group>"; };
-		5B9FA61F2F8B50470045E944 /* BrowserView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
+		5B9FA6212F8BEC930045E944 /* BrowserView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8125D2342F7EC0C200A5937E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -67,7 +66,6 @@
 		8188EF4F2F8181BC00C70F7E /* Theme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8188EF512F830A4200C70F7E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AB652DDE2F7EC67C00816346 /* AIResponseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIResponseView.swift; sourceTree = "<group>"; };
-		AB652DDF2F7EC67C00816346 /* BrowserView2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserView2.swift; sourceTree = "<group>"; };
 		AB652DE12F7EC67C00816346 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AB652DE72F7EC6A500816346 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AB652DEA2F7EC6CB00816346 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
@@ -97,15 +95,6 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
-		5B6293032F89E96F00272F64 /* Browser */ = {
-			isa = PBXGroup;
-			children = (
-				5B9FA61F2F8B50470045E944 /* BrowserView.swift */,
-				AB652DDF2F7EC67C00816346 /* BrowserView2.swift */,
-			);
-			path = Browser;
-			sourceTree = "<group>";
-		};
 		8125D2242F7EC0BD00A5937E = {
 			isa = PBXGroup;
 			children = (
@@ -132,7 +121,6 @@
 				AB652DE92F7EC6BB00816346 /* Services */,
 				8125D2362F7EC0C200A5937E /* Preview Content */,
 				5B6293022F89D36900272F64 /* Auth */,
-				5B6293032F89E96F00272F64 /* Browser */,
 				8125D2672F7F010C00A5937E /* icon1.png */,
 				8125D2342F7EC0C200A5937E /* Assets.xcassets */,
 				8188EF512F830A4200C70F7E /* Info.plist */,
@@ -180,6 +168,7 @@
 				5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */,
 				5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */,
 				8125D2412F7EC12E00A5937E /* ContentView.swift */,
+				5B9FA6212F8BEC930045E944 /* BrowserView.swift */,
 				8125D2692F80788100A5937E /* LoginView.swift */,
 				8125D26A2F80788300A5937E /* RegisterView.swift */,
 				AB652DDE2F7EC67C00816346 /* AIResponseView.swift */,
@@ -296,8 +285,6 @@
 				AB652DE22F7EC67C00816346 /* HomeView.swift in Sources */,
 				AB652DE82F7EC6A500816346 /* HomeViewModel.swift in Sources */,
 				5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */,
-				AB652DE32F7EC67C00816346 /* BrowserView2.swift in Sources */,
-				5B9FA6202F8B50480045E944 /* BrowserView.swift in Sources */,
 				8188EF4A2F817E1E00C70F7E /* BookmarkRow.swift in Sources */,
 				8188EF502F8181BE00C70F7E /* Theme.swift in Sources */,
 				AB652DE52F7EC67C00816346 /* AIResponseView.swift in Sources */,
@@ -305,6 +292,7 @@
 				8125D26C2F80788500A5937E /* RegisterView.swift in Sources */,
 				8125D24A2F7EC27500A5937E /* BrowserItem.swift in Sources */,
 				8188EF4C2F817E1E00C70F7E /* RoundedCorner.swift in Sources */,
+				5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */,
 				5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */,
 				5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */,
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,

@@ -16,8 +16,6 @@ struct BrowserView: UIViewRepresentable {
         // Bypasses Google's 'disallowed_useragent' block by identifying as a standard Mobile Safari browser.
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
 
-        context.coordinator.setupProgressObservation(for: webView)
-
         webView.navigationDelegate = context.coordinator
         webView.scrollView.delegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
@@ -66,7 +64,6 @@ struct BrowserView: UIViewRepresentable {
             print("[AutoScroll] requesting stop() from updateUIView")
             context.coordinator.autoScrollManager.stop()
         }
-
     }
 
     @MainActor
@@ -74,35 +71,15 @@ struct BrowserView: UIViewRepresentable {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
         var lastLoadedURL: URL?
-        private var progressObservation: NSKeyValueObservation?
 
         init(viewModel: HomeViewModel) {
             self.viewModel = viewModel
             self.autoScrollManager = viewModel.autoScrollManager
             super.init()
-                self.autoScrollManager.didStop = { [weak self] in
-                self.autoScrollManager.didStop = { [weak viewModel] in
-                guard let viewModel = viewModel else { return }
+            self.autoScrollManager.didStop = { [weak self] in
                 Task { @MainActor in
                     print("[AutoScroll] didStop closure running; clearing viewModel.isAutoScrolling")
                     self?.viewModel.isAutoScrolling = false
-                    viewModel.isAutoScrolling = false
-                }
-                }
-        }
-
-
-        deinit {
-            progressObservation?.invalidate()
-        }
-
-        func setupProgressObservation(for webView: WKWebView) {
-            // Use KVO to monitor the loading progress of the WKWebView
-            progressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak viewModel = self.viewModel] _, change in
-                guard let progress = change.newValue, let viewModel = viewModel else { return }
-                // Switch to the MainActor to update the published loadingProgress
-                Task { @MainActor in
-                    viewModel.loadingProgress = progress
                 }
             }
         }

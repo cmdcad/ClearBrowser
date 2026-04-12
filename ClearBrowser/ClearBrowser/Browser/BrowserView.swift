@@ -98,7 +98,7 @@ struct BrowserView: UIViewRepresentable {
                 guard let progress = change.newValue else { return }
                 // Switch to the MainActor to update the published loadingProgress
                 Task { @MainActor in
-                    self?.viewModel.loadingProgress = progress
+                    viewModel.loadingProgress = progress
                 }
             }
         }
