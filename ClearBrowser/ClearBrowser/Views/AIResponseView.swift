@@ -43,8 +43,15 @@ struct AIResponseView: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.secondary)
+
+                    ScrollView {
+                        Text(response)
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
                     }
-                    .frame(maxHeight: 300) // Provides significantly more real estate
+                    .frame(maxHeight: 450)
                     .background(Color(.secondarySystemFill))
                     .cornerRadius(14)
                 }

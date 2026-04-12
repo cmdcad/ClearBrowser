@@ -80,10 +80,11 @@ struct BrowserView: UIViewRepresentable {
             self.viewModel = viewModel
             self.autoScrollManager = viewModel.autoScrollManager
             super.init()
-                self.autoScrollManager.didStop = { [weak self] in
+                self.autoScrollManager.didStop = { [weak viewModel] in
+                guard let viewModel = viewModel else { return }
                 Task { @MainActor in
                     print("[AutoScroll] didStop closure running; clearing viewModel.isAutoScrolling")
-                    self?.viewModel.isAutoScrolling = false
+                    viewModel.isAutoScrolling = false
                 }
                 }
         }
