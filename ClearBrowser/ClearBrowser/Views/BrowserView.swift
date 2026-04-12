@@ -91,6 +91,7 @@ struct BrowserView: UIViewRepresentable {
                 }
         }
 
+
         deinit {
             progressObservation?.invalidate()
         }
