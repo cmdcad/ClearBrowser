@@ -163,12 +163,14 @@ final class HomeViewModel: NSObject, ObservableObject {
         if !bookmarks.contains(item) {
             bookmarks.insert(item, at: 0)
             storageManager.saveBookmarks(bookmarks)
+            storageManager.syncBookmarksToFirebase(bookmarks)
         }
     }
 
     func removeBookmark(_ item: BrowserItem) {
         bookmarks.removeAll { $0.id == item.id }
         storageManager.saveBookmarks(bookmarks)
+        storageManager.syncBookmarksToFirebase(bookmarks)
     }
 
     func openBookmark(_ item: BrowserItem) {
@@ -200,12 +202,14 @@ final class HomeViewModel: NSObject, ObservableObject {
         if !favorites.contains(where: { $0.url == url }) {
             favorites.insert(item, at: 0)
             storageManager.saveFavorites(favorites)
+            storageManager.syncFavoritesToFirebase(favorites)
         }
     }
 
     func removeFavorite(_ item: BrowserItem) {
         favorites.removeAll { $0.id == item.id }
         storageManager.saveFavorites(favorites)
+        storageManager.syncFavoritesToFirebase(favorites)
     }
 
     func openFavorite(_ item: BrowserItem) {
@@ -229,24 +233,25 @@ final class HomeViewModel: NSObject, ObservableObject {
     func clearHistory() {
         history.removeAll()
         storageManager.saveHistory(history)
+        storageManager.syncHistoryToFirebase(history)
     }
-    func clearBookmarks() {
-        bookmarks.removeAll()
-        storageManager.saveBookmarks(bookmarks)
-    }
+
     func removeHistoryItem(_ item: BrowserItem) {
         history.removeAll { $0.id == item.id }
         storageManager.saveHistory(history)
+        storageManager.syncHistoryToFirebase(history)
     }
 
     func removeHistoryItems(at offsets: IndexSet) {
         history.remove(atOffsets: offsets)
         storageManager.saveHistory(history)
+        storageManager.syncHistoryToFirebase(history)
     }
 
     func moveHistoryItem(from source: IndexSet, to destination: Int) {
         history.move(fromOffsets: source, toOffset: destination)
         storageManager.saveHistory(history)
+        storageManager.syncHistoryToFirebase(history)
     }
 
     func login(email: String, password: String) {
@@ -408,6 +413,23 @@ final class HomeViewModel: NSObject, ObservableObject {
         currentUserEmail = user.email
         displayName = user.displayName
         profileImageUrl = user.photoURL
+        
+        // Load data from Firebase after user logs in
+        loadDataFromFirebase()
+    }
+    
+    private func loadDataFromFirebase() {
+        storageManager.loadBookmarksFromFirebase { [weak self] bookmarks in
+            self?.bookmarks = bookmarks
+        }
+        
+        storageManager.loadFavoritesFromFirebase { [weak self] favorites in
+            self?.favorites = favorites
+        }
+        
+        storageManager.loadHistoryFromFirebase { [weak self] history in
+            self?.history = history
+        }
     }
 
     func fetchAIResponse() {
@@ -520,6 +542,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         history.insert(item, at: 0)
         history = Array(history.prefix(50))
         storageManager.saveHistory(history)
+        storageManager.syncHistoryToFirebase(history)
     }
 }
 

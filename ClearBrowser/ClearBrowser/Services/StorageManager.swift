@@ -1,4 +1,6 @@
 import Foundation
+import FirebaseFirestore
+import FirebaseAuth
 
 struct BrowserSettings: Codable {
     var defaultSearchEngine: SearchEngine = .bing
@@ -17,6 +19,9 @@ final class StorageManager {
     private let defaults = UserDefaults.standard
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private let db = Firestore.firestore()
+
+    // MARK: - Local Storage (UserDefaults)
 
     func loadBookmarks() -> [BrowserItem] {
         guard let data = defaults.data(forKey: Key.bookmarks),
@@ -66,5 +71,208 @@ final class StorageManager {
     func saveSettings(_ settings: BrowserSettings) {
         guard let data = try? encoder.encode(settings) else { return }
         defaults.set(data, forKey: Key.settings)
+    }
+
+    // MARK: - Firebase Sync
+    
+    func syncBookmarksToFirebase(_ items: [BrowserItem]) {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        let userRef = db.collection("users").document(user.uid)
+        
+        do {
+            let booksmarksData = try items.map { item -> [String: Any] in
+                return [
+                    "id": item.id.uuidString,
+                    "title": item.title,
+                    "url": item.url.absoluteString,
+                    "timestamp": item.timestamp
+                ]
+            }
+            
+            userRef.updateData(["bookmarks": booksmarksData]) { error in
+                if let error = error {
+                    print("Error syncing bookmarks to Firebase: \(error.localizedDescription)")
+                } else {
+                    print("Bookmarks synced to Firebase successfully")
+                }
+            }
+        } catch {
+            print("Error encoding bookmarks: \(error.localizedDescription)")
+        }
+    }
+    
+    func syncFavoritesToFirebase(_ items: [BrowserItem]) {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        let userRef = db.collection("users").document(user.uid)
+        
+        do {
+            let favoritesData = try items.map { item -> [String: Any] in
+                return [
+                    "id": item.id.uuidString,
+                    "title": item.title,
+                    "url": item.url.absoluteString,
+                    "timestamp": item.timestamp
+                ]
+            }
+            
+            userRef.updateData(["favorites": favoritesData]) { error in
+                if let error = error {
+                    print("Error syncing favorites to Firebase: \(error.localizedDescription)")
+                } else {
+                    print("Favorites synced to Firebase successfully")
+                }
+            }
+        } catch {
+            print("Error encoding favorites: \(error.localizedDescription)")
+        }
+    }
+    
+    func syncHistoryToFirebase(_ items: [BrowserItem]) {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        let userRef = db.collection("users").document(user.uid)
+        
+        do {
+            let historyData = try items.map { item -> [String: Any] in
+                return [
+                    "id": item.id.uuidString,
+                    "title": item.title,
+                    "url": item.url.absoluteString,
+                    "timestamp": item.timestamp
+                ]
+            }
+            
+            userRef.updateData(["history": historyData]) { error in
+                if let error = error {
+                    print("Error syncing history to Firebase: \(error.localizedDescription)")
+                } else {
+                    print("History synced to Firebase successfully")
+                }
+            }
+        } catch {
+            print("Error encoding history: \(error.localizedDescription)")
+        }
+    }
+    
+    func loadBookmarksFromFirebase(completion: @escaping ([BrowserItem]) -> Void) {
+        guard let user = Auth.auth().currentUser else {
+            completion([])
+            return
+        }
+        
+        db.collection("users").document(user.uid).getDocument { snapshot, error in
+            if let error = error {
+                print("Error loading bookmarks from Firebase: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            
+            guard let data = snapshot?.data(),
+                  let bookmarksData = data["bookmarks"] as? [[String: Any]] else {
+                completion([])
+                return
+            }
+            
+            let bookmarks = bookmarksData.compactMap { dict -> BrowserItem? in
+                guard let id = dict["id"] as? String,
+                      let title = dict["title"] as? String,
+                      let urlString = dict["url"] as? String,
+                      let url = URL(string: urlString),
+                      let timestamp = dict["timestamp"] as? Timestamp else {
+                    return nil
+                }
+                
+                return BrowserItem(
+                    id: UUID(uuidString: id) ?? UUID(),
+                    title: title,
+                    url: url,
+                    timestamp: timestamp.dateValue()
+                )
+            }
+            
+            completion(bookmarks)
+        }
+    }
+    
+    func loadFavoritesFromFirebase(completion: @escaping ([BrowserItem]) -> Void) {
+        guard let user = Auth.auth().currentUser else {
+            completion([])
+            return
+        }
+        
+        db.collection("users").document(user.uid).getDocument { snapshot, error in
+            if let error = error {
+                print("Error loading favorites from Firebase: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            
+            guard let data = snapshot?.data(),
+                  let favoritesData = data["favorites"] as? [[String: Any]] else {
+                completion([])
+                return
+            }
+            
+            let favorites = favoritesData.compactMap { dict -> BrowserItem? in
+                guard let id = dict["id"] as? String,
+                      let title = dict["title"] as? String,
+                      let urlString = dict["url"] as? String,
+                      let url = URL(string: urlString),
+                      let timestamp = dict["timestamp"] as? Timestamp else {
+                    return nil
+                }
+                
+                return BrowserItem(
+                    id: UUID(uuidString: id) ?? UUID(),
+                    title: title,
+                    url: url,
+                    timestamp: timestamp.dateValue()
+                )
+            }
+            
+            completion(favorites)
+        }
+    }
+    
+    func loadHistoryFromFirebase(completion: @escaping ([BrowserItem]) -> Void) {
+        guard let user = Auth.auth().currentUser else {
+            completion([])
+            return
+        }
+        
+        db.collection("users").document(user.uid).getDocument { snapshot, error in
+            if let error = error {
+                print("Error loading history from Firebase: \(error.localizedDescription)")
+                completion([])
+                return
+            }
+            
+            guard let data = snapshot?.data(),
+                  let historyData = data["history"] as? [[String: Any]] else {
+                completion([])
+                return
+            }
+            
+            let history = historyData.compactMap { dict -> BrowserItem? in
+                guard let id = dict["id"] as? String,
+                      let title = dict["title"] as? String,
+                      let urlString = dict["url"] as? String,
+                      let url = URL(string: urlString),
+                      let timestamp = dict["timestamp"] as? Timestamp else {
+                    return nil
+                }
+                
+                return BrowserItem(
+                    id: UUID(uuidString: id) ?? UUID(),
+                    title: title,
+                    url: url,
+                    timestamp: timestamp.dateValue()
+                )
+            }
+            
+            completion(history)
+        }
     }
 }

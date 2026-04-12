@@ -83,9 +83,19 @@ struct HomeView: View {
                 }
                 .padding(.top, 4)
                 .background(
-                    RoundedRectangle(cornerRadius: 45) // Increased for a deeper "crescent" curve
-                        .fill(Theme.primary.opacity(0.95))
-                        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+                    ZStack {
+                        // Glassmorphism background
+                        RoundedRectangle(cornerRadius: 45)
+                            .fill(Theme.primary.opacity(0.4))
+                        RoundedRectangle(cornerRadius: 45)
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 45)
+                            .fill(Theme.primary.opacity(0.1))
+                            .blur(radius: 10)
+                    )
+                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
                 )
 
                 // MARK: - Offset (Controls Visibility)
