@@ -4,6 +4,7 @@ import SwiftUI
 import AuthenticationServices
 import FirebaseAuth
 import FirebaseStorage
+import CryptoKit
 
 enum URLParseError: Error {
     case invalidURL
@@ -43,6 +44,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var isAutoScrolling = false
     @Published var isHeaderVisible = true
 
+    private var currentNonce: String?
     @Published var isPrivateMode = false
     @Published var toolbarPosition: ToolbarPosition = .top {
         didSet { saveSettings() }
@@ -269,65 +271,51 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     func loginWithGoogle() {
-        // IMPORTANT: 
-        // 1. Go to Google Cloud Console -> Credentials.
-        // 2. Create an "iOS" Client ID (NOT a "Web" client ID).
-        // 3. Use the "Bundle ID" of your app.
-        // 4. Use the "iOS Redirect URI" provided by Google (usually the reverse DNS of the Client ID).
-        
-        // 1. Replace this with your actual Client ID from the Google Cloud Console.
-        let clientID = "226339545279-8umskbk1khqkn9i33bt4r11mnvqhoi4j.apps.googleusercontent.com"
-        
-        // 2. Derive the callback scheme and redirect URI automatically to avoid mismatches.
-        let clientIDPrefix = clientID.components(separatedBy: ".").first ?? ""
-        let callbackScheme = "com.googleusercontent.apps.\(clientIDPrefix)"
-        let redirectURI = "\(callbackScheme):/oauth2redirect"
+        //  directURI = "\(callbackScheme):/oauth2redirect"
+
+        // 3. Generate Nonce for OpenID Connect security
+        let rawNonce = randomNonceString()
+        currentNonce = rawNonce
+        let hashedNonce = sha256(rawNonce)
 
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
             URLQueryItem(name: "client_id", value: clientID),
-            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "response_type", value: "id_token"),
             URLQueryItem(name: "scope", value: "email profile"),
-            URLQueryItem(name: "redirect_uri", value: redirectURI)
+            URLQueryItem(name: "redirect_uri", value: redirectURI),
+            URLQueryItem(name: "nonce", value: hashedNonce)
         ]
 
-        guard let authURL = components.url else { return }
-
-        let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
-            guard let self = self else { return }
+        guard let authURL = components.url else { retur
+        let session = ASWebAuthenticationSession(url: authURL, r
             if let error = error {
                 print("Authentication error: \(error.localizedDescription)")
                 return
             }
             
-            guard let _ = callbackURL else { return }
+            guard let url = callbackURL else { return }
             
-            // In a real app, you would parse the 'code' from the callbackURL and
-            // exchange it for a token via Firebase Google Auth.
+            // 4. Extract id_token from the URL fragment or query
+            let fragment = url.fragment ?? url.query ?? ""
+            let params = fragment.components(separatedBy: "&")
+            let idToken = params.first(where: { $0.hasPrefix("id_token=") })?
+                .components(separatedBy: "=").last
+    
+cessToken: nil)
+          
             Task { @MainActor in
-                // Simulation: In production, use Firebase OAuthProvider or GoogleSignIn SDK
-                self.isLoggedIn = true
-                let email = Auth.auth().currentUser?.email ?? "authenticated.user@example.com"
-                self.currentUserEmail = email
-                
-                // Derive a name from the email for a more realistic mock experience
-                let defaultName = email.components(separatedBy: "@").first?.capitalized ?? "User"
-                self.displayName = defaultName
-                self.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=\(defaultName)&background=random")
+                do {
+                    let result = try await Auth.auth().signIn(with: credential)
+                    self.syncUser(result.user)
+                } catch {
+                    print("Firebase Google Auth Error: \(error.localizedDescription)")
+                }
                 self.authSheet = nil
             }
         }
 
-        session.presentationContextProvider = self
-        session.prefersEphemeralWebBrowserSession = false // Allows sharing cookies with Safari
-        session.start()
-    }
-
-    func register(email: String, password: String, apiKey: String?) {
-        Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
-            guard let self = self else { return }
-            Task { @MainActor in
-                if let error = error {
+        session.presentationCont
                     print("Firebase register error: \(error.localizedDescription)")
                     return
                 }
@@ -457,6 +445,32 @@ final class HomeViewModel: NSObject, ObservableObject {
             activityVC.popoverPresentationController?.sourceView = rootVC.view
             rootVC.present(activityVC, animated: true)
         }
+    }
+
+    // MARK: - Security Helpers
+
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+        while remainingLength > 0 {
+            let randoms: [UInt8] = (0..<16).map { _ in UInt8.random(in: 0...255) }
+            randoms.forEach { random in
+                if remainingLength == 0 { return }
+                if random < charset.count {
+                    result.append(charset[Int(random)])
+                    remainingLength -= 1
+                }
+            }
+        }
+        return result
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
     }
 
     private func loadPersistentData() {
