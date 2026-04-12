@@ -116,11 +116,9 @@ struct HomeView: View {
                             lastDragValue = dragAmount
                         }
                         .onEnded { value in
-                            let velocity = value.velocity.height
                             let velocity = -value.velocity.height
 
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                if velocity > 300 || bottomBarOffset > 40 {
                                 if velocity < -300 || bottomBarOffset > 40 {
                                     // Hide (resting hidden position lowered to 75)
                                     bottomBarOffset = 75
@@ -264,10 +262,6 @@ struct HomeView: View {
   private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
-      ActionButton(label: "Favorite", symbol: viewModel.isCurrentPageFavorited ? "star.fill" : "star", tint: .yellow) {
-        viewModel.toggleFavorite()
-      }
-
       ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
           viewModel.selectedDrawer = .bookmarks
