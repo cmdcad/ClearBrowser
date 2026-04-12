@@ -41,7 +41,7 @@ struct DrawerContentView: View {
                 .padding(.bottom, 8)
 
                 if bookmarkFilter == .all {
-                    drawerList(title: "All Bookmarks", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark)
+                    drawerList(title: "All Sites", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark)
                 } else {
                     drawerList(title: "Favorited Pages", items: viewModel.favorites, onAdd: viewModel.addFavorite, onOpen: viewModel.openFavorite, onDelete: viewModel.removeFavorite)
                 }
@@ -133,7 +133,7 @@ struct DrawerContentView: View {
     private func rowView(for item: BrowserItem, onOpen: @escaping (BrowserItem) -> Void, onDelete: @escaping (BrowserItem) -> Void) -> some View {
         Button(action: { onOpen(item) }) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
+                Text(item.title.isEmpty || item.title == "Untitled" ? (item.url.host ?? item.url.absoluteString) : item.title)
                     .font(.subheadline.bold())
                     .foregroundColor(.primary)
                 Text(item.url.absoluteString)

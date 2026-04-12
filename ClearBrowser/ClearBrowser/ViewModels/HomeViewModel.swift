@@ -307,7 +307,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             Task { @MainActor in
                 // Simulation: In production, use Firebase OAuthProvider or GoogleSignIn SDK
                 self.isLoggedIn = true
-                let email = "demo.user@example.com"
+                let email = "user@example.com"
                 self.currentUserEmail = email
                 
                 // Derive a name from the email for a more realistic mock experience
@@ -411,7 +411,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
         isLoggedIn = true
         currentUserEmail = user.email
-        displayName = user.displayName
+        displayName = user.displayName ?? user.email
         profileImageUrl = user.photoURL
         
         // Load data from Firebase after user logs in

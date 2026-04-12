@@ -43,12 +43,10 @@ struct AIResponseView: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.secondary)
-                    Text(response)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding(12)
-                        .background(Color(.secondarySystemFill))
-                        .cornerRadius(14)
+                    }
+                    .frame(maxHeight: 300) // Provides significantly more real estate
+                    .background(Color(.secondarySystemFill))
+                    .cornerRadius(14)
                 }
                 .transition(.opacity)
             }

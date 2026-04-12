@@ -5,6 +5,7 @@ import PhotosUI
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
   @State private var isKeyboardVisible = false
+  @FocusState private var isAddressBarFocused: Bool
 
   @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
   @State private var lastDragValue: CGFloat = 0
@@ -86,13 +87,13 @@ struct HomeView: View {
                     ZStack {
                         // Glassmorphism background
                         RoundedRectangle(cornerRadius: 45)
-                            .fill(Theme.primary.opacity(0.15))
+                            .fill(Theme.primary.opacity(0.98))
                         RoundedRectangle(cornerRadius: 45)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 45)
-                            .fill(Theme.primary.opacity(0.1))
+                            .fill(Theme.primary)
                             .blur(radius: 10)
                     )
                     .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
@@ -205,7 +206,7 @@ struct HomeView: View {
 
   private var drawerTitle: String {
     switch viewModel.selectedDrawer {
-    case .bookmarks: return "Bookmarks"
+    case .bookmarks: return "Sites"
     case .history: return "History"
     case .settings: return "Settings" 
     case .none: return ""
@@ -220,10 +221,19 @@ struct HomeView: View {
                     .foregroundColor(viewModel.currentURL?.scheme == "https" ? .green : .secondary)
                 
                 TextField("Search or enter URL", text: $viewModel.addressBarText, onCommit: viewModel.loadAddress)
+                    .focused($isAddressBarFocused)
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     .keyboardType(.URL)
                     .autocorrectionDisabled(true)
                     .textInputAutocapitalization(.never)
+                    .onChange(of: isAddressBarFocused) { focused in
+                        if focused {
+                            // Select all text on focus
+                            DispatchQueue.main.async {
+                                UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
+                            }
+                        }
+                    }
                 
                 // Integrated Favorite Button
                 Button(action: { viewModel.toggleFavorite() }) {
@@ -261,7 +271,7 @@ struct HomeView: View {
   private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
-      ActionButton(label: "Bookmarks", symbol: "bookmark", tint: .green) {
+      ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
           viewModel.selectedDrawer = .bookmarks
         }
