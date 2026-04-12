@@ -207,8 +207,7 @@ struct HomeView: View {
     switch viewModel.selectedDrawer {
     case .bookmarks: return "Bookmarks"
     case .history: return "History"
-    case .settings: return "Settings"
-    case .favorites: return "Favorites"
+    case .settings: return "Settings" 
     case .none: return ""
     }
   }
