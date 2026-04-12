@@ -86,7 +86,7 @@ struct HomeView: View {
                     ZStack {
                         // Glassmorphism background
                         RoundedRectangle(cornerRadius: 45)
-                            .fill(Theme.primary.opacity(0.4))
+                            .fill(Theme.primary.opacity(0.15))
                         RoundedRectangle(cornerRadius: 45)
                             .stroke(Color.white.opacity(0.3), lineWidth: 1)
                     }
@@ -105,9 +105,9 @@ struct HomeView: View {
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            let dragAmount = value.translation.height
+                            // Reversed: dragging DOWN (positive translation) now reduces offset to 0
+                            let dragAmount = -value.translation.height
 
-                            // Clamp between fully visible (0) and max hidden (85)
                             bottomBarOffset = min(
                                 max(bottomBarOffset + dragAmount * 0.8, 0),
                                 85
@@ -117,9 +117,11 @@ struct HomeView: View {
                         }
                         .onEnded { value in
                             let velocity = value.velocity.height
+                            let velocity = -value.velocity.height
 
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                                 if velocity > 300 || bottomBarOffset > 40 {
+                                if velocity < -300 || bottomBarOffset > 40 {
                                     // Hide (resting hidden position lowered to 75)
                                     bottomBarOffset = 75
                                     isBottomBarExpanded = false
@@ -208,6 +210,7 @@ struct HomeView: View {
     case .bookmarks: return "Bookmarks"
     case .history: return "History"
     case .settings: return "Settings"
+    case .favorites: return "Favorites"
     case .none: return ""
     }
   }
@@ -225,6 +228,13 @@ struct HomeView: View {
                     .autocorrectionDisabled(true)
                     .textInputAutocapitalization(.never)
                 
+                // Integrated Favorite Button
+                Button(action: { viewModel.toggleFavorite() }) {
+                    Image(systemName: viewModel.isCurrentPageFavorited ? "star.fill" : "star")
+                        .font(.system(size: 14))
+                        .foregroundColor(viewModel.isCurrentPageFavorited ? .yellow : .secondary)
+                }
+
                 if viewModel.isLoading {
                     Button(action: { viewModel.stopLoading() }) {
                         Image(systemName: "xmark").foregroundColor(.secondary)
