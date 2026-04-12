@@ -95,7 +95,7 @@ struct BrowserView: UIViewRepresentable {
         func setupProgressObservation(for webView: WKWebView) {
             // Use KVO to monitor the loading progress of the WKWebView
             progressObservation = webView.observe(\.estimatedProgress, options: .new) { [weak self] _, change in
-                guard let progress = change.newValue else { return }
+                guard let progress = change.newValue, let viewModel = self?.viewModel else { return }
                 // Switch to the MainActor to update the published loadingProgress
                 Task { @MainActor in
                     viewModel.loadingProgress = progress
