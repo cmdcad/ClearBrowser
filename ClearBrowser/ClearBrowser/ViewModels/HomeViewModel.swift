@@ -236,13 +236,14 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     func login(email: String, password: String) {
         Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
+            guard let self = self else { return }
             Task { @MainActor in
                 if let error = error {
                     print("Firebase login error: \(error.localizedDescription)")
                     return
                 }
-                self?.syncUser(result?.user)
-                self?.authSheet = nil
+                self.syncUser(result?.user)
+                self.authSheet = nil
             }
         }
     }
@@ -273,6 +274,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         guard let authURL = components.url else { return }
 
         let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
+            guard let self = self else { return }
             if let error = error {
                 print("Authentication error: \(error.localizedDescription)")
                 return
@@ -284,15 +286,15 @@ final class HomeViewModel: NSObject, ObservableObject {
             // exchange it for a token via Firebase Google Auth.
             Task { @MainActor in
                 // Simulation: In production, use Firebase OAuthProvider or GoogleSignIn SDK
-                self?.isLoggedIn = true
+                self.isLoggedIn = true
                 let email = "demo.user@example.com"
-                self?.currentUserEmail = email
+                self.currentUserEmail = email
                 
                 // Derive a name from the email for a more realistic mock experience
                 let defaultName = email.components(separatedBy: "@").first?.capitalized ?? "User"
-                self?.displayName = defaultName
-                self?.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=\(defaultName)&background=random")
-                self?.authSheet = nil
+                self.displayName = defaultName
+                self.profileImageUrl = URL(string: "https://ui-avatars.com/api/?name=\(defaultName)&background=random")
+                self.authSheet = nil
             }
         }
 
@@ -303,16 +305,17 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     func register(email: String, password: String, apiKey: String?) {
         Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
+            guard let self = self else { return }
             Task { @MainActor in
                 if let error = error {
                     print("Firebase register error: \(error.localizedDescription)")
                     return
                 }
                 if let key = apiKey, !key.isEmpty {
-                    self?.openAIKey = key
+                    self.openAIKey = key
                 }
-                self?.syncUser(result?.user)
-                self?.authSheet = nil
+                self.syncUser(result?.user)
+                self.authSheet = nil
             }
         }
     }
