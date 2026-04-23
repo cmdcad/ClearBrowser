@@ -58,7 +58,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var authSheet: AuthSheetType? = nil
     @Published var openAIKey: String = "" {
         didSet {
-            KeychainHelper.standard.save(openAIKey, service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey")
+            _ = KeychainHelper.standard.save(openAIKey, service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey")
         }
     }
 
@@ -270,42 +270,39 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
     
+    private var googleClientID: String? {
+        Bundle.main.object(forInfoDictionaryKey: "GOOGLE_CLIENT_ID") as? String
+    }
+
+    private var googleRedirectURI: String? {
+        Bundle.main.object(forInfoDictionaryKey: "GOOGLE_REDIRECT_URI") as? String
+    }
+
     func loginWithGoogle() {
-        //  directURI = "\(callbackScheme):/oauth2redirect"
+        guard let clientID = googleClientID, !clientID.isEmpty,
+              let redirectURI = googleRedirectURI, !redirectURI.isEmpty,
+              let authURL = makeGoogleAuthURL(clientID: clientID, redirectURI: redirectURI) else {
+            print("Google login cannot start: missing client ID or redirect URI.")
+            return
+        }
 
-        // 3. Generate Nonce for OpenID Connect security
-        let rawNonce = randomNonceString()
-        currentNonce = rawNonce
-        let hashedNonce = sha256(rawNonce)
-
-        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
-        components.queryItems = [
-            URLQueryItem(name: "client_id", value: clientID),
-            URLQueryItem(name: "response_type", value: "id_token"),
-            URLQueryItem(name: "scope", value: "email profile"),
-            URLQueryItem(name: "redirect_uri", value: redirectURI),
-            URLQueryItem(name: "nonce", value: hashedNonce)
-        ]
-
-        guard let authURL = components.url else { retur
-        let session = ASWebAuthenticationSession(url: authURL, r
+        let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: URL(string: redirectURI)?.scheme) { callbackURL, error in
             if let error = error {
                 print("Authentication error: \(error.localizedDescription)")
                 return
             }
-            
-            guard let url = callbackURL else { return }
-            
-            // 4. Extract id_token from the URL fragment or query
-            let fragment = url.fragment ?? url.query ?? ""
+
+            guard let callbackURL = callbackURL else { return }
+            let fragment = callbackURL.fragment ?? callbackURL.query ?? ""
             let params = fragment.components(separatedBy: "&")
-            let idToken = params.first(where: { $0.hasPrefix("id_token=") })?
-                .components(separatedBy: "=").last
-    
-cessToken: nil)
-          
+            guard let idToken = params.first(where: { $0.hasPrefix("id_token=") })?.split(separator: "=").last.map(String.init) else {
+                print("Google login failed: no id_token returned.")
+                return
+            }
+
             Task { @MainActor in
                 do {
+                    let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: "")
                     let result = try await Auth.auth().signIn(with: credential)
                     self.syncUser(result.user)
                 } catch {
@@ -315,17 +312,21 @@ cessToken: nil)
             }
         }
 
-        session.presentationCont
-                    print("Firebase register error: \(error.localizedDescription)")
-                    return
-                }
-                if let key = apiKey, !key.isEmpty {
-                    self.openAIKey = key
-                }
-                self.syncUser(result?.user)
-                self.authSheet = nil
-            }
-        }
+        session.presentationContextProvider = self
+        session.prefersEphemeralWebBrowserSession = true
+        session.start()
+    }
+
+    private func makeGoogleAuthURL(clientID: String, redirectURI: String) -> URL? {
+        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")
+        components?.queryItems = [
+            URLQueryItem(name: "client_id", value: clientID),
+            URLQueryItem(name: "response_type", value: "id_token"),
+            URLQueryItem(name: "scope", value: "email profile"),
+            URLQueryItem(name: "redirect_uri", value: redirectURI),
+            URLQueryItem(name: "nonce", value: sha256(randomNonceString()))
+        ]
+        return components?.url
     }
 
     func updateProfile(name: String) {
