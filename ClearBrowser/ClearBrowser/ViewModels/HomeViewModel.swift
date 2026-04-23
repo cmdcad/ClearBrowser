@@ -504,38 +504,27 @@ cessToken: nil)
 
     private func parseOrThrow(_ input: String) throws -> URL {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { throw URLParseError.invalidURL }
 
-        // Regex matches: yahoo.com, www.yahoo.com, http://yahoo.com, https://www.x.com
-        let pattern = #"^(https?:\/\/)?(www\.)?([A-Za-z0-9-]+\.[A-Za-z]{2,})(\/.*)?$"#
-
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            throw URLParseError.invalidURL
+        // 1. If it already has a valid scheme, trust it.
+        if let url = URL(string: trimmed), url.scheme != nil, url.host != nil {
+            return url
         }
 
-        let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+        // 2. Check if it's a host-like string (no spaces, contains dot or colon for port, or localhost)
+        let hasSpaces = trimmed.contains { $0.isWhitespace }
+        let hasDot = trimmed.contains(".")
+        let hasColonPort = trimmed.range(of: #":\d+"#, options: .regularExpression) != nil
+        let isLocalhost = trimmed.lowercased().contains("localhost")
 
-        guard let match = regex.firstMatch(in: trimmed, range: range) else {
-            throw URLParseError.invalidURL
+        if !hasSpaces && (hasDot || hasColonPort || isLocalhost) {
+            let withScheme = trimmed.lowercased().hasPrefix("http") ? trimmed : "https://\(trimmed)"
+            if let url = URL(string: withScheme) {
+                return url
+            }
         }
 
-        // Extract components
-        let protocolRange = Range(match.range(at: 1), in: trimmed)
-        let wwwRange = Range(match.range(at: 2), in: trimmed)
-        let domainRange = Range(match.range(at: 3), in: trimmed)
-        let pathRange = Range(match.range(at: 4), in: trimmed)
-
-        let proto = protocolRange != nil ? String(trimmed[protocolRange!]) : "https://"
-        let www = wwwRange != nil ? String(trimmed[wwwRange!]) : ""
-        let domain = domainRange != nil ? String(trimmed[domainRange!]) : ""
-        let path = pathRange != nil ? String(trimmed[pathRange!]) : ""
-
-        let finalString = "\(proto)\(www)\(domain)\(path)"
-
-        guard let url = URL(string: finalString) else {
-            throw URLParseError.invalidURL
-        }
-
-        return url
+        throw URLParseError.invalidURL
     }
 
     private func resolveInput(_ input: String) -> URL {

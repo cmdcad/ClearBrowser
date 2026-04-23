@@ -51,7 +51,7 @@ struct AIResponseView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
                     }
-                    .frame(maxHeight: 450)
+                    .frame(maxHeight: 600)
                     .background(Color(.secondarySystemFill))
                     .cornerRadius(14)
                 }

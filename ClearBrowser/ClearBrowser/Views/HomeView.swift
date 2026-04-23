@@ -235,6 +235,17 @@ struct HomeView: View {
                         }
                     }
                 
+                // Clear Button
+                if !viewModel.addressBarText.isEmpty && isAddressBarFocused {
+                    Button(action: { viewModel.addressBarText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.trailing, 2)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 // Integrated Favorite Button
                 Button(action: { viewModel.toggleFavorite() }) {
                     Image(systemName: viewModel.isCurrentPageFavorited ? "star.fill" : "star")
@@ -309,6 +320,20 @@ struct HomeView: View {
 
   private var statusOverlay: some View {
     VStack {
+      if viewModel.isPrivateMode {
+          HStack(spacing: 4) {
+              Image(systemName: "eye.slash.fill")
+              Text("Private")
+          }
+          .font(.system(size: 10, weight: .bold))
+          .padding(.horizontal, 10)
+          .padding(.vertical, 4)
+          .background(Color.black.opacity(0.7))
+          .foregroundColor(.white)
+          .clipShape(Capsule())
+          .padding(.top, 8)
+      }
+
       if viewModel.isLoading {
         ProgressView()
           .progressViewStyle(CircularProgressViewStyle())
