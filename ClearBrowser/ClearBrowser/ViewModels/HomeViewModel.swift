@@ -286,6 +286,24 @@ final class HomeViewModel: NSObject, ObservableObject {
         syncUser(Auth.auth().currentUser ?? user)
     }
     
+    
+    func register(email: String, password: String, apiKey: String?) {
+        Auth.auth().createUser(withEmail: email, password: password) { [weak self] result, error in
+            Task { @MainActor in
+                if let error = error {
+                    print("Firebase register error: \(error.localizedDescription)")
+                    return
+                }
+                self?.isLoggedIn = true
+                self?.currentUserEmail = result?.user.email
+                if let key = apiKey, !key.isEmpty {
+                    self?.openAIKey = key
+                }
+                self?.authSheet = nil
+            }
+        }
+    }
+    
     private var googleClientID: String? {
         Bundle.main.object(forInfoDictionaryKey: "GOOGLE_CLIENT_ID") as? String
     }
