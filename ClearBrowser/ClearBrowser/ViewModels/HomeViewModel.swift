@@ -110,14 +110,21 @@ final class HomeViewModel: NSObject, ObservableObject {
     private var settings = BrowserSettings()
 
     override init() {
-        // Initialize with the first tab
-        let initialTab = tabs[0]
-        self.activeTabID = initialTab.id
-        
+        // 1. Initialize activeTabID with a placeholder to satisfy Phase 1 initialization.
+        // We cannot access 'self.tabs' yet because 'self' isn't fully initialized.
+        self.activeTabID = UUID()
+
         super.init()
         
-        self.addressBarText = initialTab.url.absoluteString
+        // 2. Load saved data. This will attempt to overwrite activeTabID from settings.
         loadPersistentData()
+
+        // 3. Fallback: If no saved session was loaded, sync with the default first tab.
+        if activeTab == nil {
+            activeTabID = tabs[0].id
+        }
+
+        self.addressBarText = activeTab?.url.absoluteString ?? ""
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
     }
     
