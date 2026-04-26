@@ -110,10 +110,12 @@ final class HomeViewModel: NSObject, ObservableObject {
     private var settings = BrowserSettings()
 
     override init() {
-        super.init()
         // Initialize with the first tab
         let initialTab = tabs[0]
         self.activeTabID = initialTab.id
+        
+        super.init()
+        
         self.addressBarText = initialTab.url.absoluteString
         loadPersistentData()
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
