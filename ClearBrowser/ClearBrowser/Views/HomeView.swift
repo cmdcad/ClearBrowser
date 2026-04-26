@@ -7,6 +7,7 @@ struct HomeView: View {
   @State private var isKeyboardVisible = false
   @FocusState private var isAddressBarFocused: Bool
 
+  @State private var showTabManager = false
   @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
@@ -162,6 +163,9 @@ struct HomeView: View {
     .fullScreenCover(item: $viewModel.accountSheet) { destination in
       AccountFlowView(viewModel: viewModel, startDestination: destination)
     }
+    .sheet(isPresented: $showTabManager) {
+        TabManagerView(viewModel: viewModel)
+    }
     .navigationViewStyle(StackNavigationViewStyle())
     .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
     { _ in
@@ -308,6 +312,12 @@ struct HomeView: View {
         viewModel.isPrivateMode.toggle()
       }
       
+      ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {
+          showTabManager = true
+      }
+      .overlay(
+        Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
+      )
 
       Spacer()
         }

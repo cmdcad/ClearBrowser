@@ -42,8 +42,17 @@ enum ToolbarPosition: String, CaseIterable, Identifiable {
 
 @MainActor
 final class HomeViewModel: NSObject, ObservableObject {
-    @Published var addressBarText: String = "https://www.bing.com"
-    @Published var currentURL: URL? = URL(string: "https://www.bing.com")
+    // MARK: - Tab Management
+    @Published var tabs: [BrowserTab] = [BrowserTab(url: URL(string: "https://www.bing.com")!)]
+    @Published var activeTabID: UUID
+    
+    var activeTab: BrowserTab? {
+        tabs.first { $0.id == activeTabID }
+    }
+
+    // Update these to be computed or updated based on the active tab
+    @Published var addressBarText: String = ""
+    @Published var currentURL: URL?
     @Published var pageTitle: String = "ClearBrowser"
     @Published var canGoBack = false
     @Published var canGoForward = false
@@ -102,6 +111,10 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        // Initialize with the first tab
+        let initialTab = tabs[0]
+        self.activeTabID = initialTab.id
+        self.addressBarText = initialTab.url.absoluteString
         loadPersistentData()
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
     }
@@ -112,6 +125,41 @@ final class HomeViewModel: NSObject, ObservableObject {
         requestURL = targetURL
         loadingProgress = 0.0
         addHistoryItem(title: addressBarText, url: targetURL)
+        
+        // Update the tab model
+        if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
+            tabs[index].url = targetURL
+            saveSettings()
+        }
+    }
+
+    func createNewTab(url: URL = URL(string: "https://www.bing.com")!) {
+        let newTab = BrowserTab(url: url)
+        tabs.append(newTab)
+        switchTab(to: newTab.id)
+        saveSettings()
+    }
+
+    func closeTab(id: UUID) {
+        guard tabs.count > 1 else { return }
+        tabs.removeAll { $0.id == id }
+        if activeTabID == id {
+            activeTabID = tabs.last?.id ?? tabs[0].id
+            if let active = activeTab {
+                addressBarText = active.url.absoluteString
+                requestURL = active.url
+            }
+        }
+        saveSettings()
+    }
+
+    func switchTab(to id: UUID) {
+        activeTabID = id
+        if let active = activeTab {
+            addressBarText = active.url.absoluteString
+            requestURL = active.url
+        }
+        saveSettings()
     }
 
     func openSearchEngineHome() {
@@ -551,14 +599,25 @@ final class HomeViewModel: NSObject, ObservableObject {
             toolbarPosition = position
         }
 
-        if let last = settings.lastOpenedURL, let url = URL(string: last) {
-            requestURL = url
-            currentURL = url
-            addressBarText = last
+        if let savedTabs = settings.tabs, !savedTabs.isEmpty {
+            self.tabs = savedTabs
+            if let savedActiveID = settings.activeTabID, tabs.contains(where: { $0.id == savedActiveID }) {
+                self.activeTabID = savedActiveID
+            } else {
+                self.activeTabID = tabs[0].id
+            }
+        }
+
+        if let active = activeTab {
+            requestURL = active.url
+            currentURL = active.url
+            addressBarText = active.url.absoluteString
         }
     }
 
     private func saveSettings() {
+        settings.tabs = tabs
+        settings.activeTabID = activeTabID
         storageManager.saveSettings(settings)
     }
 
