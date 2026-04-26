@@ -58,7 +58,7 @@ struct HomeView: View {
 
                     // MARK: - Bottom Bar Buttons
                     HStack(alignment: .center, spacing: Theme.Spacing.md) {
-                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple) {
+                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
                             viewModel.goBack()
                         }
 
@@ -70,12 +70,12 @@ struct HomeView: View {
                             Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
                                 .font(.title3)
                                 .frame(width: 44, height: 44)
-                                .background(.white)
-                                .foregroundColor(.green.opacity(0.5))
+                                .background(viewModel.isAutoScrolling ? Color.green : .white)
+                                .foregroundColor(viewModel.isAutoScrolling ? .white : .green.opacity(0.5))
                                 .cornerRadius(12)
                         }
 
-                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal) {
+                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
                             viewModel.goForward()
                         }
                     }
@@ -296,7 +296,7 @@ struct HomeView: View {
         }
       }
 
-      ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal) {
+      ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal, isActive: viewModel.showAIField) {
         viewModel.toggleAIField()
       }
 
@@ -304,7 +304,7 @@ struct HomeView: View {
         viewModel.shareCurrentPage()
       }
 
-      ActionButton(label: "Private", symbol: viewModel.isPrivateMode ? "eye.slash.fill" : "eye", tint: .gray) {
+      ActionButton(label: "Private", symbol: viewModel.isPrivateMode ? "eye.slash.fill" : "eye", tint: .gray, isActive: viewModel.isPrivateMode) {
         viewModel.isPrivateMode.toggle()
       }
       
