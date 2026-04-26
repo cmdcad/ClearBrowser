@@ -12,6 +12,7 @@
 		5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6293052F89EBAC00272F64 /* ActionButton.swift */; };
 		5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6293062F89EBAC00272F64 /* SettingsSection.swift */; };
 		5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */; };
+		5BC0A1013010000000A0B001 /* AccountFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC0A1003010000000A0B001 /* AccountFlowView.swift */; };
 		5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */; };
 		5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA6212F8BEC930045E944 /* BrowserView.swift */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
@@ -46,6 +47,7 @@
 		5B6293052F89EBAC00272F64 /* ActionButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ActionButton.swift; path = ClearBrowser/Views/ActionButton.swift; sourceTree = SOURCE_ROOT; };
 		5B6293062F89EBAC00272F64 /* SettingsSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SettingsSection.swift; path = ClearBrowser/Views/SettingsSection.swift; sourceTree = SOURCE_ROOT; };
 		5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerContentView.swift; sourceTree = "<group>"; };
+		5BC0A1003010000000A0B001 /* AccountFlowView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountFlowView.swift; sourceTree = "<group>"; };
 		5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerView.swift; sourceTree = "<group>"; };
 		5B9FA6212F8BEC930045E944 /* BrowserView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -165,6 +167,7 @@
 		AB652DDD2F7EC67200816346 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				5BC0A1003010000000A0B001 /* AccountFlowView.swift */,
 				5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */,
 				5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */,
 				8125D2412F7EC12E00A5937E /* ContentView.swift */,
@@ -276,6 +279,7 @@
 				8125D24C2F7EC27500A5937E /* DrawerType.swift in Sources */,
 				AB652DEE2F7EC6CB00816346 /* AIService.swift in Sources */,
 				AB652DEF2F7EC6CB00816346 /* SearchManager.swift in Sources */,
+				5BC0A1013010000000A0B001 /* AccountFlowView.swift in Sources */,
 				5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */,
 				8188EF4B2F817E1E00C70F7E /* HistoryRow.swift in Sources */,
 				8125D26B2F80788500A5937E /* LoginView.swift in Sources */,

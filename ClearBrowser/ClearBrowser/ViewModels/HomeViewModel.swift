@@ -22,6 +22,15 @@ enum AuthSheetType: Identifiable {
     var id: Self { self }
 }
 
+enum AccountSheetDestination: Identifiable {
+    case hub
+    case login
+    case register
+    case profile
+
+    var id: Self { self }
+}
+
 
 
 
@@ -54,8 +63,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var currentUserEmail: String? = nil
     @Published var displayName: String? = nil
     @Published var profileImageUrl: URL? = nil
+    @Published var localProfileImagePath: String? = nil
     @Published var favorites: [BrowserItem] = [] // New: Favorites list
     @Published var authSheet: AuthSheetType? = nil
+    @Published var accountSheet: AccountSheetDestination? = nil
     @Published var openAIKey: String = "" {
         didSet {
             _ = KeychainHelper.standard.save(openAIKey, service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey")
@@ -256,18 +267,23 @@ final class HomeViewModel: NSObject, ObservableObject {
         storageManager.syncHistoryToFirebase(history)
     }
 
-    func login(email: String, password: String) {
-        Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
-            guard let self = self else { return }
-            Task { @MainActor in
-                if let error = error {
-                    print("Firebase login error: \(error.localizedDescription)")
-                    return
-                }
-                self.syncUser(result?.user)
-                self.authSheet = nil
-            }
+    func login(email: String, password: String) async throws {
+        let result = try await Auth.auth().signIn(withEmail: email, password: password)
+        syncUser(result.user)
+    }
+
+    func register(email: String, password: String, displayName: String, apiKey: String) async throws {
+        let result = try await Auth.auth().createUser(withEmail: email, password: password)
+        let user = result.user
+
+        if !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let changeRequest = user.createProfileChangeRequest()
+            changeRequest.displayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            try await changeRequest.commitChanges()
         }
+
+        openAIKey = apiKey
+        syncUser(Auth.auth().currentUser ?? user)
     }
     
     private var googleClientID: String? {
@@ -278,17 +294,19 @@ final class HomeViewModel: NSObject, ObservableObject {
         Bundle.main.object(forInfoDictionaryKey: "GOOGLE_REDIRECT_URI") as? String
     }
 
-    func loginWithGoogle() {
+    func loginWithGoogle(completion: ((Bool) -> Void)? = nil) {
         guard let clientID = googleClientID, !clientID.isEmpty,
               let redirectURI = googleRedirectURI, !redirectURI.isEmpty,
               let authURL = makeGoogleAuthURL(clientID: clientID, redirectURI: redirectURI) else {
             print("Google login cannot start: missing client ID or redirect URI.")
+            completion?(false)
             return
         }
 
         let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: URL(string: redirectURI)?.scheme) { callbackURL, error in
             if let error = error {
                 print("Authentication error: \(error.localizedDescription)")
+                completion?(false)
                 return
             }
 
@@ -297,6 +315,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             let params = fragment.components(separatedBy: "&")
             guard let idToken = params.first(where: { $0.hasPrefix("id_token=") })?.split(separator: "=").last.map(String.init) else {
                 print("Google login failed: no id_token returned.")
+                completion?(false)
                 return
             }
 
@@ -305,10 +324,11 @@ final class HomeViewModel: NSObject, ObservableObject {
                     let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: "")
                     let result = try await Auth.auth().signIn(with: credential)
                     self.syncUser(result.user)
+                    completion?(true)
                 } catch {
                     print("Firebase Google Auth Error: \(error.localizedDescription)")
+                    completion?(false)
                 }
-                self.authSheet = nil
             }
         }
 
@@ -331,8 +351,10 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     func updateProfile(name: String) {
         Task {
+            let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
             // Update local state immediately so the UI responds
-            self.displayName = name
+            self.displayName = trimmedName
+            self.persistProfileSnapshot()
             
             // Attempt Firebase update if a real user exists
             guard let user = Auth.auth().currentUser else { 
@@ -341,7 +363,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             }
             
             let changeRequest = user.createProfileChangeRequest()
-            changeRequest.displayName = name
+            changeRequest.displayName = trimmedName
             
             do {
                 try await changeRequest.commitChanges()
@@ -353,15 +375,19 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func uploadProfilePicture(_ image: UIImage) {
-        guard let user = Auth.auth().currentUser else { 
-            print("Cannot upload: No Firebase user logged in.")
-            return 
-        }
-        
         guard let imageData = image.jpegData(compressionQuality: 0.7) else { return }
-        
+
+        let localFilename = Auth.auth().currentUser.map { "profile-image-\($0.uid).jpg" } ?? "profile-image-local.jpg"
+        localProfileImagePath = storageManager.saveProfileImageData(imageData, filename: localFilename)
+        persistProfileSnapshot()
+
+        guard let user = Auth.auth().currentUser else {
+            print("Saved profile image locally. Firebase upload skipped because no user is logged in.")
+            return
+        }
+
         let storageRef = Storage.storage().reference().child("profile_images/\(user.uid).jpg")
-        
+
         Task {
             do {
                 // 1. Upload to Firebase Storage
@@ -377,6 +403,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                 
                 await MainActor.run {
                     self.profileImageUrl = downloadURL
+                    self.persistProfileSnapshot()
                     print("Profile picture updated successfully.")
                 }
             } catch {
@@ -393,15 +420,22 @@ final class HomeViewModel: NSObject, ObservableObject {
     private func syncUser(_ user: User?) {
         guard let user = user else {
             isLoggedIn = false
-            currentUserEmail = nil
-            displayName = nil
-            profileImageUrl = nil
+            let cachedProfile = storageManager.loadProfileSnapshot()
+            currentUserEmail = cachedProfile?.email
+            displayName = cachedProfile?.displayName
+            profileImageUrl = cachedProfile.flatMap { snapshot in
+                guard let remotePhotoURL = snapshot.remotePhotoURL else { return nil }
+                return URL(string: remotePhotoURL)
+            }
+            localProfileImagePath = cachedProfile?.localPhotoPath
             return
         }
         isLoggedIn = true
         currentUserEmail = user.email
         displayName = user.displayName ?? user.email
         profileImageUrl = user.photoURL
+        localProfileImagePath = storageManager.loadProfileSnapshot()?.localPhotoPath
+        persistProfileSnapshot()
         
         // Load data from Firebase after user logs in
         loadDataFromFirebase()
@@ -475,6 +509,13 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     private func loadPersistentData() {
+        if let cachedProfile = storageManager.loadProfileSnapshot() {
+            currentUserEmail = cachedProfile.email
+            displayName = cachedProfile.displayName
+            profileImageUrl = cachedProfile.remotePhotoURL.flatMap(URL.init(string:))
+            localProfileImagePath = cachedProfile.localPhotoPath
+        }
+
         if let user = Auth.auth().currentUser {
             syncUser(user)
         }
@@ -501,6 +542,16 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     private func saveSettings() {
         storageManager.saveSettings(settings)
+    }
+
+    private func persistProfileSnapshot() {
+        let profile = UserProfileSnapshot(
+            email: currentUserEmail,
+            displayName: displayName,
+            remotePhotoURL: profileImageUrl?.absoluteString,
+            localPhotoPath: localProfileImagePath
+        )
+        storageManager.saveProfileSnapshot(profile)
     }
 
     private func parseOrThrow(_ input: String) throws -> URL {

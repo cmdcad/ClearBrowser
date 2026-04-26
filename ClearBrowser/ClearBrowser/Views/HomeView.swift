@@ -159,12 +159,8 @@ struct HomeView: View {
       }
       .navigationBarHidden(true)
     }
-    .sheet(item: $viewModel.authSheet) { type in
-      if type == .login {
-        LoginView(viewModel: viewModel)
-      } else {
-        RegisterView(viewModel: viewModel)
-      }
+    .fullScreenCover(item: $viewModel.accountSheet) { destination in
+      AccountFlowView(viewModel: viewModel, startDestination: destination)
     }
     .navigationViewStyle(StackNavigationViewStyle())
     .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))

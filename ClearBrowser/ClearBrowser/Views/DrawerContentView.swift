@@ -1,12 +1,8 @@
 import SwiftUI
-import PhotosUI
 
 struct DrawerContentView: View {
     @ObservedObject var viewModel: HomeViewModel
     
-    // Profile editing state
-    @State private var editedDisplayName: String = ""
-    @State private var photoPickerItem: PhotosPickerItem?
     @State private var selectedItemForInfo: BrowserItem?
     @State private var searchText: String = ""
 
@@ -207,11 +203,7 @@ struct DrawerContentView: View {
                 }
 
                 SettingsSection(title: viewModel.isLoggedIn ? "Profile" : "Account") {
-                    if viewModel.isLoggedIn {
-                        profileSection
-                    } else {
-                        loginPrompt
-                    }
+                    accountSection
                 }
             }
             .padding(.vertical, Theme.Spacing.lg)
@@ -219,138 +211,19 @@ struct DrawerContentView: View {
         }
     }
 
-    private var profileSection: some View {
-        VStack(spacing: Theme.Spacing.lg) {
-            // Profile Header Card
-            VStack(spacing: Theme.Spacing.md) {
-                // Profile Picture with Edit Overlay
-                ZStack(alignment: .bottomTrailing) {
-                    PhotosPicker(selection: $photoPickerItem, matching: .images) {
-                        if let url = viewModel.profileImageUrl {
-                            AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { ProgressView() }
-                                .frame(width: 100, height: 100).clipShape(Circle())
-                        } else {
-                            Image(systemName: "person.crop.circle.fill").resizable()
-                                .frame(width: 100, height: 100).foregroundColor(Theme.accent)
-                        }
-                    }
-                    
-                    Image(systemName: "camera.fill")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Theme.accent)
-                        .clipShape(Circle())
-                        .offset(x: 8, y: 8)
-                }
-                .onChange(of: photoPickerItem) { newItem in
-                    Task {
-                        if let data = try? await newItem?.loadTransferable(type: Data.self),
-                           let image = UIImage(data: data) {
-                            viewModel.uploadProfilePicture(image)
-                        }
-                    }
-                }
-                
-                // Display Name
-                if let displayName = viewModel.displayName {
-                    Text(displayName)
-                        .font(.title2.bold())
-                        .foregroundColor(.primary)
-                }
-                
-                // Email
-                if let email = viewModel.currentUserEmail {
-                    Text(email)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Theme.Spacing.md)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .cornerRadius(12)
-            
-            // Display Name Edit
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Label("Display Name", systemImage: "pencil.circle.fill")
-                    .font(.caption.bold())
-                    .foregroundColor(.secondary)
-                
-                HStack {
-                    TextField("Enter display name", text: $editedDisplayName)
-                        .textFieldStyle(.roundedBorder)
-                        .onAppear { editedDisplayName = viewModel.displayName ?? "" }
-                    
-                    Button(action: { viewModel.updateProfile(name: editedDisplayName) }) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.green)
-                    }
-                    .disabled(editedDisplayName == viewModel.displayName || editedDisplayName.isEmpty)
-                }
-            }
-            
-            Divider()
-            
-            // Profile Stats (optional)
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Label("Profile Stats", systemImage: "chart.bar.xaxis")
-                    .font(.caption.bold())
-                    .foregroundColor(.secondary)
-                
-                HStack(spacing: Theme.Spacing.lg) {
-                    VStack(alignment: .center, spacing: 4) {
-                        Text("\(viewModel.bookmarks.count)")
-                            .font(.headline)
-                            .foregroundColor(Theme.accent)
-                        Text("Bookmarks")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Divider()
-                    
-                    VStack(alignment: .center, spacing: 4) {
-                        Text("\(viewModel.favorites.count)")
-                            .font(.headline)
-                            .foregroundColor(Theme.accent)
-                        Text("Favorites")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Divider()
-                    
-                    VStack(alignment: .center, spacing: 4) {
-                        Text("\(viewModel.history.count)")
-                            .font(.headline)
-                            .foregroundColor(Theme.accent)
-                        Text("History")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            
-            Divider()
-            
-            Button(role: .destructive, action: viewModel.logout) {
-                Label("Log Out", systemImage: "arrow.right.circle")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-        }
-    }
-
-    private var loginPrompt: some View {
+    private var accountSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Sync your bookmarks and history across devices.")
-                .font(.footnote).foregroundColor(.secondary)
-            Button(action: { viewModel.authSheet = .login }) {
-                Label("Sign In / Register", systemImage: "person.badge.key.fill")
+            Text(viewModel.isLoggedIn
+                 ? "Open your dedicated profile view to update your name, photo, and account details."
+                 : "Open the account center to sign in, register, and manage your profile in dedicated screens.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+
+            Button(action: {
+                viewModel.accountSheet = viewModel.isLoggedIn ? .profile : .hub
+            }) {
+                Label(viewModel.isLoggedIn ? "Open Profile" : "Open Account Center",
+                      systemImage: "person.badge.key.fill")
                     .frame(maxWidth: .infinity).padding(.vertical, 10)
                     .background(Theme.accent).foregroundColor(.white).cornerRadius(8)
             }

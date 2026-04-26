@@ -2,8 +2,10 @@ import SwiftUI
 
 struct RegisterView: View {
     @ObservedObject var viewModel: HomeViewModel
-    
-    // MARK: - State Properties
+    var onSuccess: (() -> Void)? = nil
+    var onSignIn: (() -> Void)? = nil
+
+    @State private var displayName = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -11,14 +13,13 @@ struct RegisterView: View {
     @State private var showPassword = false
     @State private var isLoading = false
     @State private var errorMessage: String?
-    
-    @Environment(\.dismiss) var dismiss
-    
-    // MARK: - Computed Properties
+
+    @Environment(\.dismiss) private var dismiss
+
     private var isEmailValid: Bool {
         email.contains("@") && email.contains(".")
     }
-    
+
     private var isPasswordValid: Bool {
         password.count >= 8 &&
         password == confirmPassword &&
@@ -26,76 +27,165 @@ struct RegisterView: View {
         password.contains(where: { $0.isLowercase }) &&
         password.contains(where: { $0.isNumber })
     }
-    
-    private var isFormValid: Bool {
-        isEmailValid && isPasswordValid
-    }
-    
-    // MARK: - Body
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Form {
-                    Section {
-                        HeaderSection()
-                            .listRowBackground(Color.clear)
-                    }
 
-                    AccountDetailsSection(
-                        email: $email,
-                        password: $password,
-                        confirmPassword: $confirmPassword,
-                        showPassword: $showPassword
-                    )
-                    
-                    AIConfigurationSection(openAIKey: $openAIKey)
-                }
-                .scrollContentBackground(.hidden)
-                
-                if isLoading {
-                    ProgressView()
-                        .tint(.blue)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.3))
-                }
-            }
-            .navigationTitle("Create Account")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    RegisterButton(
-                        isValid: isFormValid,
-                        isLoading: isLoading,
-                        action: handleRegister
-                    )
-                }
-            }
-            .alert("Registration Error", isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            )) {
-                Button("OK") { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "An unknown error occurred")
-            }
+    private var isFormValid: Bool {
+        !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        isEmailValid &&
+        isPasswordValid
     }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 10) {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .font(.system(size: 54))
+                        .foregroundColor(Theme.accent)
+
+                    Text("Create your account")
+                        .font(.largeTitle.bold())
+
+                    Text("Set up your profile once and keep your browsing experience easier to manage.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 24)
+
+                registerCard(
+                    title: "Profile",
+                    content: {
+                        RegisterTextField(title: "Display name", systemImage: "person", text: $displayName)
+                    }
+                )
+
+                registerCard(
+                    title: "Account",
+                    content: {
+                        VStack(spacing: 16) {
+                            RegisterTextField(title: "Email", systemImage: "envelope", text: $email)
+
+                            RegisterSecureField(
+                                title: "Password",
+                                text: $password,
+                                isSecure: !showPassword
+                            )
+
+                            RegisterSecureField(
+                                title: "Confirm password",
+                                text: $confirmPassword,
+                                isSecure: !showPassword
+                            )
+
+                            Toggle("Show password", isOn: $showPassword)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+
+                            PasswordRequirements(password: password)
+                        }
+                    }
+                )
+
+                registerCard(
+                    title: "AI Key",
+                    footer: "Optional. You can add this later in settings.",
+                    content: {
+                        RegisterTextField(title: "OpenAI API key", systemImage: "key", text: $openAIKey)
+                            .textInputAutocapitalization(.never)
+                    }
+                )
+
+                Button(action: handleRegister) {
+                    if isLoading {
+                        ProgressView()
+                            .tint(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    } else {
+                        Text("Create Account")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                }
+                .disabled(!isFormValid || isLoading)
+                .background(isFormValid ? Theme.accent : Color.gray.opacity(0.35))
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                VStack(spacing: 10) {
+                    Text("Already have an account?")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+
+                    Button("Sign in instead", action: handleSignIn)
+                        .fontWeight(.semibold)
+                }
+                .padding(.bottom, 32)
+            }
+            .padding(.horizontal, 20)
+        }
+        .navigationTitle("Register")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if onSuccess == nil && onSignIn == nil {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .alert("Registration Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "An unknown error occurred")
+        }
     }
-    // MARK: - Actions
-    func handleRegister() {
-        guard isFormValid else { return }
-        
+
+    private func registerCard<Content: View>(
+        title: String,
+        footer: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundColor(.secondary)
+
+            content()
+
+            if let footer {
+                Text(footer)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(20)
+        .background(Color(uiColor: .secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func handleRegister() {
+        guard !isLoading else { return }
+
         isLoading = true
-        
-        // Simulate async operation
         Task {
             do {
-                viewModel.register(email: email, password: password, apiKey: openAIKey)
+                try await viewModel.register(
+                    email: email,
+                    password: password,
+                    displayName: displayName,
+                    apiKey: openAIKey
+                )
                 await MainActor.run {
-                    dismiss()
+                    isLoading = false
+                    if let onSuccess {
+                        onSuccess()
+                    } else {
+                        dismiss()
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -105,296 +195,91 @@ struct RegisterView: View {
             }
         }
     }
-}
 
-// MARK: - Subviews
-private struct HeaderSection: View {
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "person.badge.plus")
-                .font(.system(size: 44))
-                .foregroundColor(.blue)
-            
-            Text("Create Your Account")
-                .font(.title2)
-                .fontWeight(.bold)
-            
-            Text("Join us to get started")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-private struct AccountDetailsSection: View {
-    @Binding var email: String
-    @Binding var password: String
-    @Binding var confirmPassword: String
-    @Binding var showPassword: Bool
-    
-    var body: some View {
-        Section(header: Label("Account Details", systemImage: "person.fill")) {
-            VStack(spacing: 12) {
-                EmailField(email: $email)
-                
-                PasswordField(
-                    label: "Password",
-                    text: $password,
-                    isSecure: !showPassword
-                )
-                
-                PasswordField(
-                    label: "Confirm Password",
-                    text: $confirmPassword,
-                    isSecure: !showPassword
-                )
-                
-                HStack {
-                    Image(systemName: showPassword ? "eye.slash" : "eye")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Toggle("Show Password", isOn: $showPassword)
-                }
-                .font(.subheadline)
-                
-                PasswordRequirements(password: password)
+    private func handleSignIn() {
+        if let onSignIn {
+            onSignIn()
+        } else {
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                viewModel.accountSheet = .login
             }
-            .padding(.vertical, 8)
         }
     }
 }
 
-private struct EmailField: View {
-    @Binding var email: String
-    
-    var isValid: Bool {
-        email.contains("@") && email.contains(".")
-    }
-    
+private struct RegisterTextField: View {
+    let title: String
+    let systemImage: String
+    @Binding var text: String
+
     var body: some View {
-        HStack {
-            Image(systemName: "envelope")
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
                 .foregroundColor(.secondary)
-            
-            TextField("Email Address", text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.none)
+
+            TextField(title, text: $text)
                 .autocorrectionDisabled(true)
-            
-            if !email.isEmpty {
-                Image(systemName: isValid ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .foregroundColor(isValid ? .green : .red)
-                    .transition(.scale.combined(with: .opacity))
-            }
         }
-        .accessibilityLabel("Email Address")
-        .accessibilityHint("Enter a valid email address")
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(Color(uiColor: .systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 
-private struct PasswordField: View {
-    let label: String
+private struct RegisterSecureField: View {
+    let title: String
     @Binding var text: String
     let isSecure: Bool
-    
+
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: "lock")
                 .foregroundColor(.secondary)
-            
-            if isSecure {
-                SecureField(label, text: $text)
-            } else {
-                TextField(label, text: $text)
-                    .textInputAutocapitalization(.none)
-            }
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
+
+            Group {
+                if isSecure {
+                    SecureField(title, text: $text)
+                } else {
+                    TextField(title, text: $text)
+                        .textInputAutocapitalization(.never)
                 }
             }
         }
-        .accessibilityLabel(label)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(Color(uiColor: .systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 
 private struct PasswordRequirements: View {
     let password: String
-    
-    var isLengthValid: Bool { password.count >= 8 }
-    var hasUppercase: Bool { password.contains(where: { $0.isUppercase }) }
-    var hasLowercase: Bool { password.contains(where: { $0.isLowercase }) }
-    var hasNumber: Bool { password.contains(where: { $0.isNumber }) }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            RequirementRow(
-                text: "At least 8 characters",
-                isMet: isLengthValid
-            )
-            RequirementRow(
-                text: "Contains uppercase letter",
-                isMet: hasUppercase
-            )
-            RequirementRow(
-                text: "Contains lowercase letter",
-                isMet: hasLowercase
-            )
-            RequirementRow(
-                text: "Contains number",
-                isMet: hasNumber
-            )
-        }
-        .padding(12)
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
-    }
-}
 
-private struct RequirementRow: View {
-    let text: String
-    let isMet: Bool
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isMet ? "checkmark.circle.fill" : "circle")
-                .font(.caption)
-                .foregroundColor(isMet ? .green : .gray)
-            
-            Text(text)
-                .font(.caption)
-                .foregroundColor(isMet ? .primary : .secondary)
-        }
+    private var requirements: [(String, Bool)] {
+        [
+            ("At least 8 characters", password.count >= 8),
+            ("Contains uppercase letter", password.contains(where: { $0.isUppercase })),
+            ("Contains lowercase letter", password.contains(where: { $0.isLowercase })),
+            ("Contains number", password.contains(where: { $0.isNumber }))
+        ]
     }
-}
 
-private struct AIConfigurationSection: View {
-    @Binding var openAIKey: String
-    @State private var showKeyInfo = false
-    
     var body: some View {
-        Section {
-            HStack {
-                Image(systemName: "key.fill")
-                    .foregroundColor(.secondary)
-                
-                if openAIKey.isEmpty {
-                    TextField("OpenAI API Key (Optional)", text: $openAIKey)
-                        .textInputAutocapitalization(.none)
-                        .autocorrectionDisabled(true)
-                } else {
-                    HStack {
-                        Text(String(repeating: "•", count: max(openAIKey.count, 1)))
-                            .tracking(2)
-                        Spacer()
-                        Button(action: { openAIKey = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-            }
-            .accessibilityLabel("OpenAI API Key")
-            
-            Button(action: { showKeyInfo.toggle() }) {
-                Label("Where to find your API key?", systemImage: "questionmark.circle")
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
-            }
-        } header: {
-            Label("AI Configuration", systemImage: "sparkles")
-        } footer: {
-            Text("Optional. You can add this later in settings.")
-                .font(.caption)
-        }
-        .sheet(isPresented: $showKeyInfo) {
-            APIKeyInfoSheet()
-        }
-    }
-}
-
-private struct APIKeyInfoSheet: View {
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Getting Your OpenAI API Key")
-                        .font(.headline)
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        StepItem(number: "1", text: "Visit platform.openai.com")
-                        StepItem(number: "2", text: "Sign in or create an account")
-                        StepItem(number: "3", text: "Go to the API keys section")
-                        StepItem(number: "4", text: "Click 'Create new secret key'")
-                        StepItem(number: "5", text: "Copy and paste it here")
-                    }
-                    
-                    Divider()
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Security Note", systemImage: "shield.fill")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                        Text("Never share your API key. It's secret and personal to your account.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("API Key Help")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(requirements, id: \.0) { requirement in
+                HStack(spacing: 8) {
+                    Image(systemName: requirement.1 ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(requirement.1 ? .green : .secondary)
+                    Text(requirement.0)
+                        .font(.caption)
+                        .foregroundColor(requirement.1 ? .primary : .secondary)
                 }
             }
         }
+        .padding(14)
+        .background(Color(uiColor: .tertiarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
-
-private struct StepItem: View {
-    let number: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(number)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .frame(width: 28, height: 28)
-                .background(Color.blue)
-                .clipShape(Circle())
-            
-            Text(text)
-                .font(.subheadline)
-            
-            Spacer()
-        }
-    }
-}
-
-private struct RegisterButton: View {
-    let isValid: Bool
-    let isLoading: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        if isLoading {
-            ProgressView()
-        } else {
-            Button("Register") {
-                action()
-            }
-            .disabled(!isValid)
-        }
-    }
-}
-

@@ -8,12 +8,20 @@ struct BrowserSettings: Codable {
     var lastOpenedURL: String? = nil
 }
 
+struct UserProfileSnapshot: Codable {
+    var email: String?
+    var displayName: String?
+    var remotePhotoURL: String?
+    var localPhotoPath: String?
+}
+
 final class StorageManager {
     private enum Key {
         static let bookmarks = "ClearBrowser.bookmarks"
         static let history = "ClearBrowser.history"
         static let favorites = "ClearBrowser.favorites"
         static let settings = "ClearBrowser.settings"
+        static let profile = "ClearBrowser.profile"
     }
 
     private let defaults = UserDefaults.standard
@@ -71,6 +79,54 @@ final class StorageManager {
     func saveSettings(_ settings: BrowserSettings) {
         guard let data = try? encoder.encode(settings) else { return }
         defaults.set(data, forKey: Key.settings)
+    }
+
+    func loadProfileSnapshot() -> UserProfileSnapshot? {
+        guard let data = defaults.data(forKey: Key.profile),
+              let profile = try? decoder.decode(UserProfileSnapshot.self, from: data) else {
+            return nil
+        }
+        return profile
+    }
+
+    func saveProfileSnapshot(_ profile: UserProfileSnapshot?) {
+        guard let profile else {
+            defaults.removeObject(forKey: Key.profile)
+            return
+        }
+
+        guard let data = try? encoder.encode(profile) else { return }
+        defaults.set(data, forKey: Key.profile)
+    }
+
+    func saveProfileImageData(_ data: Data, filename: String = "profile-image.jpg") -> String? {
+        guard let url = profileImageURL(filename: filename) else { return nil }
+
+        do {
+            try data.write(to: url, options: .atomic)
+            return url.path
+        } catch {
+            print("Error saving profile image locally: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func deleteProfileImage(at path: String?) {
+        guard let path else { return }
+
+        do {
+            if FileManager.default.fileExists(atPath: path) {
+                try FileManager.default.removeItem(atPath: path)
+            }
+        } catch {
+            print("Error deleting profile image: \(error.localizedDescription)")
+        }
+    }
+
+    private func profileImageURL(filename: String) -> URL? {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent(filename)
     }
 
     // MARK: - Firebase Sync
