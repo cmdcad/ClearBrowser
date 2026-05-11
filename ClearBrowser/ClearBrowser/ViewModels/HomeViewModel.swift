@@ -493,9 +493,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     private func syncUser(_ user: User?) {
+        let cachedProfile = storageManager.loadProfileSnapshot()
+
         guard let user = user else {
             isLoggedIn = false
-            let cachedProfile = storageManager.loadProfileSnapshot()
             currentUserEmail = cachedProfile?.email
             displayName = cachedProfile?.displayName
             profileImageUrl = cachedProfile.flatMap { snapshot in
@@ -505,14 +506,23 @@ final class HomeViewModel: NSObject, ObservableObject {
             localProfileImagePath = cachedProfile?.localPhotoPath
             return
         }
+
         isLoggedIn = true
-        currentUserEmail = user.email
-        displayName = user.displayName ?? user.email
-        profileImageUrl = user.photoURL
-        localProfileImagePath = storageManager.loadProfileSnapshot()?.localPhotoPath
+        currentUserEmail = user.email ?? cachedProfile?.email
+        displayName = user.displayName ?? cachedProfile?.displayName ?? user.email
+
+        if let userPhotoURL = user.photoURL {
+            profileImageUrl = userPhotoURL
+        } else if let cachedURL = cachedProfile?.remotePhotoURL {
+            profileImageUrl = URL(string: cachedURL)
+        } else {
+            profileImageUrl = nil
+        }
+
+        localProfileImagePath = cachedProfile?.localPhotoPath
         persistProfileSnapshot()
-        
-        // Load data from Firebase after user logs in
+
+        // Load data from Firebase after the user logs in.
         loadDataFromFirebase()
     }
     
