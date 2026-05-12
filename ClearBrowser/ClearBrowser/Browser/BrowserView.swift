@@ -130,6 +130,31 @@ struct BrowserView: UIViewRepresentable {
             viewModel.isLoading = false
         }
 
+        func webView(_ webView: WKWebView,
+                    decidePolicyFor navigationAction: WKNavigationAction,
+                    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+
+            let url = navigationAction.request.url!
+
+            // Block known app schemes
+            let blockedSchemes = ["twitter", "youtube", "fb", "instagram"]
+            if let scheme = url.scheme, blockedSchemes.contains(scheme) {
+                decisionHandler(.cancel)
+                return
+            }
+
+            // Block universal links from opening externally
+            if navigationAction.navigationType == .linkActivated {
+                if !url.absoluteString.hasPrefix("http") {
+                    decisionHandler(.cancel)
+                    return
+                }
+            }
+
+            decisionHandler(.allow)
+        }
+
+
         // MARK: - UIScrollViewDelegate
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             // Only update visibility if the user is actively dragging
