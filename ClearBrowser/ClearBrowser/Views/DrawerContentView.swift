@@ -37,9 +37,9 @@ struct DrawerContentView: View {
                 .padding(.bottom, 8)
 
                 if bookmarkFilter == .all {
-                    drawerList(title: "All Sites", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark)
+                    drawerList(title: "All Sites", items: viewModel.bookmarks, onAdd: viewModel.addBookmark, onOpen: viewModel.openBookmark, onDelete: viewModel.removeBookmark, showBlockedIndicator: true)
                 } else {
-                    drawerList(title: "Favorited Pages", items: viewModel.favorites, onAdd: viewModel.addFavorite, onOpen: viewModel.openFavorite, onDelete: viewModel.removeFavorite)
+                    drawerList(title: "Favorited Pages", items: viewModel.favorites, onAdd: viewModel.addFavorite, onOpen: viewModel.openFavorite, onDelete: viewModel.removeFavorite, showBlockedIndicator: true)
                 }
             }
             .onAppear { searchText = "" }
@@ -64,7 +64,8 @@ struct DrawerContentView: View {
         onAdd: (() -> Void)?,
         onOpen: @escaping (BrowserItem) -> Void,
         onDelete: @escaping (BrowserItem) -> Void,
-        onClear: (() -> Void)? = nil
+        onClear: (() -> Void)? = nil,
+        showBlockedIndicator: Bool = false
     ) -> some View {
         let filteredItems = items.filter { item in
             searchText.isEmpty || 
@@ -110,7 +111,7 @@ struct DrawerContentView: View {
             } else {
                 List {
                     ForEach(filteredItems) { item in
-                        rowView(for: item, onOpen: onOpen, onDelete: onDelete)
+                        rowView(for: item, onOpen: onOpen, onDelete: onDelete, showBlockedIndicator: showBlockedIndicator)
                     }
                 }
                 .listStyle(.plain)
@@ -126,16 +127,23 @@ struct DrawerContentView: View {
     }
 
     @ViewBuilder
-    private func rowView(for item: BrowserItem, onOpen: @escaping (BrowserItem) -> Void, onDelete: @escaping (BrowserItem) -> Void) -> some View {
+    private func rowView(for item: BrowserItem, onOpen: @escaping (BrowserItem) -> Void, onDelete: @escaping (BrowserItem) -> Void, showBlockedIndicator: Bool) -> some View {
         Button(action: { onOpen(item) }) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.title.isEmpty || item.title == "Untitled" ? (item.url.host ?? item.url.absoluteString) : item.title)
-                    .font(.subheadline.bold())
-                    .foregroundColor(.primary)
-                Text(item.url.absoluteString)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title.isEmpty || item.title == "Untitled" ? (item.url.host ?? item.url.absoluteString) : item.title)
+                        .font(.subheadline.bold())
+                        .foregroundColor(.primary)
+                    Text(item.url.absoluteString)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                if showBlockedIndicator && viewModel.isBrowserItemSchemeBlocked(item) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                }
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 20)
@@ -149,6 +157,13 @@ struct DrawerContentView: View {
         .contextMenu {
             Button { selectedItemForInfo = item } label: {
                 Label("Show Info", systemImage: "info.circle")
+            }
+            if viewModel.blockableScheme(from: item) != nil {
+                Button {
+                    withAnimation { viewModel.toggleBlockedScheme(for: item) }
+                } label: {
+                    Label("Always open in app", systemImage: viewModel.isBrowserItemSchemeBlocked(item) ? "checkmark.circle.fill" : "circle")
+                }
             }
             Button(role: .destructive) { withAnimation { onDelete(item) } } label: {
                 Label("Delete", systemImage: "trash")

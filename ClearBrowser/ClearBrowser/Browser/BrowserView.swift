@@ -136,9 +136,8 @@ struct BrowserView: UIViewRepresentable {
 
             let url = navigationAction.request.url!
 
-            // Block known app schemes
-            let blockedSchemes = ["twitter", "youtube", "fb", "instagram"]
-            if let scheme = url.scheme, blockedSchemes.contains(scheme) {
+            // Block known app schemes that are stored in user settings
+            if viewModel.isBlockedScheme(url.scheme) {
                 decisionHandler(.cancel)
                 return
             }

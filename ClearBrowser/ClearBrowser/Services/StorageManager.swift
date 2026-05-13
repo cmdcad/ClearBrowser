@@ -22,6 +22,7 @@ final class StorageManager {
         static let bookmarks = "ClearBrowser.bookmarks"
         static let history = "ClearBrowser.history"
         static let favorites = "ClearBrowser.favorites"
+        static let blockedSchemes = "ClearBrowser.blockedSchemes"
         static let settings = "ClearBrowser.settings"
         static let profile = "ClearBrowser.profile"
     }
@@ -81,6 +82,19 @@ final class StorageManager {
     func saveSettings(_ settings: BrowserSettings) {
         guard let data = try? encoder.encode(settings) else { return }
         defaults.set(data, forKey: Key.settings)
+    }
+
+    func loadBlockedSchemes() -> [String] {
+        guard let data = defaults.data(forKey: Key.blockedSchemes),
+              let schemes = try? decoder.decode([String].self, from: data) else {
+            return []
+        }
+        return schemes
+    }
+
+    func saveBlockedSchemes(_ schemes: [String]) {
+        guard let data = try? encoder.encode(schemes) else { return }
+        defaults.set(data, forKey: Key.blockedSchemes)
     }
 
     func loadProfileSnapshot() -> UserProfileSnapshot? {
@@ -148,7 +162,7 @@ final class StorageManager {
                 ]
             }
             
-            userRef.updateData(["bookmarks": booksmarksData]) { error in
+            userRef.setData(["bookmarks": booksmarksData], merge: true) { error in
                 if let error = error {
                     print("Error syncing bookmarks to Firebase: \(error.localizedDescription)")
                 } else {
@@ -175,7 +189,7 @@ final class StorageManager {
                 ]
             }
             
-            userRef.updateData(["favorites": favoritesData]) { error in
+            userRef.setData(["favorites": favoritesData], merge: true) { error in
                 if let error = error {
                     print("Error syncing favorites to Firebase: \(error.localizedDescription)")
                 } else {
@@ -202,7 +216,7 @@ final class StorageManager {
                 ]
             }
             
-            userRef.updateData(["history": historyData]) { error in
+            userRef.setData(["history": historyData], merge: true) { error in
                 if let error = error {
                     print("Error syncing history to Firebase: \(error.localizedDescription)")
                 } else {

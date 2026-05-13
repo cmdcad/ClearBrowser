@@ -62,6 +62,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var isAutoScrolling = false
     @Published var isHeaderVisible = true
 
+    private var authListenerHandle: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
     @Published var isPrivateMode = false
     @Published var toolbarPosition: ToolbarPosition = .top {
@@ -96,6 +97,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     @Published var bookmarks: [BrowserItem] = []
     @Published var history: [BrowserItem] = []
+    @Published var blockedSchemes: [String] = []
     @Published var aiQuery: String = ""
     @Published var aiResponse: String? = nil
     @Published var isAIWorking: Bool = false
@@ -119,6 +121,9 @@ final class HomeViewModel: NSObject, ObservableObject {
         // 2. Load saved data. This will attempt to overwrite activeTabID from settings.
         loadPersistentData()
 
+        // 3. Listen for Auth changes to handle auto-sync on launch/re-install
+        setupAuthListener()
+
         // 3. Fallback: If no saved session was loaded, sync with the default first tab.
         if activeTab == nil {
             activeTabID = tabs[0].id
@@ -126,6 +131,21 @@ final class HomeViewModel: NSObject, ObservableObject {
 
         self.addressBarText = activeTab?.url.absoluteString ?? ""
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
+    }
+
+    deinit {
+        if let handle = authListenerHandle {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+
+    private func setupAuthListener() {
+        authListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.syncUser(user)
+            }
+        }
     }
     
     func loadAddress() {
@@ -235,6 +255,33 @@ final class HomeViewModel: NSObject, ObservableObject {
             storageManager.saveBookmarks(bookmarks)
             storageManager.syncBookmarksToFirebase(bookmarks)
         }
+    }
+
+    func isBlockedScheme(_ scheme: String?) -> Bool {
+        guard let scheme = scheme?.lowercased(), !scheme.isEmpty,
+              scheme != "http", scheme != "https" else { return false }
+        return blockedSchemes.contains(scheme)
+    }
+
+    func blockableScheme(from item: BrowserItem) -> String? {
+        guard let scheme = item.url.scheme?.lowercased(), !scheme.isEmpty,
+              scheme != "http", scheme != "https" else { return nil }
+        return scheme
+    }
+
+    func isBrowserItemSchemeBlocked(_ item: BrowserItem) -> Bool {
+        guard let scheme = blockableScheme(from: item) else { return false }
+        return blockedSchemes.contains(scheme)
+    }
+
+    func toggleBlockedScheme(for item: BrowserItem) {
+        guard let scheme = blockableScheme(from: item) else { return }
+        if let index = blockedSchemes.firstIndex(of: scheme) {
+            blockedSchemes.remove(at: index)
+        } else {
+            blockedSchemes.append(scheme)
+        }
+        storageManager.saveBlockedSchemes(blockedSchemes)
     }
 
     func removeBookmark(_ item: BrowserItem) {
@@ -529,14 +576,17 @@ final class HomeViewModel: NSObject, ObservableObject {
     private func loadDataFromFirebase() {
         storageManager.loadBookmarksFromFirebase { [weak self] bookmarks in
             self?.bookmarks = bookmarks
+            self?.storageManager.saveBookmarks(bookmarks)
         }
         
         storageManager.loadFavoritesFromFirebase { [weak self] favorites in
             self?.favorites = favorites
+            self?.storageManager.saveFavorites(favorites)
         }
         
         storageManager.loadHistoryFromFirebase { [weak self] history in
             self?.history = history
+            self?.storageManager.saveHistory(history)
         }
     }
 
@@ -601,13 +651,10 @@ final class HomeViewModel: NSObject, ObservableObject {
             localProfileImagePath = cachedProfile.localPhotoPath
         }
 
-        if let user = Auth.auth().currentUser {
-            syncUser(user)
-        }
-
         bookmarks = storageManager.loadBookmarks()
         history = storageManager.loadHistory()
         favorites = storageManager.loadFavorites() // New: Load favorites
+        blockedSchemes = storageManager.loadBlockedSchemes()
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
