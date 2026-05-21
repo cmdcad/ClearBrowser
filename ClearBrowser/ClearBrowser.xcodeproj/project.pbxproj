@@ -12,7 +12,11 @@
 		5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6293052F89EBAC00272F64 /* ActionButton.swift */; };
 		5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6293062F89EBAC00272F64 /* SettingsSection.swift */; };
 		5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */; };
-		5BC0A1013010000000A0B001 /* AccountFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC0A1003010000000A0B001 /* AccountFlowView.swift */; };
+		5B8F40C02FBF7AD0001BC431 /* TabManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40BF2FBF7ACE001BC431 /* TabManagerView.swift */; };
+		5B8F40C42FBF7B68001BC431 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40C12FBF7B62001BC431 /* LoginView.swift */; };
+		5B8F40C52FBF7B68001BC431 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40C22FBF7B64001BC431 /* RegisterView.swift */; };
+		5B8F40C62FBF7B68001BC431 /* AccountFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40C32FBF7B66001BC431 /* AccountFlowView.swift */; };
+		5B8F40CC2FBF7ECD001BC431 /* BrowserTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40CB2FBF7ECB001BC431 /* BrowserTab.swift */; };
 		5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */; };
 		5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA6212F8BEC930045E944 /* BrowserView.swift */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
@@ -23,8 +27,6 @@
 		8125D24B2F7EC27500A5937E /* SearchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D2482F7EC27400A5937E /* SearchEngine.swift */; };
 		8125D24C2F7EC27500A5937E /* DrawerType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D2492F7EC27500A5937E /* DrawerType.swift */; };
 		8125D2682F7F010E00A5937E /* icon1.png in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2672F7F010C00A5937E /* icon1.png */; };
-		8125D26B2F80788500A5937E /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D2692F80788100A5937E /* LoginView.swift */; };
-		8125D26C2F80788500A5937E /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D26A2F80788300A5937E /* RegisterView.swift */; };
 		8188EF4A2F817E1E00C70F7E /* BookmarkRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8188EF442F817E1C00C70F7E /* BookmarkRow.swift */; };
 		8188EF4B2F817E1E00C70F7E /* HistoryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8188EF452F817E1C00C70F7E /* HistoryRow.swift */; };
 		8188EF4C2F817E1E00C70F7E /* RoundedCorner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8188EF462F817E1C00C70F7E /* RoundedCorner.swift */; };
@@ -47,7 +49,11 @@
 		5B6293052F89EBAC00272F64 /* ActionButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ActionButton.swift; path = ClearBrowser/Views/ActionButton.swift; sourceTree = SOURCE_ROOT; };
 		5B6293062F89EBAC00272F64 /* SettingsSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SettingsSection.swift; path = ClearBrowser/Views/SettingsSection.swift; sourceTree = SOURCE_ROOT; };
 		5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerContentView.swift; sourceTree = "<group>"; };
-		5BC0A1003010000000A0B001 /* AccountFlowView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountFlowView.swift; sourceTree = "<group>"; };
+		5B8F40BF2FBF7ACE001BC431 /* TabManagerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TabManagerView.swift; path = ClearBrowser/Views/TabManagerView.swift; sourceTree = SOURCE_ROOT; };
+		5B8F40C12FBF7B62001BC431 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		5B8F40C22FBF7B64001BC431 /* RegisterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		5B8F40C32FBF7B66001BC431 /* AccountFlowView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountFlowView.swift; sourceTree = "<group>"; };
+		5B8F40CB2FBF7ECB001BC431 /* BrowserTab.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserTab.swift; sourceTree = "<group>"; };
 		5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerView.swift; sourceTree = "<group>"; };
 		5B9FA6212F8BEC930045E944 /* BrowserView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -60,8 +66,6 @@
 		8125D2482F7EC27400A5937E /* SearchEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchEngine.swift; sourceTree = "<group>"; };
 		8125D2492F7EC27500A5937E /* DrawerType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerType.swift; sourceTree = "<group>"; };
 		8125D2672F7F010C00A5937E /* icon1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon1.png; sourceTree = SOURCE_ROOT; };
-		8125D2692F80788100A5937E /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		8125D26A2F80788300A5937E /* RegisterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		8188EF442F817E1C00C70F7E /* BookmarkRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkRow.swift; sourceTree = "<group>"; };
 		8188EF452F817E1C00C70F7E /* HistoryRow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryRow.swift; sourceTree = "<group>"; };
 		8188EF462F817E1C00C70F7E /* RoundedCorner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RoundedCorner.swift; sourceTree = "<group>"; };
@@ -93,6 +97,9 @@
 		5B6293022F89D36900272F64 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				5B8F40C32FBF7B66001BC431 /* AccountFlowView.swift */,
+				5B8F40C12FBF7B62001BC431 /* LoginView.swift */,
+				5B8F40C22FBF7B64001BC431 /* RegisterView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -144,6 +151,7 @@
 		8125D2432F7EC1C100A5937E /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5B8F40CB2FBF7ECB001BC431 /* BrowserTab.swift */,
 				8188EF4F2F8181BC00C70F7E /* Theme.swift */,
 				8125D2472F7EC27400A5937E /* BrowserItem.swift */,
 				8125D2492F7EC27500A5937E /* DrawerType.swift */,
@@ -167,13 +175,11 @@
 		AB652DDD2F7EC67200816346 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				5BC0A1003010000000A0B001 /* AccountFlowView.swift */,
+				5B8F40BF2FBF7ACE001BC431 /* TabManagerView.swift */,
 				5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */,
 				5B62930E2F89FCAD00272F64 /* DrawerContentView.swift */,
 				8125D2412F7EC12E00A5937E /* ContentView.swift */,
 				5B9FA6212F8BEC930045E944 /* BrowserView.swift */,
-				8125D2692F80788100A5937E /* LoginView.swift */,
-				8125D26A2F80788300A5937E /* RegisterView.swift */,
 				AB652DDE2F7EC67C00816346 /* AIResponseView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
 			);
@@ -279,13 +285,12 @@
 				8125D24C2F7EC27500A5937E /* DrawerType.swift in Sources */,
 				AB652DEE2F7EC6CB00816346 /* AIService.swift in Sources */,
 				AB652DEF2F7EC6CB00816346 /* SearchManager.swift in Sources */,
-				5BC0A1013010000000A0B001 /* AccountFlowView.swift in Sources */,
 				5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */,
 				8188EF4B2F817E1E00C70F7E /* HistoryRow.swift in Sources */,
-				8125D26B2F80788500A5937E /* LoginView.swift in Sources */,
 				AB652DF02F7EC6CB00816346 /* AutoScrollManager.swift in Sources */,
 				AB652DF12F7EC6CB00816346 /* StorageManager.swift in Sources */,
 				8125D2422F7EC12E00A5937E /* ContentView.swift in Sources */,
+				5B8F40C62FBF7B68001BC431 /* AccountFlowView.swift in Sources */,
 				AB652DE22F7EC67C00816346 /* HomeView.swift in Sources */,
 				AB652DE82F7EC6A500816346 /* HomeViewModel.swift in Sources */,
 				5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */,
@@ -293,11 +298,14 @@
 				8188EF502F8181BE00C70F7E /* Theme.swift in Sources */,
 				AB652DE52F7EC67C00816346 /* AIResponseView.swift in Sources */,
 				8125D24B2F7EC27500A5937E /* SearchEngine.swift in Sources */,
-				8125D26C2F80788500A5937E /* RegisterView.swift in Sources */,
+				5B8F40C52FBF7B68001BC431 /* RegisterView.swift in Sources */,
+				5B8F40CC2FBF7ECD001BC431 /* BrowserTab.swift in Sources */,
 				8125D24A2F7EC27500A5937E /* BrowserItem.swift in Sources */,
 				8188EF4C2F817E1E00C70F7E /* RoundedCorner.swift in Sources */,
 				5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */,
+				5B8F40C42FBF7B68001BC431 /* LoginView.swift in Sources */,
 				5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */,
+				5B8F40C02FBF7AD0001BC431 /* TabManagerView.swift in Sources */,
 				5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */,
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 				5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */,
