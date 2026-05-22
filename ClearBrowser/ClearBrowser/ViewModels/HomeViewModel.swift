@@ -257,29 +257,55 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
 
-    func isBlockedScheme(_ scheme: String?) -> Bool {
-        guard let scheme = scheme?.lowercased(), !scheme.isEmpty,
-              scheme != "http", scheme != "https" else { return false }
-        return blockedSchemes.contains(scheme)
+    func isForcedInApp(_ url: URL?) -> Bool {
+        guard let url = url else { return false }
+        
+        // Check scheme for custom apps (e.g. twitter://)
+        if let scheme = url.scheme?.lowercased(), scheme != "http", scheme != "https" {
+            if blockedSchemes.contains(scheme) {
+                return true
+            }
+        }
+        
+        // Check host for web domains (e.g. youtube.com)
+        if let host = url.host?.lowercased() {
+            for blocked in blockedSchemes {
+                if host == blocked || host.hasSuffix("." + blocked) {
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
 
-    func blockableScheme(from item: BrowserItem) -> String? {
-        guard let scheme = item.url.scheme?.lowercased(), !scheme.isEmpty,
-              scheme != "http", scheme != "https" else { return nil }
-        return scheme
+    func forceableEntity(from url: URL?) -> String? {
+        guard let url = url else { return nil }
+        if let scheme = url.scheme?.lowercased(), scheme != "http", scheme != "https" {
+            return scheme
+        }
+        
+        // For standard web links, strip www. for a cleaner rule
+        if let host = url.host?.lowercased() {
+            var cleanHost = host
+            if cleanHost.hasPrefix("www.") {
+                cleanHost.removeFirst(4)
+            }
+            return cleanHost
+        }
+        return nil
     }
 
-    func isBrowserItemSchemeBlocked(_ item: BrowserItem) -> Bool {
-        guard let scheme = blockableScheme(from: item) else { return false }
-        return blockedSchemes.contains(scheme)
+    func isBrowserItemForcedInApp(_ item: BrowserItem) -> Bool {
+        return isForcedInApp(item.url)
     }
 
-    func toggleBlockedScheme(for item: BrowserItem) {
-        guard let scheme = blockableScheme(from: item) else { return }
-        if let index = blockedSchemes.firstIndex(of: scheme) {
+    func toggleForceInApp(for item: BrowserItem) {
+        guard let entity = forceableEntity(from: item.url) else { return }
+        if let index = blockedSchemes.firstIndex(of: entity) {
             blockedSchemes.remove(at: index)
         } else {
-            blockedSchemes.append(scheme)
+            blockedSchemes.append(entity)
         }
         storageManager.saveBlockedSchemes(blockedSchemes)
     }

@@ -140,7 +140,7 @@ struct DrawerContentView: View {
                         .lineLimit(1)
                 }
                 Spacer()
-                if showBlockedIndicator && viewModel.isBrowserItemSchemeBlocked(item) {
+                if showBlockedIndicator && viewModel.isBrowserItemForcedInApp(item) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
                 }
@@ -158,11 +158,11 @@ struct DrawerContentView: View {
             Button { selectedItemForInfo = item } label: {
                 Label("Show Info", systemImage: "info.circle")
             }
-            if viewModel.blockableScheme(from: item) != nil {
+            if let entity = viewModel.forceableEntity(from: item.url) {
                 Button {
-                    withAnimation { viewModel.toggleBlockedScheme(for: item) }
+                    withAnimation { viewModel.toggleForceInApp(for: item) }
                 } label: {
-                    Label("Always open in app", systemImage: viewModel.isBrowserItemSchemeBlocked(item) ? "checkmark.circle.fill" : "circle")
+                    Label("Always open \(entity) in app", systemImage: viewModel.isBrowserItemForcedInApp(item) ? "checkmark.circle.fill" : "circle")
                 }
             }
             Button(role: .destructive) { withAnimation { onDelete(item) } } label: {

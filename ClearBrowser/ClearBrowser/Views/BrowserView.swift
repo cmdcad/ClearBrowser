@@ -136,13 +136,24 @@ struct BrowserView: UIViewRepresentable {
 
             let url = navigationAction.request.url!
 
-            // Block known app schemes using the dynamic list from the ViewModel
-            if viewModel.isBlockedScheme(url.scheme) {
-                decisionHandler(.cancel)
-                return
+            // Check if this URL is forced to open in-app (blocked scheme or domain)
+            if viewModel.isForcedInApp(url) {
+                // If it's a non-http(s) scheme (like twitter://), cancel to prevent the external app from opening
+                if let scheme = url.scheme?.lowercased(), scheme != "http", scheme != "https" {
+                    decisionHandler(.cancel)
+                    return
+                }
+                
+                // If it's a web link and the user tapped it, cancel standard navigation 
+                // to prevent Universal Links, and manually load it to force it in WKWebView.
+                if navigationAction.navigationType == .linkActivated {
+                    decisionHandler(.cancel)
+                    webView.load(URLRequest(url: url))
+                    return
+                }
             }
 
-            // Block universal links from opening externally
+            // Block universal links from opening externally for other non-http schemes
             if navigationAction.navigationType == .linkActivated {
                 if !url.absoluteString.hasPrefix("http") {
                     decisionHandler(.cancel)
