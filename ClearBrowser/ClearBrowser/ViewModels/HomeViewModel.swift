@@ -104,12 +104,22 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var showAIField: Bool = false
     @Published var navigationCommand: BrowserNavigationCommand? = nil
     @Published var requestURL: URL? = URL(string: "https://www.bing.com")
+    
+    // MARK: - Read Aloud Properties
+    @Published var isReadAloudAvailable = false
+    @Published var isReadAloudPlaying = false
+    @Published var readAloudProgress: TimeInterval = 0
+    @Published var readAloudDuration: TimeInterval = 0
+    
+    // WebView reference for read-aloud functionality
+    var currentWebView: WKWebView?
 
     private(set) var autoScrollManager = AutoScrollManager()
     private let searchManager = SearchManager()
     private let storageManager = StorageManager()
     private let aiService = AIService()
     private var settings = BrowserSettings()
+    @Published var audioVixService = AudioVixService()
 
     override init() {
         // 1. Initialize activeTabID with a placeholder to satisfy Phase 1 initialization.
@@ -131,6 +141,9 @@ final class HomeViewModel: NSObject, ObservableObject {
 
         self.addressBarText = activeTab?.url.absoluteString ?? ""
         autoScrollManager.speed = CGFloat(autoScrollSpeed)
+        
+        // 4. Setup audio playback progress tracking
+        setupAudioPlaybackTracking()
     }
 
     deinit {
@@ -148,6 +161,12 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
     
+    private func setupAudioPlaybackTracking() {
+        // Observe audioVixService changes and update published properties
+        audioVixService.$isPlaying.assign(to: &$isReadAloudPlaying)
+        audioVixService.$currentTime.assign(to: &$readAloudProgress)
+        audioVixService.$duration.assign(to: &$readAloudDuration)
+    }
     func loadAddress() {
         let targetURL = resolveInput(addressBarText)
         currentURL = targetURL
@@ -767,6 +786,56 @@ final class HomeViewModel: NSObject, ObservableObject {
         history = Array(history.prefix(50))
         storageManager.saveHistory(history)
         storageManager.syncHistoryToFirebase(history)
+    }
+    
+    // MARK: - Read Aloud Methods
+    
+    func startReadAloud(from webView: WKWebView) {
+        audioVixService.extractArticleContent(from: webView) { [weak self] content in
+            guard let self = self, let content = content, !content.isEmpty else {
+                self?.audioVixService.errorMessage = "No article content found"
+                return
+            }
+            
+            Task {
+                do {
+                    _ = try await self.audioVixService.synthesizeSpeech(text: content)
+                    await MainActor.run {
+                        self.audioVixService.play()
+                        self.isReadAloudPlaying = true
+                        self.isReadAloudAvailable = true
+                    }
+                } catch let error as AudioVixError {
+                    await MainActor.run {
+                        self.audioVixService.errorMessage = error.localizedDescription
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.audioVixService.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    
+    func pauseReadAloud() {
+        audioVixService.pause()
+        isReadAloudPlaying = false
+    }
+    
+    func resumeReadAloud() {
+        audioVixService.resume()
+        isReadAloudPlaying = true
+    }
+    
+    func stopReadAloud() {
+        audioVixService.stop()
+        isReadAloudPlaying = false
+        isReadAloudAvailable = false
+    }
+    
+    func setReadAloudSpeed(_ speed: Float) {
+        audioVixService.setPlaybackRate(speed)
     }
 }
 

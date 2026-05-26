@@ -79,6 +79,25 @@ struct HomeView: View {
                         ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
                             viewModel.goForward()
                         }
+                        
+                        Button(action: {
+                            if viewModel.isReadAloudPlaying {
+                                viewModel.pauseReadAloud()
+                            } else if viewModel.isReadAloudAvailable {
+                                viewModel.resumeReadAloud()
+                            } else if let webView = viewModel.currentWebView {
+                                viewModel.startReadAloud(from: webView)
+                            } else {
+                                viewModel.audioVixService.errorMessage = "No article content available"
+                            }
+                        }) {
+                            Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "speaker.badge.exclamationmark.fill")
+                                .font(.title3)
+                                .frame(width: 44, height: 44)
+                                .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
+                                .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.5))
+                                .cornerRadius(12)
+                        }
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
                     .padding(.bottom, 20)
