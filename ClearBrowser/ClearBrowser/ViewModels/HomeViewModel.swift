@@ -5,6 +5,7 @@ import AuthenticationServices
 import FirebaseAuth
 import FirebaseStorage
 import CryptoKit
+import WebKit
 
 enum URLParseError: Error {
     case invalidURL
