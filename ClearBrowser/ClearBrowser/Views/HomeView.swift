@@ -98,6 +98,7 @@ struct HomeView: View {
                                 .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.5))
                                 .cornerRadius(12)
                         }
+                        .disabled(viewModel.currentWebView == nil && !viewModel.isReadAloudAvailable)
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
                     .padding(.bottom, 20)
@@ -298,7 +299,7 @@ struct HomeView: View {
     .padding(.horizontal, Theme.Spacing.lg)
   }
 
-  private var actionRow: some View { // Changed "Search" to "Favorite" (add current page) and added "Favorites" (open drawer)
+  private var actionRow: some View {
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
       ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
@@ -313,22 +314,8 @@ struct HomeView: View {
         }
       }
 
-      ActionButton(label: "Settings", symbol: "gearshape", tint: .purple) {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-          viewModel.selectedDrawer = .settings
-        }
-      }
-
       ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal, isActive: viewModel.showAIField) {
         viewModel.toggleAIField()
-      }
-
-      ActionButton(label: "Share", symbol: "square.and.arrow.up", tint: .blue) {
-        viewModel.shareCurrentPage()
-      }
-
-      ActionButton(label: "Private", symbol: viewModel.isPrivateMode ? "eye.slash.fill" : "eye", tint: .gray, isActive: viewModel.isPrivateMode) {
-        viewModel.isPrivateMode.toggle()
       }
       
       ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {
@@ -337,6 +324,35 @@ struct HomeView: View {
       .overlay(
         Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
       )
+      
+      Menu {
+        Button(action: {
+          withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            viewModel.selectedDrawer = .settings
+          }
+        }) {
+          Label("Settings", systemImage: "gearshape")
+        }
+        
+        Button(action: {
+          viewModel.shareCurrentPage()
+        }) {
+          Label("Share", systemImage: "square.and.arrow.up")
+        }
+        
+        Button(action: {
+          viewModel.isPrivateMode.toggle()
+        }) {
+          Label(viewModel.isPrivateMode ? "Exit Private" : "Private", systemImage: viewModel.isPrivateMode ? "eye.slash.fill" : "eye")
+        }
+      } label: {
+        Image(systemName: "ellipsis")
+          .font(.title3)
+          .frame(width: 44, height: 44)
+          .background(.white)
+          .foregroundColor(.gray.opacity(0.6))
+          .cornerRadius(12)
+      }
 
       Spacer()
         }

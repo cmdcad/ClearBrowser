@@ -27,5 +27,12 @@ struct HistoryRow: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
+        .contextMenu {
+            Button(action: {
+                UIPasteboard.general.url = item.url
+            }) {
+                Label("Copy URL", systemImage: "doc.on.doc")
+            }
+        }
     }
 }

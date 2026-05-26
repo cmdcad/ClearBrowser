@@ -260,6 +260,13 @@ final class HomeViewModel: NSObject, ObservableObject {
             }
             self.addressBarText = url.absoluteString
             self.currentURL = url
+            
+            // Update the active tab's URL for persistence
+            if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
+                tabs[index].url = url
+                tabs[index].title = title ?? url.host ?? "New Tab"
+            }
+            
             // persist last opened URL
             settings.lastOpenedURL = url.absoluteString
             saveSettings()
