@@ -96,6 +96,12 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var defaultSearchEngine: SearchEngine = .bing {
         didSet { settings.defaultSearchEngine = defaultSearchEngine; saveSettings() }
     }
+    @Published var darkModeEnabled: Bool = false {
+        didSet { settings.darkModeEnabled = darkModeEnabled; saveSettings() }
+    }
+    @Published var invertColorsEnabled: Bool = false {
+        didSet { settings.invertColorsEnabled = invertColorsEnabled; saveSettings() }
+    }
     @Published var bookmarks: [BrowserItem] = []
     @Published var history: [BrowserItem] = []
     @Published var blockedSchemes: [String] = []
@@ -111,6 +117,11 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var isReadAloudPlaying = false
     @Published var readAloudProgress: TimeInterval = 0
     @Published var readAloudDuration: TimeInterval = 0
+    
+    // Diagnostic properties for audio flow
+    @Published var audioContentCandidate: Bool = false
+    @Published var audioRequestSent: Bool = false
+    @Published var audioReceived: Bool = false
     
     // WebView reference for read-aloud functionality
     var currentWebView: WKWebView?
@@ -167,7 +178,13 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioVixService.$isPlaying.assign(to: &$isReadAloudPlaying)
         audioVixService.$currentTime.assign(to: &$readAloudProgress)
         audioVixService.$duration.assign(to: &$readAloudDuration)
+        
+        // Bind diagnostic properties
+        audioVixService.$hasExtractableContent.assign(to: &$audioContentCandidate)
+        audioVixService.$audioRequestSent.assign(to: &$audioRequestSent)
+        audioVixService.$audioReceived.assign(to: &$audioReceived)
     }
+    
     func loadAddress() {
         let targetURL = resolveInput(addressBarText)
         currentURL = targetURL
@@ -799,6 +816,11 @@ final class HomeViewModel: NSObject, ObservableObject {
     // MARK: - Read Aloud Methods
     
     func startReadAloud(from webView: WKWebView) {
+        // Reset diagnostic flags for new request
+        audioContentCandidate = false
+        audioRequestSent = false
+        audioReceived = false
+        
         audioVixService.extractArticleContent(from: webView) { [weak self] content in
             guard let self = self, let content = content, !content.isEmpty else {
                 self?.audioVixService.errorMessage = "No article content found"
@@ -844,6 +866,33 @@ final class HomeViewModel: NSObject, ObservableObject {
     
     func setReadAloudSpeed(_ speed: Float) {
         audioVixService.setPlaybackRate(speed)
+    }
+    
+    // MARK: - Diagnostic Helper
+    
+    /// Returns a formatted status string showing the audio flow state
+    var audioFlowDiagnostics: String {
+        var status: [String] = []
+        
+        if audioContentCandidate {
+            status.append("✓ Content found")
+        } else {
+            status.append("✗ No content")
+        }
+        
+        if audioRequestSent {
+            status.append("✓ Request sent")
+        } else {
+            status.append("○ Waiting")
+        }
+        
+        if audioReceived {
+            status.append("✓ Audio ready")
+        } else if audioRequestSent {
+            status.append("○ Loading...")
+        }
+        
+        return status.joined(separator: " → ")
     }
 }
 

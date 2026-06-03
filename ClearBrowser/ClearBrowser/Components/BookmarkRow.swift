@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BookmarkRow: View {
     let item: BrowserItem
-    @Environment(\.pasteboard) var pasteboard: NSPasteboard?
+    
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -16,8 +16,7 @@ struct BookmarkRow: View {
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
-            }
-            
+            } 
         }
         .padding(8)
         .frame(height: 72) 

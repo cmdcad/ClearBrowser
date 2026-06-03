@@ -11,6 +11,11 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
     
+    // Diagnostic properties for debugging audio flow
+    @Published var hasExtractableContent: Bool = false
+    @Published var audioRequestSent: Bool = false
+    @Published var audioReceived: Bool = false
+    
     private var displayLink: CADisplayLink?
     
     override init() {
@@ -63,16 +68,21 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
         })();
         """
         
-        webView.evaluateJavaScript(javascriptCode) { result, error in
+        webView.evaluateJavaScript(javascriptCode) { [weak self] result, error in
             if let error = error {
-                print("Error extracting article content: \(error)")
+                print("[AudioVix] Error extracting article content: \(error)")
+                self?.hasExtractableContent = false
                 completion(nil)
                 return
             }
             
             if let text = result as? String, !text.isEmpty {
+                print("[AudioVix] ✓ Content extracted: \(text.count) characters")
+                self?.hasExtractableContent = true
                 completion(text)
             } else {
+                print("[AudioVix] ✗ No extractable content found on page")
+                self?.hasExtractableContent = false
                 completion(nil)
             }
         }
@@ -82,9 +92,12 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func synthesizeSpeech(text: String) async throws -> AVAudioPlayer {
         isLoading = true
         errorMessage = nil
+        audioRequestSent = false
+        audioReceived = false
         defer { isLoading = false }
         
         guard let url = URL(string: "\(audioVixBaseURL)/synthesize") else {
+            print("[AudioVix] ✗ Invalid URL for server")
             throw AudioVixError.invalidURL
         }
         
@@ -100,11 +113,18 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         
+        print("[AudioVix] → Sending audio request to \(url)")
+        audioRequestSent = true
+        
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
+            print("[AudioVix] ✗ Server returned error status")
             throw AudioVixError.serverError
         }
+        
+        print("[AudioVix] ✓ Audio received from server (\(data.count) bytes)")
+        audioReceived = true
         
         do {
             let player = try AVAudioPlayer(data: data, fileTypeHint: AVFileType.mp3.rawValue)
@@ -112,6 +132,7 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
             self.audioPlayer = player
             return player
         } catch {
+            print("[AudioVix] ✗ Failed to create audio player: \(error.localizedDescription)")
             throw AudioVixError.audioPlaybackError(error.localizedDescription)
         }
     }

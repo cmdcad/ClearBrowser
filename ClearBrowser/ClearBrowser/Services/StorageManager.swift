@@ -8,6 +8,8 @@ struct BrowserSettings: Codable {
     var lastOpenedURL: String? = nil
     var tabs: [BrowserTab]? = nil
     var activeTabID: UUID? = nil
+    var darkModeEnabled: Bool = false
+    var invertColorsEnabled: Bool = false
 }
 
 struct UserProfileSnapshot: Codable {
