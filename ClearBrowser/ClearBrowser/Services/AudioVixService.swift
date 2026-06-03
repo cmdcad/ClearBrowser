@@ -10,6 +10,7 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var duration: TimeInterval = 0
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
+    @Published var lastAudioEventMessage: String? = nil
     
     // Diagnostic properties for debugging audio flow
     @Published var hasExtractableContent: Bool = false
@@ -34,7 +35,7 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
     
     /// Extracts article text content from HTML using JavaScript injection
-    func extractArticleContent(from webView: WKWebView, completion: @escaping (String?) -> Void) {
+    func extractArticleContent(from webView: WKWebView, notifyUser: Bool = false, completion: @escaping (String?) -> Void) {
         let javascriptCode = """
         (function() {
             // Try to find article content using common selectors
@@ -69,20 +70,27 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
         """
         
         webView.evaluateJavaScript(javascriptCode) { [weak self] result, error in
+            guard let self = self else { completion(nil); return }
             if let error = error {
-                print("[AudioVix] Error extracting article content: \(error)")
-                self?.hasExtractableContent = false
+                if notifyUser {
+                    self.lastAudioEventMessage = "Unable to read page content"
+                }
+                self.hasExtractableContent = false
                 completion(nil)
                 return
             }
             
             if let text = result as? String, !text.isEmpty {
-                print("[AudioVix] ✓ Content extracted: \(text.count) characters")
-                self?.hasExtractableContent = true
+                if notifyUser {
+                    self.lastAudioEventMessage = "Audio content found"
+                }
+                self.hasExtractableContent = true
                 completion(text)
             } else {
-                print("[AudioVix] ✗ No extractable content found on page")
-                self?.hasExtractableContent = false
+                if notifyUser {
+                    self.lastAudioEventMessage = "No extractable audio content"
+                }
+                self.hasExtractableContent = false
                 completion(nil)
             }
         }
@@ -92,12 +100,13 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func synthesizeSpeech(text: String) async throws -> AVAudioPlayer {
         isLoading = true
         errorMessage = nil
+        lastAudioEventMessage = nil
         audioRequestSent = false
         audioReceived = false
         defer { isLoading = false }
         
         guard let url = URL(string: "\(audioVixBaseURL)/synthesize") else {
-            print("[AudioVix] ✗ Invalid URL for server")
+            lastAudioEventMessage = "Invalid audio server URL"
             throw AudioVixError.invalidURL
         }
         
@@ -113,17 +122,17 @@ final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         
-        print("[AudioVix] → Sending audio request to \(url)")
+        lastAudioEventMessage = "Sending audio request..."
         audioRequestSent = true
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
-            print("[AudioVix] ✗ Server returned error status")
+            lastAudioEventMessage = "Audio server error"
             throw AudioVixError.serverError
         }
         
-        print("[AudioVix] ✓ Audio received from server (\(data.count) bytes)")
+        lastAudioEventMessage = "Audio received"
         audioReceived = true
         
         do {

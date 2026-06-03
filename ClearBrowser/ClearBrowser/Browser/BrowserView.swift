@@ -22,6 +22,7 @@ struct BrowserView: UIViewRepresentable {
         context.coordinator.setupProgressObservation(for: webView)
 
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.scrollView.delegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.showsVerticalScrollIndicator = true
@@ -73,7 +74,7 @@ struct BrowserView: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
         var lastLoadedURL: URL?
@@ -109,6 +110,7 @@ struct BrowserView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             viewModel.isLoading = true
+            viewModel.audioContentCandidate = false
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -118,7 +120,7 @@ struct BrowserView: UIViewRepresentable {
                                             title: webView.title,
                                             url: webView.url)
             autoScrollManager.scrollView = webView.scrollView
-            print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
+            viewModel.audioVixService.extractArticleContent(from: webView)
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -156,6 +158,15 @@ struct BrowserView: UIViewRepresentable {
             decisionHandler(.allow)
         }
 
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            guard navigationAction.targetFrame == nil || navigationAction.targetFrame?.isMainFrame == false else {
+                return nil
+            }
+            if let url = navigationAction.request.url {
+                webView.load(URLRequest(url: url))
+            }
+            return nil
+        }
 
         // MARK: - UIScrollViewDelegate
         func scrollViewDidScroll(_ scrollView: UIScrollView) {

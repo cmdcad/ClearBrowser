@@ -11,6 +11,7 @@ struct HomeView: View {
   @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
+  @State private var toastMessage: String? = nil
 
   private var drawerOpenBinding: Binding<Bool> {
     Binding<Bool>(
@@ -80,25 +81,27 @@ struct HomeView: View {
                             viewModel.goForward()
                         }
                         
-                        Button(action: {
-                            if viewModel.isReadAloudPlaying {
-                                viewModel.pauseReadAloud()
-                            } else if viewModel.isReadAloudAvailable {
-                                viewModel.resumeReadAloud()
-                            } else if let webView = viewModel.currentWebView {
-                                viewModel.startReadAloud(from: webView)
-                            } else {
-                                viewModel.audioVixService.errorMessage = "No article content available"
+                        if viewModel.audioContentCandidate || viewModel.isReadAloudAvailable {
+                            Button(action: {
+                                if viewModel.isReadAloudPlaying {
+                                    viewModel.pauseReadAloud()
+                                } else if viewModel.isReadAloudAvailable {
+                                    viewModel.resumeReadAloud()
+                                } else if let webView = viewModel.currentWebView {
+                                    viewModel.startReadAloud(from: webView)
+                                } else {
+                                    viewModel.audioVixService.errorMessage = "No article content available"
+                                }
+                            }) {
+                                Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "speaker.badge.exclamationmark.fill")
+                                    .font(.title3)
+                                    .frame(width: 44, height: 44)
+                                    .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
+                                    .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.5))
+                                    .cornerRadius(12)
                             }
-                        }) {
-                            Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "speaker.badge.exclamationmark.fill")
-                                .font(.title3)
-                                .frame(width: 44, height: 44)
-                                .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
-                                .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.5))
-                                .cornerRadius(12)
+                            .disabled(viewModel.currentWebView == nil && !viewModel.isReadAloudAvailable)
                         }
-                        .disabled(viewModel.currentWebView == nil && !viewModel.isReadAloudAvailable)
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
                     .padding(.bottom, 20)
@@ -177,6 +180,24 @@ struct HomeView: View {
           }
           .transition(.move(edge: .trailing).combined(with: .opacity))
         }
+
+        if let message = toastMessage {
+          VStack {
+            Spacer()
+            Text(message)
+              .font(.footnote)
+              .foregroundColor(.white)
+              .padding(.horizontal, 16)
+              .padding(.vertical, 12)
+              .background(.ultraThinMaterial.opacity(0.95))
+              .background(Color.black.opacity(0.75))
+              .cornerRadius(16)
+              .padding(.bottom, 90)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+          .padding(.horizontal, 20)
+          .zIndex(1)
+        }
       }
       .navigationBarHidden(true)
     }
@@ -194,6 +215,27 @@ struct HomeView: View {
     .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
     { _ in
       withAnimation(.easeIn(duration: 0.2)) { isKeyboardVisible = false }
+    }
+    .onChange(of: viewModel.audioVixService.lastAudioEventMessage) { message in
+      guard let message = message else { return }
+      showToast(message)
+    }
+    .onChange(of: viewModel.audioVixService.errorMessage) { message in
+      guard let message = message else { return }
+      showToast(message)
+    }
+  }
+
+  private func showToast(_ message: String) {
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+      toastMessage = message
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+      withAnimation(.easeOut(duration: 0.25)) {
+        if toastMessage == message {
+          toastMessage = nil
+        }
+      }
     }
   }
 
@@ -324,6 +366,8 @@ struct HomeView: View {
       .overlay(
         Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
       )
+      
+      Spacer()
       
       Menu {
         Button(action: {

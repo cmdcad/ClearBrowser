@@ -821,7 +821,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioRequestSent = false
         audioReceived = false
         
-        audioVixService.extractArticleContent(from: webView) { [weak self] content in
+        audioVixService.extractArticleContent(from: webView, notifyUser: true) { [weak self] content in
             guard let self = self, let content = content, !content.isEmpty else {
                 self?.audioVixService.errorMessage = "No article content found"
                 return

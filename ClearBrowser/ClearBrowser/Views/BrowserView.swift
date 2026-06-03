@@ -19,6 +19,7 @@ struct BrowserView: UIViewRepresentable {
         context.coordinator.setupProgressObservation(for: webView)
 
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.scrollView.delegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.showsVerticalScrollIndicator = true
@@ -70,7 +71,7 @@ struct BrowserView: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, UIScrollViewDelegate {
         let viewModel: HomeViewModel
         let autoScrollManager: AutoScrollManager
         var lastLoadedURL: URL?
@@ -164,6 +165,17 @@ struct BrowserView: UIViewRepresentable {
             decisionHandler(.allow)
         }
 
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            // Intercept navigation attempts that would normally open in a new window or tab.
+            // Instead of returning a new WKWebView, we load the request in the current one.
+            guard navigationAction.targetFrame == nil || navigationAction.targetFrame?.isMainFrame == false else {
+                return nil
+            }
+            if let url = navigationAction.request.url {
+                webView.load(URLRequest(url: url))
+            }
+            return nil
+        }
 
         // MARK: - UIScrollViewDelegate
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
