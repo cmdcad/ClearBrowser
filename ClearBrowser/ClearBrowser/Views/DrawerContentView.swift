@@ -212,6 +212,9 @@ struct DrawerContentView: View {
                         SecureField("OpenAI API Key", text: $viewModel.openAIKey)
                             .textInputAutocapitalization(.none)
                             .autocorrectionDisabled(true)
+                            .onTapGesture {
+                                UIPasteboard.general.string = viewModel.openAIKey
+                            }
                         Text("Stored securely in Keychain.")
                             .font(.caption2).foregroundColor(.secondary)
                     }
