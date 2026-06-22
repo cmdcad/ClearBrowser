@@ -19,6 +19,8 @@
 		5B8F40CC2FBF7ECD001BC431 /* BrowserTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8F40CB2FBF7ECB001BC431 /* BrowserTab.swift */; };
 		5B9FA61E2F8B4FC10045E944 /* DrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */; };
 		5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9FA6212F8BEC930045E944 /* BrowserView.swift */; };
+		5BBC0EB12FE9B6D900D7030F /* ReadAloudControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBC0EB02FE9B6D800D7030F /* ReadAloudControlView.swift */; };
+		5BBC0EB32FE9B76C00D7030F /* AudioVixService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBC0EB22FE9B76B00D7030F /* AudioVixService.swift */; };
 		8125D2352F7EC0C200A5937E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2342F7EC0C200A5937E /* Assets.xcassets */; };
 		8125D2382F7EC0C200A5937E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */; };
 		8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8125D23F2F7EC12000A5937E /* ClearBrowserApp.swift */; };
@@ -56,6 +58,8 @@
 		5B8F40CB2FBF7ECB001BC431 /* BrowserTab.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserTab.swift; sourceTree = "<group>"; };
 		5B9FA61D2F8B4FC00045E944 /* DrawerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DrawerView.swift; sourceTree = "<group>"; };
 		5B9FA6212F8BEC930045E944 /* BrowserView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
+		5BBC0EB02FE9B6D800D7030F /* ReadAloudControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ReadAloudControlView.swift; path = ClearBrowser/Views/ReadAloudControlView.swift; sourceTree = SOURCE_ROOT; };
+		5BBC0EB22FE9B76B00D7030F /* AudioVixService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioVixService.swift; sourceTree = "<group>"; };
 		8125D22D2F7EC0BE00A5937E /* ClearBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClearBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8125D2342F7EC0C200A5937E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8125D2372F7EC0C200A5937E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -197,6 +201,8 @@
 		AB652DE92F7EC6BB00816346 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				5BBC0EB22FE9B76B00D7030F /* AudioVixService.swift */,
+				5BBC0EB02FE9B6D800D7030F /* ReadAloudControlView.swift */,
 				5B6292FE2F89BD0500272F64 /* KeychainHelper.swift */,
 				AB652DEA2F7EC6CB00816346 /* AIService.swift */,
 				AB652DEB2F7EC6CB00816346 /* AutoScrollManager.swift */,
@@ -293,6 +299,7 @@
 				5B8F40C62FBF7B68001BC431 /* AccountFlowView.swift in Sources */,
 				AB652DE22F7EC67C00816346 /* HomeView.swift in Sources */,
 				AB652DE82F7EC6A500816346 /* HomeViewModel.swift in Sources */,
+				5BBC0EB32FE9B76C00D7030F /* AudioVixService.swift in Sources */,
 				5B6293092F89EBAC00272F64 /* SettingsSection.swift in Sources */,
 				8188EF4A2F817E1E00C70F7E /* BookmarkRow.swift in Sources */,
 				8188EF502F8181BE00C70F7E /* Theme.swift in Sources */,
@@ -304,6 +311,7 @@
 				8188EF4C2F817E1E00C70F7E /* RoundedCorner.swift in Sources */,
 				5B9FA6222F8BEC940045E944 /* BrowserView.swift in Sources */,
 				5B8F40C42FBF7B68001BC431 /* LoginView.swift in Sources */,
+				5BBC0EB12FE9B6D900D7030F /* ReadAloudControlView.swift in Sources */,
 				5B6292FF2F89BD0600272F64 /* KeychainHelper.swift in Sources */,
 				5B8F40C02FBF7AD0001BC431 /* TabManagerView.swift in Sources */,
 				5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */,
