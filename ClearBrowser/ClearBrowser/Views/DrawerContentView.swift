@@ -196,6 +196,11 @@ struct DrawerContentView: View {
                     .pickerStyle(.segmented)
                 }
 
+                SettingsSection(title: "Reading") {
+                    Toggle("Highlight Current Verse", isOn: $viewModel.highlightVerseEnabled)
+                        .tint(Theme.accent)
+                }
+
                 SettingsSection(title: "Auto-Scroll") {
                     VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                         HStack {
