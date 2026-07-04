@@ -5,6 +5,11 @@ import WebKit
 @MainActor
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
+    private let fallbackServerBaseURLs: [URL] = [
+        URL(string: "http://localhost:4000")!,
+        URL(string: "http://127.0.0.1:4000")!,
+        URL(string: "http://10.0.0.41:4000")!
+    ]
     private var audioPlayer: AVAudioPlayer?
 
     @Published var isPlaying = false
@@ -57,6 +62,10 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             }
         }
 
+        for fallback in fallbackServerBaseURLs where !urls.contains(fallback) {
+            urls.append(fallback)
+        }
+
         if urls.isEmpty {
             urls.append(defaultServerBaseURL)
         }
@@ -64,9 +73,15 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         return urls
     }
 
-    private var synthesizeEndpointURL: URL {
-        let baseURL = configuredServerBaseURLs.first ?? defaultServerBaseURL
-        return baseURL.appendingPathComponent("synthesize")
+    private func synthesizeEndpointCandidates(for baseURL: URL) -> [URL] {
+        [
+            baseURL.appendingPathComponent("api/speak"),
+            baseURL.appendingPathComponent("api/audio"),
+            baseURL.appendingPathComponent("synthesize"),
+            baseURL.appendingPathComponent("api/synthesize"),
+            baseURL.appendingPathComponent("tts"),
+            baseURL.appendingPathComponent("api/tts")
+        ]
     }
 
     /// Extracts article text content from HTML using JavaScript injection.
@@ -123,17 +138,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             throw ServerManagerError.invalidText
         }
 
-        let endpointURL = synthesizeEndpointURL
-        guard let requestURL = URL(string: endpointURL.absoluteString) else {
-            lastAudioEventMessage = "Invalid audio server URL"
-            throw ServerManagerError.invalidURL
-        }
-
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 60
+        lastAudioEventMessage = "Sending audio request..."
+        audioRequestSent = true
 
         let payload: [String: Any] = [
             "text": text,
@@ -143,17 +149,47 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             "requestType": "synthesize"
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        let payloadData = try JSONSerialization.data(withJSONObject: payload)
 
-        lastAudioEventMessage = "Sending audio request..."
-        audioRequestSent = true
+        var lastError: Error?
+        for baseURL in configuredServerBaseURLs {
+            for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
+                do {
+                    let request = try makeRequest(to: endpointURL, body: payloadData)
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        lastError = ServerManagerError.serverError(message: "No HTTP response from server")
+                        continue
+                    }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+                    if (200..<300).contains(httpResponse.statusCode) {
+                        let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
+                        lastAudioEventMessage = "Audio response received"
+                        audioReceived = true
+                        let player = try AVAudioPlayer(data: audioData)
+                        player.delegate = self
+                        self.audioPlayer = player
+                        player.prepareToPlay()
+                        return player
+                    }
 
-        guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
-            lastAudioEventMessage = "Audio server error"
-            throw ServerManagerError.serverError
+                    let responseBody = String(data: data, encoding: .utf8) ?? ""
+                    let detail = responseBody.isEmpty ? "empty response body" : responseBody
+                    lastError = ServerManagerError.serverError(message: "Status \(httpResponse.statusCode) from \(endpointURL.absoluteString): \(detail)")
+                    lastAudioEventMessage = "Server responded with \(httpResponse.statusCode)"
+                } catch let error as ServerManagerError {
+                    lastError = error
+                } catch let error {
+                    lastError = ServerManagerError.networkError(error.localizedDescription)
+                }
+            }
         }
+
+        if let lastError {
+            throw lastError
+        }
+
+        throw ServerManagerError.serverError(message: "No audio server endpoint responded")
 
         let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
         lastAudioEventMessage = "Audio response received"
@@ -169,6 +205,20 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             print("[ServerManager] ✗ Failed to create audio player: \(error.localizedDescription)")
             throw ServerManagerError.audioPlaybackError(error.localizedDescription)
         }
+    }
+
+    private func makeRequest(to endpointURL: URL, body: Data) throws -> URLRequest {
+        guard let requestURL = URL(string: endpointURL.absoluteString) else {
+            throw ServerManagerError.invalidURL
+        }
+
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 60
+        request.httpBody = body
+        return request
     }
 
     private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
@@ -187,25 +237,31 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                let decoded = Data(base64Encoded: dataString) {
                 return decoded
             }
+
+            if let status = jsonObject["status"] as? String, status.lowercased() != "ok" && status.lowercased() != "success" {
+                throw ServerManagerError.serverError(message: "Server status: \(status)")
+            }
         }
 
         if let contentType = response.mimeType, contentType.contains("json") {
-            throw ServerManagerError.serverError
+            throw ServerManagerError.serverError(message: "Server returned JSON instead of audio")
         }
 
         return data
     }
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
-        let candidateKeys = ["audioURL", "audioUrl", "audio_url", "url", "audioFileUrl", "audioFileURL"]
+        let candidateKeys = ["audioURL", "audioUrl", "audio_url", "audioFileUrl", "audioFileURL", "audioPath", "fileURL", "url", "audio"]
         for key in candidateKeys {
             if let value = payload[key] as? String, !value.isEmpty {
                 return value
             }
         }
 
-        if let nestedAudio = payload["audio"] as? [String: Any] {
-            return resolveAudioURL(from: nestedAudio)
+        for key in payload.keys {
+            if let nested = payload[key] as? [String: Any], let resolved = resolveAudioURL(from: nested) {
+                return resolved
+            }
         }
 
         return nil
@@ -226,7 +282,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         let (downloadedData, downloadedResponse) = try await URLSession.shared.data(from: resolvedURL)
         guard let response = downloadedResponse as? HTTPURLResponse,
               (200..<300).contains(response.statusCode) else {
-            throw ServerManagerError.serverError
+            throw ServerManagerError.serverError(message: "Audio download failed")
         }
 
         return downloadedData
@@ -309,20 +365,23 @@ typealias AudioVixError = ServerManagerError
 
 enum ServerManagerError: Error, LocalizedError {
     case invalidURL
-    case serverError
+    case serverError(message: String = "Audio server error - please check the server connection")
     case audioPlaybackError(String)
     case invalidText
+    case networkError(String)
 
     var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid audio server URL"
-        case .serverError:
-            return "Audio server error - please check the server connection"
+        case .serverError(let message):
+            return message
         case .audioPlaybackError(let message):
             return "Audio playback error: \(message)"
         case .invalidText:
             return "No valid text content to read"
+        case .networkError(let message):
+            return "Network error: \(message)"
         }
     }
 }
