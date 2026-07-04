@@ -187,11 +187,11 @@ struct HomeView: View {
               .background(.ultraThinMaterial.opacity(0.95))
               .background(Color.black.opacity(0.75))
               .cornerRadius(16)
-              .padding(.bottom, 90)
+              .padding(.bottom, 140)
               .transition(.move(edge: .bottom).combined(with: .opacity))
           }
           .padding(.horizontal, 20)
-          .zIndex(1)
+          .zIndex(3)
         }
 
         if !viewModel.currentReadAloudText.isEmpty || viewModel.serverManager.isLoading {
