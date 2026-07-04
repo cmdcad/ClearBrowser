@@ -179,6 +179,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                     lastAudioEventMessage = "Server responded with \(httpResponse.statusCode)"
                 } catch let error as ServerManagerError {
                     lastError = error
+                } catch let error as URLError {
+                    lastError = ServerManagerError.networkError("Could not connect to server: \(error.localizedDescription)")
                 } catch let error {
                     lastError = ServerManagerError.networkError(error.localizedDescription)
                 }
