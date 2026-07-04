@@ -120,6 +120,21 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var isReadAloudPlaying = false
     @Published var readAloudProgress: TimeInterval = 0
     @Published var readAloudDuration: TimeInterval = 0
+    @Published var currentReadAloudText: String = ""
+
+    var estimatedCurrentReadAloudText: String {
+        let words = currentReadAloudText.split(separator: " ")
+        guard !words.isEmpty else { return "" }
+        guard readAloudDuration > 0 else {
+            return words.prefix(18).joined(separator: " ")
+        }
+
+        let progress = min(max(readAloudProgress / readAloudDuration, 0), 1)
+        let currentWordIndex = min(max(Int(Double(words.count) * progress), 0), words.count - 1)
+        let startIndex = max(currentWordIndex - 8, 0)
+        let endIndex = min(currentWordIndex + 16, words.count)
+        return words[startIndex..<endIndex].joined(separator: " ")
+    }
     
     // Diagnostic properties for audio flow
     @Published var audioContentCandidate: Bool = false
@@ -819,6 +834,30 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     // MARK: - Read Aloud Methods
+
+    private let sampleReadAloudText = """
+    ClearBrowser audio test. This is a sample passage to confirm that the read aloud button can send text to the AudioVix server, receive synthesized speech, and play it back in the app.
+    """
+
+    func startSampleReadAloud() {
+        currentReadAloudText = sampleReadAloudText
+        audioContentCandidate = true
+        audioRequestSent = false
+        audioReceived = false
+
+        Task {
+            do {
+                _ = try await audioVixService.synthesizeSpeech(text: sampleReadAloudText)
+                audioVixService.play()
+                isReadAloudPlaying = true
+                isReadAloudAvailable = true
+            } catch let error as AudioVixError {
+                audioVixService.errorMessage = error.localizedDescription
+            } catch {
+                audioVixService.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
+            }
+        }
+    }
     
     func startReadAloud(from webView: WKWebView) {
         // Reset diagnostic flags for new request
@@ -831,6 +870,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                 self?.audioVixService.errorMessage = "No article content found"
                 return
             }
+            self.currentReadAloudText = content
             
             Task {
                 do {
@@ -867,6 +907,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioVixService.stop()
         isReadAloudPlaying = false
         isReadAloudAvailable = false
+        currentReadAloudText = ""
     }
     
     func setReadAloudSpeed(_ speed: Float) {
