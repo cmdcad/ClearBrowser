@@ -150,7 +150,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     private let aiService = AIService()
     private var settings = BrowserSettings()
 
-    @Published var audioVixService = AudioVixService()
+    @Published var serverManager = ServerManager()
 
     override init() {
         // 1. Initialize activeTabID with a placeholder to satisfy Phase 1 initialization.
@@ -193,15 +193,15 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     private func setupAudioPlaybackTracking() {
-        // Observe audioVixService changes and update published properties
-        audioVixService.$isPlaying.assign(to: &$isReadAloudPlaying)
-        audioVixService.$currentTime.assign(to: &$readAloudProgress)
-        audioVixService.$duration.assign(to: &$readAloudDuration)
-        
+        // Observe serverManager changes and update published properties
+        serverManager.$isPlaying.assign(to: &$isReadAloudPlaying)
+        serverManager.$currentTime.assign(to: &$readAloudProgress)
+        serverManager.$duration.assign(to: &$readAloudDuration)
+
         // Bind diagnostic properties
-        audioVixService.$hasExtractableContent.assign(to: &$audioContentCandidate)
-        audioVixService.$audioRequestSent.assign(to: &$audioRequestSent)
-        audioVixService.$audioReceived.assign(to: &$audioReceived)
+        serverManager.$hasExtractableContent.assign(to: &$audioContentCandidate)
+        serverManager.$audioRequestSent.assign(to: &$audioRequestSent)
+        serverManager.$audioReceived.assign(to: &$audioReceived)
     }
     
     func loadAddress() {
@@ -836,7 +836,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     // MARK: - Read Aloud Methods
 
     private let sampleReadAloudText = """
-    ClearBrowser audio test. This is a sample passage to confirm that the read aloud button can send text to the AudioVix server, receive synthesized speech, and play it back in the app.
+    ClearBrowser audio test. This is a sample passage to confirm that the read aloud button can send text to the configured server, receive synthesized speech, and play it back in the app.
     """
 
     func startSampleReadAloud() {
@@ -847,14 +847,14 @@ final class HomeViewModel: NSObject, ObservableObject {
 
         Task {
             do {
-                _ = try await audioVixService.synthesizeSpeech(text: sampleReadAloudText)
-                audioVixService.play()
+                _ = try await serverManager.synthesizeSpeech(text: sampleReadAloudText)
+                serverManager.play()
                 isReadAloudPlaying = true
                 isReadAloudAvailable = true
             } catch let error as AudioVixError {
-                audioVixService.errorMessage = error.localizedDescription
+                serverManager.errorMessage = error.localizedDescription
             } catch {
-                audioVixService.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
+                serverManager.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
             }
         }
     }
@@ -865,28 +865,28 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioRequestSent = false
         audioReceived = false
         
-        audioVixService.extractArticleContent(from: webView, notifyUser: true) { [weak self] content in
+        serverManager.extractArticleContent(from: webView, notifyUser: true) { [weak self] content in
             guard let self = self, let content = content, !content.isEmpty else {
-                self?.audioVixService.errorMessage = "No article content found"
+                self?.serverManager.errorMessage = "No article content found"
                 return
             }
             self.currentReadAloudText = content
-            
+
             Task {
                 do {
-                    _ = try await self.audioVixService.synthesizeSpeech(text: content)
+                    _ = try await self.serverManager.synthesizeSpeech(text: content)
                     await MainActor.run {
-                        self.audioVixService.play()
+                        self.serverManager.play()
                         self.isReadAloudPlaying = true
                         self.isReadAloudAvailable = true
                     }
                 } catch let error as AudioVixError {
                     await MainActor.run {
-                        self.audioVixService.errorMessage = error.localizedDescription
+                        self.serverManager.errorMessage = error.localizedDescription
                     }
                 } catch {
                     await MainActor.run {
-                        self.audioVixService.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
+                        self.serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
                     }
                 }
             }
@@ -894,24 +894,24 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     func pauseReadAloud() {
-        audioVixService.pause()
+        serverManager.pause()
         isReadAloudPlaying = false
     }
-    
+
     func resumeReadAloud() {
-        audioVixService.resume()
+        serverManager.resume()
         isReadAloudPlaying = true
     }
-    
+
     func stopReadAloud() {
-        audioVixService.stop()
+        serverManager.stop()
         isReadAloudPlaying = false
         isReadAloudAvailable = false
         currentReadAloudText = ""
     }
-    
+
     func setReadAloudSpeed(_ speed: Float) {
-        audioVixService.setPlaybackRate(speed)
+        serverManager.setPlaybackRate(speed)
     }
     
     // MARK: - Diagnostic Helper
