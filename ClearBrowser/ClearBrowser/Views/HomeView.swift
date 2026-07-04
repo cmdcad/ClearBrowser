@@ -81,26 +81,21 @@ struct HomeView: View {
                             viewModel.goForward()
                         }
                         
-                        if viewModel.audioContentCandidate || viewModel.isReadAloudAvailable {
-                            Button(action: {
-                                if viewModel.isReadAloudPlaying {
-                                    viewModel.pauseReadAloud()
-                                } else if viewModel.isReadAloudAvailable {
-                                    viewModel.resumeReadAloud()
-                                } else if let webView = viewModel.currentWebView {
-                                    viewModel.startReadAloud(from: webView)
-                                } else {
-                                    viewModel.audioVixService.errorMessage = "No article content available"
-                                }
-                            }) {
-                                Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "speaker.badge.exclamationmark.fill")
-                                    .font(.title3)
-                                    .frame(width: 44, height: 44)
-                                    .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
-                                    .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.5))
-                                    .cornerRadius(12)
+                        Button(action: {
+                            if viewModel.isReadAloudPlaying {
+                                viewModel.pauseReadAloud()
+                            } else if viewModel.isReadAloudAvailable {
+                                viewModel.resumeReadAloud()
+                            } else {
+                                viewModel.startSampleReadAloud()
                             }
-                            .disabled(viewModel.currentWebView == nil && !viewModel.isReadAloudAvailable)
+                        }) {
+                            Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
+                                .font(.title3)
+                                .frame(width: 44, height: 44)
+                                .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
+                                .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
+                                .cornerRadius(12)
                         }
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
@@ -196,6 +191,17 @@ struct HomeView: View {
               .transition(.move(edge: .bottom).combined(with: .opacity))
           }
           .padding(.horizontal, 20)
+          .zIndex(1)
+        }
+
+        if !viewModel.currentReadAloudText.isEmpty || viewModel.audioVixService.isLoading {
+          VStack {
+            Spacer()
+            readAloudTextPanel
+          }
+          .padding(.horizontal, Theme.Spacing.md)
+          .padding(.bottom, 108)
+          .transition(.move(edge: .bottom).combined(with: .opacity))
           .zIndex(1)
         }
       }
@@ -429,6 +435,53 @@ struct HomeView: View {
       }
       Spacer()
     }
+  }
+
+  private var readAloudTextPanel: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 8) {
+        Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "waveform")
+          .font(.caption)
+          .foregroundColor(.orange)
+
+        if viewModel.audioVixService.isLoading {
+          ProgressView()
+            .scaleEffect(0.75)
+        }
+
+        Spacer()
+
+        Button(action: viewModel.stopReadAloud) {
+          Image(systemName: "xmark.circle.fill")
+            .font(.body)
+            .foregroundColor(.secondary)
+        }
+      }
+
+      if !viewModel.estimatedCurrentReadAloudText.isEmpty {
+        Text(viewModel.estimatedCurrentReadAloudText)
+          .font(.footnote.weight(.semibold))
+          .foregroundColor(.orange)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(8)
+          .background(Color.orange.opacity(0.12))
+          .cornerRadius(8)
+      }
+
+      ScrollView {
+        Text(viewModel.currentReadAloudText)
+          .font(.footnote)
+          .foregroundColor(.primary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .textSelection(.enabled)
+      }
+      .frame(maxHeight: 110)
+    }
+    .padding(12)
+    .background(.ultraThinMaterial)
+    .background(Color(uiColor: .secondarySystemGroupedBackground).opacity(0.92))
+    .cornerRadius(14)
+    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
   }
  
 }

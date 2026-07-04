@@ -3,7 +3,7 @@ import AVFoundation
 import WebKit
 
 final class AudioVixService: NSObject, ObservableObject, AVAudioPlayerDelegate {
-    private let audioVixBaseURL = "http://10.0.0.152:4000"
+    private let audioVixBaseURL = "http://10.0.0.41:4000"
     private var audioPlayer: AVAudioPlayer?
     @Published var isPlaying = false
     @Published var currentTime: TimeInterval = 0

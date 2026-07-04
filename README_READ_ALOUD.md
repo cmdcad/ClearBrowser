@@ -89,7 +89,7 @@ Optional advanced control interface providing:
 ### AudioVix Server Settings
 Edit `AudioVixService.swift` line 7 to change the server address:
 ```swift
-private let audioVixBaseURL = "http://10.0.0.152:4000"
+private let audioVixBaseURL = "http://10.0.0.41:4000"
 ```
 
 ### Server Endpoint
