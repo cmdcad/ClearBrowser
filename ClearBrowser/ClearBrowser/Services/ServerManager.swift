@@ -190,21 +190,6 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
-
-        let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
-        lastAudioEventMessage = "Audio response received"
-        audioReceived = true
-
-        do {
-            let player = try AVAudioPlayer(data: audioData)
-            player.delegate = self
-            self.audioPlayer = player
-            player.prepareToPlay()
-            return player
-        } catch {
-            print("[ServerManager] ✗ Failed to create audio player: \(error.localizedDescription)")
-            throw ServerManagerError.audioPlaybackError(error.localizedDescription)
-        }
     }
 
     private func makeRequest(to endpointURL: URL, body: Data) throws -> URLRequest {
