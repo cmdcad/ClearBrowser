@@ -196,16 +196,6 @@ struct HomeView: View {
           .zIndex(3)
         }
 
-        if !viewModel.currentReadAloudText.isEmpty || viewModel.serverManager.isLoading {
-          VStack {
-            Spacer()
-            readAloudTextPanel
-          }
-          .padding(.horizontal, Theme.Spacing.md)
-          .padding(.bottom, 108)
-          .transition(.move(edge: .bottom).combined(with: .opacity))
-          .zIndex(1)
-        }
       }
       .navigationBarHidden(true)
     }
@@ -439,52 +429,5 @@ struct HomeView: View {
     }
   }
 
-  private var readAloudTextPanel: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack(spacing: 8) {
-        Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "waveform")
-          .font(.caption)
-          .foregroundColor(.orange)
-
-        if viewModel.serverManager.isLoading {
-          ProgressView()
-            .scaleEffect(0.75)
-        }
-
-        Spacer()
-
-        Button(action: viewModel.stopReadAloud) {
-          Image(systemName: "xmark.circle.fill")
-            .font(.body)
-            .foregroundColor(.secondary)
-        }
-      }
-
-      if !viewModel.estimatedCurrentReadAloudText.isEmpty {
-        Text(viewModel.estimatedCurrentReadAloudText)
-          .font(.footnote.weight(.semibold))
-          .foregroundColor(.orange)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(8)
-          .background(Color.orange.opacity(0.12))
-          .cornerRadius(8)
-      }
-
-      ScrollView {
-        Text(viewModel.currentReadAloudText)
-          .font(.footnote)
-          .foregroundColor(.primary)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .textSelection(.enabled)
-      }
-      .frame(maxHeight: 110)
-    }
-    .padding(12)
-    .background(.ultraThinMaterial)
-    .background(Color(uiColor: .secondarySystemGroupedBackground).opacity(0.92))
-    .cornerRadius(14)
-    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
-  }
- 
 }
  
