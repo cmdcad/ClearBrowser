@@ -86,6 +86,8 @@ struct HomeView: View {
                                 viewModel.pauseReadAloud()
                             } else if viewModel.isReadAloudAvailable {
                                 viewModel.resumeReadAloud()
+                            } else if let webView = viewModel.currentWebView {
+                                viewModel.startReadAloud(from: webView)
                             } else {
                                 viewModel.startSampleReadAloud()
                             }
