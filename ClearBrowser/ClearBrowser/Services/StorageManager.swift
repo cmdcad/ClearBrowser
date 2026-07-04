@@ -10,6 +10,7 @@ struct BrowserSettings: Codable {
     var activeTabID: UUID? = nil
     var darkModeEnabled: Bool = false
     var invertColorsEnabled: Bool = false
+    var highlightVerseEnabled: Bool = true
 }
 
 struct UserProfileSnapshot: Codable {

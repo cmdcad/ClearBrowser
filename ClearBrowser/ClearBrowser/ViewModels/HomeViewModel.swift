@@ -102,6 +102,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var invertColorsEnabled: Bool = false {
         didSet { settings.invertColorsEnabled = invertColorsEnabled; saveSettings() }
     }
+    @Published var highlightVerseEnabled: Bool = true {
+        didSet { settings.highlightVerseEnabled = highlightVerseEnabled; saveSettings() }
+    }
     @Published var bookmarks: [BrowserItem] = []
     @Published var history: [BrowserItem] = []
     @Published var blockedSchemes: [String] = []
@@ -729,6 +732,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         settings = storageManager.loadSettings()
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
+        highlightVerseEnabled = settings.highlightVerseEnabled
         openAIKey = KeychainHelper.standard.read(service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey") ?? ""
 
         if let pos = UserDefaults.standard.string(forKey: "toolbarPosition"),
@@ -809,7 +813,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         let item = BrowserItem(title: title, url: url)
         history.removeAll { $0.url == url }
         history.insert(item, at: 0)
-        history = Array(history.prefix(50))
+        history = Array(history.prefix(5))
         storageManager.saveHistory(history)
         storageManager.syncHistoryToFirebase(history)
     }
