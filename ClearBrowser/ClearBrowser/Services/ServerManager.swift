@@ -151,14 +151,23 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         let payloadData = try JSONSerialization.data(withJSONObject: payload)
 
-        var lastError: Error?
+        struct AttemptError {
+            let baseURL: URL
+            let endpointURL: URL
+            let statusCode: Int?
+            let error: Error
+        }
+
+        var attempts: [AttemptError] = []
+
         for baseURL in configuredServerBaseURLs {
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
                     let request = try makeRequest(to: endpointURL, body: payloadData)
                     let (data, response) = try await URLSession.shared.data(for: request)
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        lastError = ServerManagerError.serverError(message: "No HTTP response from server")
+                        let err = ServerManagerError.serverError(message: "No HTTP response from server")
+                        attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: err))
                         continue
                     }
 
@@ -175,20 +184,48 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
                     let responseBody = String(data: data, encoding: .utf8) ?? ""
                     let detail = responseBody.isEmpty ? "empty response body" : responseBody
-                    lastError = ServerManagerError.serverError(message: "Status \(httpResponse.statusCode) from \(endpointURL.absoluteString): \(detail)")
-                    lastAudioEventMessage = "Server responded with \(httpResponse.statusCode)"
+                    let serverErr = ServerManagerError.serverError(message: "Status \(httpResponse.statusCode) from \(endpointURL.absoluteString): \(detail)")
+                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: httpResponse.statusCode, error: serverErr))
                 } catch let error as ServerManagerError {
-                    lastError = error
+                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: error))
                 } catch let error as URLError {
-                    lastError = ServerManagerError.networkError("Could not connect to server: \(error.localizedDescription)")
+                    let netErr = ServerManagerError.networkError("Could not connect to server: \(error.localizedDescription)")
+                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
                 } catch let error {
-                    lastError = ServerManagerError.networkError(error.localizedDescription)
+                    let netErr = ServerManagerError.networkError(error.localizedDescription)
+                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
                 }
             }
         }
 
-        if let lastError {
-            throw lastError
+        if !attempts.isEmpty {
+            let primaryURL = configuredServerBaseURLs.first
+            
+            func rank(_ attempt: AttemptError) -> Int {
+                let isPrimary = (primaryURL != nil && attempt.baseURL == primaryURL)
+                let scoreMultiplier = isPrimary ? 10 : 1
+                
+                if let statusCode = attempt.statusCode {
+                    if statusCode == 404 || statusCode == 405 {
+                        return 5 * scoreMultiplier
+                    } else {
+                        return 10 * scoreMultiplier
+                    }
+                } else {
+                    return 2 * scoreMultiplier
+                }
+            }
+            
+            var bestAttempt = attempts[0]
+            var bestRank = rank(bestAttempt)
+            for attempt in attempts.dropFirst() {
+                let r = rank(attempt)
+                if r > bestRank {
+                    bestAttempt = attempt
+                    bestRank = r
+                }
+            }
+            throw bestAttempt.error
         }
 
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
