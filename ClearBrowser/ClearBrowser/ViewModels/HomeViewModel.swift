@@ -131,6 +131,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     private let storageManager = StorageManager()
     private let aiService = AIService()
     private var settings = BrowserSettings()
+
     @Published var audioVixService = AudioVixService()
 
     override init() {
