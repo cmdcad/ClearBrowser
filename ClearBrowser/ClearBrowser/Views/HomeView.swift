@@ -194,7 +194,7 @@ struct HomeView: View {
           .zIndex(1)
         }
 
-        if !viewModel.currentReadAloudText.isEmpty || viewModel.audioVixService.isLoading {
+        if !viewModel.currentReadAloudText.isEmpty || viewModel.serverManager.isLoading {
           VStack {
             Spacer()
             readAloudTextPanel
@@ -222,11 +222,11 @@ struct HomeView: View {
     { _ in
       withAnimation(.easeIn(duration: 0.2)) { isKeyboardVisible = false }
     }
-    .onChange(of: viewModel.audioVixService.lastAudioEventMessage) { message in
+    .onChange(of: viewModel.serverManager.lastAudioEventMessage) { message in
       guard let message = message else { return }
       showToast(message)
     }
-    .onChange(of: viewModel.audioVixService.errorMessage) { message in
+    .onChange(of: viewModel.serverManager.errorMessage) { message in
       guard let message = message else { return }
       showToast(message)
     }
@@ -444,7 +444,7 @@ struct HomeView: View {
           .font(.caption)
           .foregroundColor(.orange)
 
-        if viewModel.audioVixService.isLoading {
+        if viewModel.serverManager.isLoading {
           ProgressView()
             .scaleEffect(0.75)
         }

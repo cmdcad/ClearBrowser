@@ -74,7 +74,7 @@ struct ReadAloudControlView: View {
             }
             
             // Error Message
-            if let errorMessage = viewModel.audioVixService.errorMessage {
+            if let errorMessage = viewModel.serverManager.errorMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill")
                         .foregroundColor(.red)
@@ -87,7 +87,7 @@ struct ReadAloudControlView: View {
                     Spacer()
                     
                     Button(action: {
-                        viewModel.audioVixService.errorMessage = nil
+                        viewModel.serverManager.errorMessage = nil
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.gray)
@@ -99,7 +99,7 @@ struct ReadAloudControlView: View {
             }
             
             // Loading State
-            if viewModel.audioVixService.isLoading {
+            if viewModel.serverManager.isLoading {
                 HStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)
