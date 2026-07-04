@@ -88,11 +88,53 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func extractArticleContent(from webView: WKWebView, notifyUser: Bool = false, completion: @escaping (String?) -> Void) {
         let javascriptCode = """
         (function() {
-            let content = document.querySelector('article')?.innerText
-                ?? document.querySelector('main')?.innerText
-                ?? document.querySelector('[class*="article"], [class*="post-content"], [class*="entry-content"]')?.innerText
-                ?? document.body?.innerText;
-            return content ? content.trim() : null;
+            // Remove noise elements from body to keep text clean
+            const noiseSelectors = [
+                'nav', 'header', 'footer', 'aside', 'script', 'style', 'noscript', 'iframe',
+                '.nav', '.navbar', '.footer', '.sidebar', '.menu', '.ads', '.comments', '.comment-list',
+                '#comments', '#sidebar', '#header', '#footer', '.advertisement', '.social-share',
+                '.cookie-banner', '.newsletter-signup', '.related-posts'
+            ];
+            
+            // Clone document body to mutate safely without affecting the UI
+            const bodyClone = document.body.cloneNode(true);
+            
+            // Remove noise elements from clone
+            noiseSelectors.forEach(selector => {
+                bodyClone.querySelectorAll(selector).forEach(el => el.remove());
+            });
+
+            // Try to find the primary article container in the cleaned clone
+            let mainContent = bodyClone.querySelector('article') 
+                || bodyClone.querySelector('main')
+                || bodyClone.querySelector('[role="main"]')
+                || bodyClone.querySelector('[class*="article-content"]')
+                || bodyClone.querySelector('[class*="post-content"]')
+                || bodyClone.querySelector('[class*="entry-content"]');
+
+            if (mainContent) {
+                let text = (mainContent.innerText || mainContent.textContent || "").trim();
+                if (text.length > 100) {
+                    return text;
+                }
+            }
+
+            // Fallback: Gather all paragraph text blocks that have reasonable length
+            const paragraphs = bodyClone.querySelectorAll('p');
+            let paragraphTexts = [];
+            paragraphs.forEach(p => {
+                let text = (p.innerText || p.textContent || '').trim();
+                if (text.length > 20) {
+                    paragraphTexts.push(text);
+                }
+            });
+
+            if (paragraphTexts.length > 0) {
+                return paragraphTexts.join('\\n\\n');
+            }
+
+            // Final fallback to entire cleaned body
+            return (bodyClone.innerText || bodyClone.textContent || "").trim();
         })();
         """
 
