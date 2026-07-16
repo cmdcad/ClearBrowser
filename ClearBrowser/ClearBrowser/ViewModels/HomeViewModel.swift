@@ -141,6 +141,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var audioRequestSent: Bool = false
     @Published var audioReceived: Bool = false
     
+    // Page-level cache for synthesized audio data
+    private var pageAudioCache: [URL: Data] = [:]
+    private let audioCacheLimit = 5
+
     // WebView reference for read-aloud functionality
     var currentWebView: WKWebView?
 
@@ -175,6 +179,8 @@ final class HomeViewModel: NSObject, ObservableObject {
         
         // 4. Setup audio playback progress tracking
         setupAudioPlaybackTracking()
+        
+        restoreAudioForCurrentTab()
     }
 
     deinit {
@@ -245,6 +251,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             requestURL = active.url
         }
         saveSettings()
+        restoreAudioForCurrentTab()
     }
 
     func openSearchEngineHome() {
@@ -306,6 +313,43 @@ final class HomeViewModel: NSObject, ObservableObject {
             // persist last opened URL
             settings.lastOpenedURL = url.absoluteString
             saveSettings()
+        }
+    }
+
+    private func restoreAudioForCurrentTab() {
+        guard let url = activeTab?.url else { return }
+        if let cachedData = pageAudioCache[url] {
+            do {
+                try serverManager.preparePlayer(with: cachedData)
+                isReadAloudAvailable = true
+                isReadAloudPlaying = false
+                audioReceived = true
+                audioRequestSent = false
+                audioContentCandidate = true
+            } catch {
+                // If the cached audio is invalid, remove it and reset state
+                pageAudioCache.removeValue(forKey: url)
+                isReadAloudAvailable = false
+                isReadAloudPlaying = false
+                audioReceived = false
+                serverManager.errorMessage = "Failed to restore cached audio."
+            }
+        } else {
+            isReadAloudAvailable = false
+            isReadAloudPlaying = false
+        }
+    }
+
+    private func cacheAudioData(_ data: Data, for url: URL) {
+        pageAudioCache[url] = data
+        if pageAudioCache.count > audioCacheLimit {
+            let oldestKey = pageAudioCache.keys.first
+            if let oldestKey {
+                pageAudioCache.removeValue(forKey: oldestKey)
+            }
+        }
+    }
+            isReadAloudPlaying = false
         }
     }
 
@@ -849,8 +893,11 @@ final class HomeViewModel: NSObject, ObservableObject {
 
         Task {
             do {
-                _ = try await serverManager.synthesizeSpeech(text: sampleReadAloudText)
-                serverManager.play()
+                let player = try await serverManager.synthesizeSpeech(text: sampleReadAloudText)
+                if let currentURL = self.currentURL {
+                    self.cacheAudioData(self.serverManager.lastAudioData ?? Data(), for: currentURL)
+                }
+                serverManager.play(audioPlayer: player)
                 isReadAloudPlaying = true
                 isReadAloudAvailable = true
             } catch let error as AudioVixError {
@@ -879,9 +926,12 @@ final class HomeViewModel: NSObject, ObservableObject {
 
             Task {
                 do {
-                    _ = try await self.serverManager.synthesizeSpeech(text: content)
+                    let player = try await self.serverManager.synthesizeSpeech(text: content)
+                    if let url = self.activeTab?.url, let audioData = self.serverManager.lastAudioData {
+                        self.cacheAudioData(audioData, for: url)
+                    }
                     await MainActor.run {
-                        self.serverManager.play()
+                        self.serverManager.play(audioPlayer: player)
                         self.isReadAloudPlaying = true
                         self.isReadAloudAvailable = true
                     }
