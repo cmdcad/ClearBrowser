@@ -81,6 +81,20 @@ struct HomeView: View {
                             viewModel.goForward()
                         }
                         
+                        if viewModel.isReadAloudPlaying {
+                            Button(action: {
+                                viewModel.stopReadAloud()
+                            }) {
+                                Image(systemName: "stop.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(width: 34, height: 34)
+                                    .background(Color.red.opacity(0.12))
+                                    .foregroundColor(.red)
+                                    .clipShape(Circle())
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                        }
+
                         Button(action: {
                             if viewModel.isReadAloudPlaying {
                                 viewModel.pauseReadAloud()
