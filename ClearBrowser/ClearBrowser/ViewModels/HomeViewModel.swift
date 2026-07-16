@@ -197,7 +197,425 @@ final class HomeViewModel: NSObject, ObservableObject {
             }
         }
     }
-    
+    /*
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:196:22 Value of type 'HomeViewModel' has no member 'syncUser'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:352:13 Expected 'var' keyword in property declaration
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:352:13 Invalid redeclaration of 'isReadAloudPlaying'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:354:5 Extraneous '}' at top level
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:357:25 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:358:21 Cannot find 'pageTitle' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:358:74 Cannot find 'pageTitle' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:360:13 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:361:13 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:362:13 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:362:42 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:363:13 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:363:52 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:372:16 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:379:28 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:412:24 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:413:13 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:415:13 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:417:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:417:43 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:421:9 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:422:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:422:38 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:423:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:423:48 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:428:13 Cannot find 'selectedDrawer' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:429:13 Cannot find 'addressBarText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:430:13 Cannot find 'requestURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:436:25 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:437:16 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:441:25 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:443:47 Cannot find 'pageTitle' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:450:25 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:451:39 Cannot find 'pageTitle' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:452:13 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:453:13 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:454:13 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:454:42 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:455:13 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:455:52 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:460:9 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:461:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:461:38 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:462:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:462:48 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:467:13 Cannot find 'selectedDrawer' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:468:13 Cannot find 'addressBarText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:469:13 Cannot find 'requestURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:476:13 Cannot find 'selectedDrawer' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:477:13 Cannot find 'addressBarText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:478:13 Cannot find 'requestURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:484:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:485:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:485:36 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:486:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:486:46 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:490:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:491:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:491:36 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:492:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:492:46 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:496:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:497:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:497:36 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:498:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:498:46 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:502:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:503:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:503:36 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:504:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:504:46 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:522:9 Cannot find 'openAIKey' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:528:78 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:539:35 'nil' requires a contextual type
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:581:21 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:590:47 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:611:13 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:612:13 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:636:9 Cannot find 'localProfileImagePath' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:636:33 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:660:21 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:661:21 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:676:29 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:679:13 Cannot find 'isLoggedIn' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:680:13 Cannot find 'currentUserEmail' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:680:47 Value of optional type 'Optional<_>' must be unwrapped to a value of type '_'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:681:13 Cannot find 'displayName' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:681:42 Value of optional type 'Optional<_>' must be unwrapped to a value of type '_'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:682:13 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:686:13 Cannot find 'localProfileImagePath' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:686:52 Value of optional type 'Optional<_>' must be unwrapped to a value of type '_'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:690:9 Cannot find 'isLoggedIn' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:691:9 Cannot find 'currentUserEmail' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:692:9 Cannot find 'displayName' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:695:13 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:697:13 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:699:13 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:702:9 Cannot find 'localProfileImagePath' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:702:48 Value of optional type 'Optional<_>' must be unwrapped to a value of type '_'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:710:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:710:58 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:710:64 Cannot infer type of closure parameter 'bookmarks' without a type annotation
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:715:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:715:58 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:715:64 Cannot infer type of closure parameter 'favorites' without a type annotation
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:720:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:720:56 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:720:62 Cannot infer type of closure parameter 'history' without a type annotation
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:727:21 Cannot find 'aiQuery' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:727:53 Cannot infer contextual base in reference to member 'whitespacesAndNewlines'
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:729:9 Cannot find 'isAIWorking' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:730:9 Cannot find 'aiResponse' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:733:34 Cannot find 'aiService' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:735:17 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:736:17 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:742:25 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:780:32 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:781:13 Cannot find 'currentUserEmail' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:782:13 Cannot find 'displayName' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:783:13 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:784:13 Cannot find 'localProfileImagePath' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:787:9 Cannot find 'bookmarks' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:787:21 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:788:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:788:19 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:789:9 Cannot find 'favorites' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:789:21 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:790:9 Cannot find 'blockedSchemes' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:790:26 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:791:9 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:791:20 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:792:9 Cannot find 'defaultSearchEngine' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:792:31 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:793:9 Cannot find 'autoScrollSpeed' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:793:27 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:794:9 Cannot find 'highlightVerseEnabled' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:794:33 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:795:9 Cannot find 'openAIKey' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:799:13 Cannot find 'toolbarPosition' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:802:28 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:803:13 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:804:36 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:804:58 Cannot find 'tabs' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:805:17 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:807:17 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:807:36 Cannot find 'tabs' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:811:25 Cannot find 'activeTab' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:812:13 Cannot find 'requestURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:813:13 Cannot find 'currentURL' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:814:13 Cannot find 'addressBarText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:819:9 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:819:25 Cannot find 'tabs' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:820:9 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:820:32 Cannot find 'activeTabID' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:821:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:821:37 Cannot find 'settings' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:826:20 Cannot find 'currentUserEmail' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:827:26 Cannot find 'displayName' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:828:29 Cannot find 'profileImageUrl' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:829:29 Cannot find 'localProfileImagePath' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:831:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:865:32 Cannot find 'defaultSearchEngine' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:870:16 Cannot find 'isPrivateMode' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:873:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:874:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:875:9 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:875:25 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:876:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:876:36 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:877:9 Cannot find 'storageManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:877:46 Cannot find 'history' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:887:9 Cannot find 'currentReadAloudText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:888:9 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:889:9 Cannot find 'isReadAloudAvailable' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:890:9 Cannot find 'audioContentCandidate' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:891:9 Cannot find 'audioRequestSent' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:892:9 Cannot find 'audioReceived' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:896:40 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:897:37 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:898:21 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:898:41 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:900:17 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:901:17 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:902:17 Cannot find 'isReadAloudAvailable' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:904:17 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:906:17 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:913:9 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:914:9 Cannot find 'isReadAloudAvailable' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:915:9 Cannot find 'currentReadAloudText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:916:9 Cannot find 'audioContentCandidate' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:917:9 Cannot find 'audioRequestSent' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:918:9 Cannot find 'audioReceived' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:920:9 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:920:86 Cannot find 'self' in scope; did you mean to use it in a type or extension context?
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:920:92 Cannot infer type of closure parameter 'content' without a type annotation
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:952:9 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:953:9 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:957:9 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:958:9 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:962:9 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:963:9 Cannot find 'isReadAloudPlaying' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:964:9 Cannot find 'isReadAloudAvailable' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:965:9 Cannot find 'currentReadAloudText' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:969:9 Cannot find 'serverManager' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:978:12 Cannot find 'audioContentCandidate' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:984:12 Cannot find 'audioRequestSent' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:990:12 Cannot find 'audioReceived' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:992:19 Cannot find 'audioRequestSent' in scope
+
+     /Users/tosinmac8/Downloads/Git/ClearBrowser/ClearBrowser/ClearBrowser/ViewModels/HomeViewModel.swift:998:1 Extraneous '}' at top level
+*/
     private func setupAudioPlaybackTracking() {
         // Observe serverManager changes and update published properties
         serverManager.$isPlaying.assign(to: &$isReadAloudPlaying)
