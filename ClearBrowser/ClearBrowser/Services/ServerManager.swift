@@ -119,6 +119,28 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 }
             }
 
+            // Try overlay or dialog content before falling back to body paragraphs.
+            const overlaySelectors = [
+                'dialog',
+                '[role="dialog"]',
+                '[role="alertdialog"]',
+                '.modal',
+                '.popup',
+                '.overlay',
+                '.popover',
+                '.drawer',
+                '.sheet'
+            ];
+            for (const selector of overlaySelectors) {
+                const overlay = bodyClone.querySelector(selector);
+                if (overlay) {
+                    const text = (overlay.innerText || overlay.textContent || '').trim();
+                    if (text.length > 40) {
+                        return text;
+                    }
+                }
+            }
+
             // Fallback: Gather all paragraph text blocks that have reasonable length
             const paragraphs = bodyClone.querySelectorAll('p');
             let paragraphTexts = [];
@@ -358,7 +380,12 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func play(audioPlayer: AVAudioPlayer? = nil) {
         let playerToPlay = audioPlayer ?? self.audioPlayer
-        playerToPlay?.play()
+        guard let player = playerToPlay else {
+            errorMessage = "No audio available to play"
+            isPlaying = false
+            return
+        }
+        player.play()
         isPlaying = true
         startProgressTracking()
     }
@@ -370,6 +397,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func resume() {
+        guard audioPlayer != nil else {
+            errorMessage = "No audio available to resume"
+            isPlaying = false
+            return
+        }
         audioPlayer?.play()
         isPlaying = true
         startProgressTracking()
