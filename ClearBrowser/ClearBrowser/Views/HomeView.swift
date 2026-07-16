@@ -92,13 +92,22 @@ struct HomeView: View {
                                 viewModel.startSampleReadAloud()
                             }
                         }) {
-                            Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
-                                .font(.title3)
-                                .frame(width: 44, height: 44)
-                                .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
-                                .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
-                                .cornerRadius(12)
+                            if viewModel.serverManager.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .orange))
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.white)
+                                    .cornerRadius(12)
+                            } else {
+                                Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
+                                    .font(.title3)
+                                    .frame(width: 44, height: 44)
+                                    .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
+                                    .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
+                                    .cornerRadius(12)
+                            }
                         }
+                        .disabled(viewModel.serverManager.isLoading)
                     }
                     .padding(.horizontal, Theme.Spacing.lg)
                     .padding(.bottom, 20)

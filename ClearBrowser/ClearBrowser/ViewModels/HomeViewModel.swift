@@ -841,6 +841,8 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     func startSampleReadAloud() {
         currentReadAloudText = sampleReadAloudText
+        isReadAloudPlaying = false
+        isReadAloudAvailable = false
         audioContentCandidate = true
         audioRequestSent = false
         audioReceived = false
@@ -861,6 +863,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     
     func startReadAloud(from webView: WKWebView) {
         // Reset diagnostic flags for new request
+        isReadAloudPlaying = false
+        isReadAloudAvailable = false
+        currentReadAloudText = ""
         audioContentCandidate = false
         audioRequestSent = false
         audioReceived = false
