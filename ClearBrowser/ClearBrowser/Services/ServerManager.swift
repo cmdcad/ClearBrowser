@@ -11,6 +11,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         URL(string: "http://10.0.0.41:4000")!
     ]
     private var audioPlayer: AVAudioPlayer?
+    private(set) var lastAudioData: Data? = nil
 
     @Published var isPlaying = false
     @Published var currentTime: TimeInterval = 0
@@ -239,6 +240,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
                         lastAudioEventMessage = "Audio response received"
                         audioReceived = true
+                        self.lastAudioData = audioData
                         let player = try AVAudioPlayer(data: audioData)
                         player.delegate = self
                         self.audioPlayer = player
@@ -413,6 +415,17 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         isPlaying = false
         currentTime = 0
         stopProgressTracking()
+    }
+
+func preparePlayer(with audioData: Data) throws {
+        let player = try AVAudioPlayer(data: audioData)
+        player.delegate = self
+        player.enableRate = true
+        self.audioPlayer = player
+        self.lastAudioData = audioData
+        player.prepareToPlay()
+        currentTime = 0
+        duration = player.duration
     }
 
     func setPlaybackRate(_ rate: Float) {
