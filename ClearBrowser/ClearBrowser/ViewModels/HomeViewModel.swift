@@ -144,6 +144,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     // Page-level cache for synthesized audio data
     private var pageAudioCache: [URL: Data] = [:]
     private let audioCacheLimit = 5
+    private var currentReadAloudURL: URL? = nil
 
     // WebView reference for read-aloud functionality
     var currentWebView: WKWebView?
@@ -299,6 +300,9 @@ final class HomeViewModel: NSObject, ObservableObject {
         self.canGoForward = canGoForward
         self.pageTitle = title ?? url?.host ?? "ClearBrowser"
         if let url = url {
+            if url != currentReadAloudURL {
+                stopReadAloud()
+            }
             if url != currentURL {
                 addHistoryItem(title: title ?? url.host ?? "Untitled", url: url)
             }
@@ -318,10 +322,15 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     private func restoreAudioForCurrentTab() {
-        guard let url = activeTab?.url else { return }
+        guard let url = activeTab?.url else {
+            stopReadAloud()
+            currentReadAloudURL = nil
+            return
+        }
         if let cachedData = pageAudioCache[url] {
             do {
                 try serverManager.preparePlayer(with: cachedData)
+                currentReadAloudURL = url
                 isReadAloudAvailable = true
                 isReadAloudPlaying = false
                 audioReceived = true
@@ -330,14 +339,11 @@ final class HomeViewModel: NSObject, ObservableObject {
             } catch {
                 // If the cached audio is invalid, remove it and reset state
                 pageAudioCache.removeValue(forKey: url)
-                isReadAloudAvailable = false
-                isReadAloudPlaying = false
-                audioReceived = false
+                stopReadAloud()
                 serverManager.errorMessage = "Failed to restore cached audio."
             }
         } else {
-            isReadAloudAvailable = false
-            isReadAloudPlaying = false
+            stopReadAloud()
         }
     }
 
@@ -961,6 +967,10 @@ final class HomeViewModel: NSObject, ObservableObject {
         isReadAloudPlaying = false
         isReadAloudAvailable = false
         currentReadAloudText = ""
+        audioReceived = false
+        audioRequestSent = false
+        audioContentCandidate = false
+        currentReadAloudURL = nil
     }
 
     func setReadAloudSpeed(_ speed: Float) {
