@@ -21,13 +21,11 @@
 		<true/>
 	</dict>
 	<key>AudioServerBaseURL</key>
-	<string>http://10.0.0.41:4000</string>
-	<key>ChapterAudioServiceURL</key>
-	<string>http://10.0.0.41:4000</string>
-	<key>ChapterAudioServiceFallbackURLs</key>
+	<string>https://mike-tts.fly.dev</string>
+	<key>AudioServerFallbackURLs</key>
 	<array>
-		<string>http://localhost:4000</string>
-		<string>http://127.0.0.1:4000</string>
+		<string>http://10.0.0.41:4000</string>
+		<string>https://mike-tts.fly.dev</string>
 	</array>
 </dict>
 </plist>
