@@ -4,10 +4,10 @@ import WebKit
 
 @MainActor
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
-    private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
+    private let defaultServerBaseURL = URL(string: "https://mike-tts.fly.dev")!
     private let fallbackServerBaseURLs: [URL] = [
         URL(string: "http://localhost:4000")!,
-        URL(string: "http://127.0.0.1:4000")!,
+        URL(string: "https://mike-tts.fly.dev")!,
         URL(string: "http://10.0.0.41:4000")!
     ]
     private var audioPlayer: AVAudioPlayer?
