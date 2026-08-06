@@ -45,17 +45,13 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var configuredServerBaseURLs: [URL] {
         var urls: [URL] = []
 
-        if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "ChapterAudioServiceURL") as? String,
-           let url = URL(string: configuredURL) {
-            urls.append(url)
-        }
 
         if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "AudioServerBaseURL") as? String,
            let url = URL(string: configuredURL) {
             urls.append(url)
         }
 
-        if let fallbackURLs = Bundle.main.object(forInfoDictionaryKey: "ChapterAudioServiceFallbackURLs") as? [String] {
+        if let fallbackURLs = Bundle.main.object(forInfoDictionaryKey: "AudioServerFallbackURLs") as? [String] {
             for entry in fallbackURLs {
                 if let url = URL(string: entry) {
                     urls.append(url)
