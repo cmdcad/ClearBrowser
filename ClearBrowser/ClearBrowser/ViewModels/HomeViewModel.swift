@@ -145,6 +145,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     private var pageAudioCache: [URL: Data] = [:]
     private let audioCacheLimit = 5
     private var currentReadAloudURL: URL? = nil
+    private var activeReadAloudTask: Task<Void, Never>? = nil
 
     // WebView reference for read-aloud functionality
     var currentWebView: WKWebView?
@@ -888,6 +889,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     """
 
     func startSampleReadAloud() {
+        activeReadAloudTask?.cancel()
+        activeReadAloudTask = nil
+
         currentReadAloudText = sampleReadAloudText
         isReadAloudPlaying = false
         isReadAloudAvailable = false
@@ -895,24 +899,39 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioRequestSent = false
         audioReceived = false
 
-        Task {
+        let task = Task {
             do {
                 let player = try await serverManager.synthesizeSpeech(text: sampleReadAloudText)
-                if let currentURL = self.currentURL {
-                    self.cacheAudioData(self.serverManager.lastAudioData ?? Data(), for: currentURL)
+                try Task.checkCancellation()
+                await MainActor.run {
+                    guard !Task.isCancelled else { return }
+                    if let currentURL = self.currentURL {
+                        self.cacheAudioData(self.serverManager.lastAudioData ?? Data(), for: currentURL)
+                        self.currentReadAloudURL = currentURL
+                    }
+                    serverManager.play(audioPlayer: player)
+                    isReadAloudPlaying = true
+                    isReadAloudAvailable = true
                 }
-                serverManager.play(audioPlayer: player)
-                isReadAloudPlaying = true
-                isReadAloudAvailable = true
-            } catch let error as AudioVixError {
-                serverManager.errorMessage = error.localizedDescription
             } catch {
-                serverManager.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if let error = error as? AudioVixError {
+                        serverManager.errorMessage = error.localizedDescription
+                    } else {
+                        serverManager.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
+                    }
+                }
             }
         }
+        activeReadAloudTask = task
     }
     
     func startReadAloud(from webView: WKWebView) {
+        // Cancel any existing task first
+        activeReadAloudTask?.cancel()
+        activeReadAloudTask = nil
+
         // Reset diagnostic flags for new request
         isReadAloudPlaying = false
         isReadAloudAvailable = false
@@ -922,32 +941,46 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioReceived = false
         
         serverManager.extractArticleContent(from: webView, notifyUser: true) { [weak self] content in
-            guard let self = self, let content = content, !content.isEmpty else {
-                self?.serverManager.errorMessage = "No article content found"
-                return
-            }
-            self.currentReadAloudText = content
+            guard let self = self else { return }
+            
+            Task { @MainActor in
+                guard let content = content, !content.isEmpty else {
+                    self.serverManager.errorMessage = "No article content found"
+                    return
+                }
+                self.currentReadAloudText = content
 
-            Task {
-                do {
-                    let player = try await self.serverManager.synthesizeSpeech(text: content)
-                    if let url = self.activeTab?.url, let audioData = self.serverManager.lastAudioData {
-                        self.cacheAudioData(audioData, for: url)
-                    }
-                    await MainActor.run {
-                        self.serverManager.play(audioPlayer: player)
-                        self.isReadAloudPlaying = true
-                        self.isReadAloudAvailable = true
-                    }
-                } catch let error as AudioVixError {
-                    await MainActor.run {
-                        self.serverManager.errorMessage = error.localizedDescription
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
+                // Cancel any task that might have started in the meantime
+                self.activeReadAloudTask?.cancel()
+
+                let task = Task {
+                    do {
+                        let player = try await self.serverManager.synthesizeSpeech(text: content)
+                        
+                        try Task.checkCancellation()
+                        
+                        await MainActor.run {
+                            guard !Task.isCancelled else { return }
+                            if let url = self.activeTab?.url, let audioData = self.serverManager.lastAudioData {
+                                self.cacheAudioData(audioData, for: url)
+                                self.currentReadAloudURL = url
+                            }
+                            self.serverManager.play(audioPlayer: player)
+                            self.isReadAloudPlaying = true
+                            self.isReadAloudAvailable = true
+                        }
+                    } catch {
+                        guard !Task.isCancelled else { return }
+                        await MainActor.run {
+                            if let error = error as? AudioVixError {
+                                self.serverManager.errorMessage = error.localizedDescription
+                            } else {
+                                self.serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
+                            }
+                        }
                     }
                 }
+                self.activeReadAloudTask = task
             }
         }
     }
@@ -963,6 +996,9 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func stopReadAloud() {
+        activeReadAloudTask?.cancel()
+        activeReadAloudTask = nil
+
         serverManager.stop()
         isReadAloudPlaying = false
         isReadAloudAvailable = false

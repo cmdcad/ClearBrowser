@@ -21,11 +21,12 @@
 		<true/>
 	</dict>
 	<key>AudioServerBaseURL</key>
-	<string>https://mike-tts.fly.dev</string>
+	<string>http://10.0.0.41:4000</string>
 	<key>AudioServerFallbackURLs</key>
 	<array>
 		<string>http://10.0.0.41:4000</string>
 		<string>https://mike-tts.fly.dev</string>
+		<string>https://mirror-api-991075429415.us-central1.run.app</string>
 	</array>
 </dict>
 </plist>
