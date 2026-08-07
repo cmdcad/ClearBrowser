@@ -883,49 +883,6 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
     
     // MARK: - Read Aloud Methods
-
-    private let sampleReadAloudText = """
-    ClearBrowser audio test. This is a sample passage to confirm that the read aloud button can send text to the configured server, receive synthesized speech, and play it back in the app.
-    """
-
-    func startSampleReadAloud() {
-        activeReadAloudTask?.cancel()
-        activeReadAloudTask = nil
-
-        currentReadAloudText = sampleReadAloudText
-        isReadAloudPlaying = false
-        isReadAloudAvailable = false
-        audioContentCandidate = true
-        audioRequestSent = false
-        audioReceived = false
-
-        let task = Task {
-            do {
-                let player = try await serverManager.synthesizeSpeech(text: sampleReadAloudText)
-                try Task.checkCancellation()
-                await MainActor.run {
-                    guard !Task.isCancelled else { return }
-                    if let currentURL = self.currentURL {
-                        self.cacheAudioData(self.serverManager.lastAudioData ?? Data(), for: currentURL)
-                        self.currentReadAloudURL = currentURL
-                    }
-                    serverManager.play(audioPlayer: player)
-                    isReadAloudPlaying = true
-                    isReadAloudAvailable = true
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    if let error = error as? AudioVixError {
-                        serverManager.errorMessage = error.localizedDescription
-                    } else {
-                        serverManager.errorMessage = "Failed to synthesize sample audio: \(error.localizedDescription)"
-                    }
-                }
-            }
-        }
-        activeReadAloudTask = task
-    }
     
     func startReadAloud(from webView: WKWebView) {
         // Cancel any existing task first

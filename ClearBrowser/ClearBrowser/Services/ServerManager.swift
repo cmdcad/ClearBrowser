@@ -476,6 +476,8 @@ func preparePlayer(with audioData: Data) throws {
         isPlaying = false
     }
 }
+
+
 extension ServerManager {
 
     func fallbackToTTSService(text: String, voice: String, rate: Double) async throws -> AVAudioPlayer {
