@@ -311,15 +311,7 @@ struct HomeView: View {
        
     }
   }
-
-  private var drawerTitle: String {
-    switch viewModel.selectedDrawer {
-    case .bookmarks: return "Sites"
-    case .history: return "History"
-    case .settings: return "Settings" 
-    case .none: return ""
-    }
-  }
+ 
 
   private var searchBar: some View {
            ZStack(alignment: .bottom) {
