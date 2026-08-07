@@ -79,6 +79,22 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             baseURL.appendingPathComponent("api/tts")
         ]
     }
+    
+    private func getFriendlyServerName(for url: URL) -> String {
+        let urlString = url.absoluteString.lowercased()
+        
+        if urlString.contains("10.0.0.41") || urlString.contains("localhost") {
+            return "home server"
+        } else if urlString.contains("mirror-api") {
+            return "cloud server"
+        } else if urlString.contains("mike-tts") {
+            return "backup server"
+        } else if urlString.contains("fly.dev") {
+            return "cloud backup"
+        } else {
+            return "server"
+        }
+    }
 
     /// Extracts article text content from HTML using JavaScript injection.
     func extractArticleContent(from webView: WKWebView, notifyUser: Bool = false, completion: @escaping (String?) -> Void) {
@@ -161,7 +177,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
             if let error = error {
                 if notifyUser {
-                    self.lastAudioEventMessage = "Unable to read page content"
+                    self.lastAudioEventMessage = "Couldn't read the page"
                 }
                 self.hasExtractableContent = false
                 completion(nil)
@@ -170,13 +186,13 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
             if let text = result as? String, !text.isEmpty {
                 if notifyUser {
-                    self.lastAudioEventMessage = "Audio content found"
+                    self.lastAudioEventMessage = "Found text to read"
                 }
                 self.hasExtractableContent = true
                 completion(text)
             } else {
                 if notifyUser {
-                    self.lastAudioEventMessage = "No extractable audio content"
+                    self.lastAudioEventMessage = "No text found on this page"
                 }
                 self.hasExtractableContent = false
                 completion(nil)
@@ -188,17 +204,17 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func synthesizeSpeech(text: String, voice: String = "Eric", rate: Double = 1.0) async throws -> AVAudioPlayer {
         isLoading = true
         errorMessage = nil
-        lastAudioEventMessage = nil
+        lastAudioEventMessage = "Starting to read..."
         audioRequestSent = false
         audioReceived = false
         defer { isLoading = false }
 
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            lastAudioEventMessage = "No valid text to synthesize"
+            lastAudioEventMessage = "Nothing to read here"
             throw ServerManagerError.invalidText
         }
 
-        lastAudioEventMessage = "Sending audio request..."
+        lastAudioEventMessage = "Getting text ready for reading..."
         audioRequestSent = true
 
         let payload: [String: Any] = [
@@ -221,9 +237,13 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         var attempts: [AttemptError] = []
 
         for baseURL in configuredServerBaseURLs {
+            let serverName = getFriendlyServerName(for: baseURL)
+            lastAudioEventMessage = "Trying \(serverName)..."
+            
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
                     let request = try makeRequest(to: endpointURL, body: payloadData)
+                    lastAudioEventMessage = "Asking \(serverName) to read this..."
                     let (data, response) = try await URLSession.shared.data(for: request)
                     guard let httpResponse = response as? HTTPURLResponse else {
                         let err = ServerManagerError.serverError(message: "No HTTP response from server")
@@ -232,8 +252,9 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                     }
 
                     if (200..<300).contains(httpResponse.statusCode) {
+                        lastAudioEventMessage = "\(serverName) is preparing the audio..."
                         let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
-                        lastAudioEventMessage = "Audio response received"
+                        lastAudioEventMessage = "Got the audio from \(serverName)!"
                         audioReceived = true
                         self.lastAudioData = audioData
                         let player = try AVAudioPlayer(data: audioData)
@@ -250,9 +271,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 } catch let error as ServerManagerError {
                     attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: error))
                 } catch let error as URLError {
+                    lastAudioEventMessage = "\(serverName) didn't respond, trying next option..."
                     let netErr = ServerManagerError.networkError("Could not connect to server: \(error.localizedDescription)")
                     attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
                 } catch let error {
+                    lastAudioEventMessage = "\(serverName) had an issue, trying next option..."
                     let netErr = ServerManagerError.networkError(error.localizedDescription)
                     attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
                 }
@@ -262,7 +285,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         if !attempts.isEmpty {
             // Try TTS fallback
             do {
-                lastAudioEventMessage = "Falling back to TTS server..."
+                lastAudioEventMessage = "Using backup voice service..."
                 let player = try await fallbackToTTSService(text: text, voice: voice, rate: rate)
                 audioReceived = true
                 return player
@@ -320,7 +343,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
         if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             if let audioURLString = resolveAudioURL(from: jsonObject) {
-                lastAudioEventMessage = "Downloading audio from server"
+                lastAudioEventMessage = "Downloading the audio file..."
                 return try await downloadAudioData(from: audioURLString)
             }
 
@@ -508,15 +531,15 @@ enum ServerManagerError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid audio server URL"
+            return "The server address doesn't look right"
         case .serverError(let message):
             return message
         case .audioPlaybackError(let message):
-            return "Audio playback error: \(message)"
+            return "Couldn't play the audio: \(message)"
         case .invalidText:
-            return "No valid text content to read"
+            return "There's no text to read"
         case .networkError(let message):
-            return "Network error: \(message)"
+            return "Connection problem: \(message)"
         }
     }
 }
