@@ -194,8 +194,6 @@ struct HomeView: View {
         viewModel.resumeReadAloud()
       } else if let webView = viewModel.currentWebView {
         viewModel.startReadAloud(from: webView)
-      } else {
-        viewModel.startSampleReadAloud()
       }
     }) {
       if viewModel.serverManager.isLoading {
@@ -255,14 +253,13 @@ struct HomeView: View {
       }
   }
 
+  @ViewBuilder
   private var drawerOverlay: some View {
     if viewModel.selectedDrawer != nil {
       DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
         DrawerContentView(viewModel: viewModel)
       }
       .transition(.move(edge: .trailing).combined(with: .opacity))
-    } else {
-      EmptyView()
     }
   }
 

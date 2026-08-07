@@ -369,7 +369,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
 
-    nonisolated func isForcedInApp(_ url: URL?) -> Bool {
+    func isForcedInApp(_ url: URL?) -> Bool {
         guard let url = url else { return false }
 
         // Check scheme for custom apps (e.g. twitter://)
