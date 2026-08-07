@@ -111,41 +111,33 @@ struct BrowserView: UIViewRepresentable {
             }
         }
 
-        nonisolated func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-            Task { @MainActor in
-                viewModel.isLoading = true
-            }
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            viewModel.isLoading = true
         }
 
-        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            Task { @MainActor in
-                viewModel.isLoading = false
-                viewModel.updateNavigationState(canGoBack: webView.canGoBack,
-                                                canGoForward: webView.canGoForward,
-                                                title: webView.title,
-                                                url: webView.url)
-                autoScrollManager.scrollView = webView.scrollView
-                print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
-            }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            viewModel.isLoading = false
+            viewModel.updateNavigationState(canGoBack: webView.canGoBack,
+                                            canGoForward: webView.canGoForward,
+                                            title: webView.title,
+                                            url: webView.url)
+            autoScrollManager.scrollView = webView.scrollView
+            print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
         }
 
-        nonisolated func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            Task { @MainActor in
-                viewModel.isLoading = false
-                viewModel.updateNavigationState(canGoBack: webView.canGoBack,
-                                                canGoForward: webView.canGoForward,
-                                                title: webView.title,
-                                                url: webView.url)
-            }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            viewModel.isLoading = false
+            viewModel.updateNavigationState(canGoBack: webView.canGoBack,
+                                            canGoForward: webView.canGoForward,
+                                            title: webView.title,
+                                            url: webView.url)
         }
 
-        nonisolated func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            Task { @MainActor in
-                viewModel.isLoading = false
-            }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            viewModel.isLoading = false
         }
 
-        nonisolated func webView(_ webView: WKWebView,
+        func webView(_ webView: WKWebView,
              decidePolicyFor navigationAction: WKNavigationAction,
              decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
@@ -179,7 +171,7 @@ struct BrowserView: UIViewRepresentable {
             decisionHandler(.allow)
         }
 
-        nonisolated func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             // Intercept navigation attempts that would normally open in a new window or tab.
             // Instead of returning a new WKWebView, we load the request in the current one.
             guard navigationAction.targetFrame == nil || navigationAction.targetFrame?.isMainFrame == false else {
