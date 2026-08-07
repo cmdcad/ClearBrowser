@@ -369,16 +369,16 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
     }
 
-    func isForcedInApp(_ url: URL?) -> Bool {
+    nonisolated func isForcedInApp(_ url: URL?) -> Bool {
         guard let url = url else { return false }
-        
+
         // Check scheme for custom apps (e.g. twitter://)
         if let scheme = url.scheme?.lowercased(), scheme != "http", scheme != "https" {
             if blockedSchemes.contains(scheme) {
                 return true
             }
         }
-        
+
         // Check host for web domains (e.g. youtube.com)
         if let host = url.host?.lowercased() {
             for blocked in blockedSchemes {
@@ -387,7 +387,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                 }
             }
         }
-        
+
         return false
     }
 
