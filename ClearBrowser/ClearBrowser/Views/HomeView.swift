@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import PhotosUI
+import AudioToolbox
 
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
@@ -273,6 +274,10 @@ struct HomeView: View {
   }
 
   private func showToast(_ message: String) {
+    // Vibrate when showing toast message
+    let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.impactOccurred()
+
     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
       toastMessage = message
     }

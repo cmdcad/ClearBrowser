@@ -6,6 +6,7 @@ import WebKit
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
     private let fallbackServerBaseURLs: [URL] = [
+        URL(string: "https://mike-tts.fly.dev")!,
         URL(string: "https://mirror-api-991075429415.us-central1.run.app")!
     ]
 
@@ -25,6 +26,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var audioReceived: Bool = false
 
     private var displayLink: CADisplayLink?
+    private var currentJobId: String? = nil
+    private var currentJobBaseURL: URL? = nil
 
     override init() {
         super.init()
@@ -70,26 +73,18 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func synthesizeEndpointCandidates(for baseURL: URL) -> [URL] {
-        [
-            baseURL.appendingPathComponent("api/speak"),
-            baseURL.appendingPathComponent("api/audio"),
-            baseURL.appendingPathComponent("synthesize"),
-            baseURL.appendingPathComponent("api/synthesize"),
-            baseURL.appendingPathComponent("tts"),
-            baseURL.appendingPathComponent("api/tts")
-        ]
+        // All servers use the same /api/audio endpoint
+        return [baseURL.appendingPathComponent("api/audio")]
     }
     
     private func getFriendlyServerName(for url: URL) -> String {
         let urlString = url.absoluteString.lowercased()
-        
+
         if urlString.contains("10.0.0.41") || urlString.contains("localhost") {
             return "home server"
         } else if urlString.contains("mirror-api") {
             return "cloud server"
-        } else if urlString.contains("mike-tts") {
-            return "backup server"
-        } else if urlString.contains("fly.dev") {
+        } else if urlString.contains("mike-tts") || urlString.contains("fly.dev") {
             return "cloud backup"
         } else {
             return "server"
@@ -200,8 +195,45 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Cancels any existing audio generation job
+    private func cancelExistingJob() async {
+        guard let jobId = currentJobId, let baseURL = currentJobBaseURL else {
+            return
+        }
+
+        let urlString = baseURL.absoluteString.lowercased()
+        let isMikeTTS = urlString.contains("mike-tts") || urlString.contains("fly.dev")
+
+        let cancelURL: URL
+        if isMikeTTS {
+            // Mike-tts doesn't have a cancel endpoint, but we can stop tracking it
+            currentJobId = nil
+            currentJobBaseURL = nil
+            return
+        } else {
+            // Home server cancel endpoint
+            cancelURL = baseURL.appendingPathComponent("api/audio").appendingPathComponent(jobId).appendingPathComponent("cancel")
+        }
+
+        do {
+            var request = URLRequest(url: cancelURL)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 5
+            let (_, _) = try await URLSession.shared.data(for: request)
+            lastAudioEventMessage = "Cancelled previous request"
+        } catch {
+            // Ignore cancel errors, just clear the job tracking
+        }
+
+        currentJobId = nil
+        currentJobBaseURL = nil
+    }
+
     /// Sends text to the configured server and resolves the returned audio payload.
     func synthesizeSpeech(text: String, voice: String = "Eric", rate: Double = 1.0) async throws -> AVAudioPlayer {
+        // Cancel any existing job before starting a new one
+        await cancelExistingJob()
+
         isLoading = true
         errorMessage = nil
         lastAudioEventMessage = "Starting to read..."
@@ -239,7 +271,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         for baseURL in configuredServerBaseURLs {
             let serverName = getFriendlyServerName(for: baseURL)
             lastAudioEventMessage = "Trying \(serverName)..."
-            
+
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
                     let request = try makeRequest(to: endpointURL, body: payloadData)
@@ -342,6 +374,17 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
         if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            // Handle async job response - any server that returns a job ID
+            if let jobId = jsonObject["id"] as? String ?? jsonObject["jobId"] as? String {
+                currentJobId = jobId
+                currentJobBaseURL = response.url?.deletingLastPathComponent()
+                lastAudioEventMessage = "Waiting for audio generation..."
+                let audioData = try await pollHomeServerJob(jobId: jobId, baseURL: response.url?.deletingLastPathComponent())
+                currentJobId = nil
+                currentJobBaseURL = nil
+                return audioData
+            }
+
             if let audioURLString = resolveAudioURL(from: jsonObject) {
                 lastAudioEventMessage = "Downloading the audio file..."
                 return try await downloadAudioData(from: audioURLString)
@@ -367,6 +410,58 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         return data
+    }
+
+    private func pollHomeServerJob(jobId: String, baseURL: URL?) async throws -> Data {
+        guard let baseURL = baseURL else {
+            throw ServerManagerError.invalidURL
+        }
+
+        let urlString = baseURL.absoluteString.lowercased()
+        let isMikeTTS = urlString.contains("mike-tts") || urlString.contains("fly.dev")
+
+        // Use appropriate poll endpoint based on server type
+        let pollURL: URL
+        if isMikeTTS {
+            pollURL = baseURL.appendingPathComponent("tts").appendingPathComponent("status").appendingPathComponent(jobId)
+        } else {
+            pollURL = baseURL.appendingPathComponent("api/audio").appendingPathComponent(jobId)
+        }
+
+        let maxAttempts = 30
+        let pollInterval: TimeInterval = 1.0
+
+        for attempt in 0..<maxAttempts {
+            try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+
+            let (data, response) = try await URLSession.shared.data(from: pollURL)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ServerManagerError.serverError(message: "No HTTP response from poll endpoint")
+            }
+
+            if (200..<300).contains(httpResponse.statusCode) {
+                if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let status = jsonObject["status"] as? String {
+                        if status.lowercased() == "completed" || status.lowercased() == "done" || status.lowercased() == "success" {
+                            // Download the audio file
+                            let audioURL: URL
+                            if isMikeTTS {
+                                audioURL = baseURL.appendingPathComponent("audio").appendingPathComponent("\(jobId).wav")
+                            } else {
+                                audioURL = baseURL.appendingPathComponent("api/audio").appendingPathComponent("\(jobId).mp3")
+                            }
+                            lastAudioEventMessage = "Downloading the audio file..."
+                            return try await downloadAudioData(from: audioURL.absoluteString)
+                        } else if status.lowercased() == "failed" || status.lowercased() == "error" {
+                            throw ServerManagerError.serverError(message: "Audio generation failed")
+                        }
+                        // Continue polling for other statuses
+                    }
+                }
+            }
+        }
+
+        throw ServerManagerError.serverError(message: "Audio generation timed out")
     }
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
@@ -425,6 +520,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         audioPlayer?.pause()
         isPlaying = false
         stopProgressTracking()
+
+        // Cancel any ongoing audio generation job when pausing
+        Task {
+            await cancelExistingJob()
+        }
     }
 
     func resume() {
@@ -444,6 +544,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         isPlaying = false
         currentTime = 0
         stopProgressTracking()
+
+        // Cancel any ongoing audio generation job
+        Task {
+            await cancelExistingJob()
+        }
     }
 
 func preparePlayer(with audioData: Data) throws {
