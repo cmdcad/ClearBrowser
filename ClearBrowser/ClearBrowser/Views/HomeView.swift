@@ -25,7 +25,6 @@ struct HomeView: View {
   }
 
   var body: some View {
-      
     NavigationView {
       ZStack {
         Color(uiColor: .systemGroupedBackground)
@@ -37,170 +36,22 @@ struct HomeView: View {
               .transition(.move(edge: .top).combined(with: .opacity))
           }
 
-          BrowserView(viewModel: viewModel)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .padding(.horizontal, Theme.Spacing.sm)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-            .overlay(statusOverlay, alignment: .top)
-  
-            // New draggable bottom bar:
-            .overlay(alignment: .bottom) {
-            if !isKeyboardVisible {
-                VStack(spacing: 0) {
-
-                    // MARK: - Grip Handle (More Grippable)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.secondary.opacity(0.35))
-                        .frame(width: 40, height: 5)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .contentShape(Rectangle()) // Makes entire area tappable
-
-                    // MARK: - Bottom Bar Buttons
-                    HStack(alignment: .center, spacing: Theme.Spacing.md) {
-                        ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
-                            viewModel.goBack()
-                        }
-
-                        Button(action: {
-                            print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
-                            viewModel.toggleAutoScroll()
-                            print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
-                        }) {
-                            Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-                                .font(.title3)
-                                .frame(width: 44, height: 44)
-                                .background(viewModel.isAutoScrolling ? Color.green : .white)
-                                .foregroundColor(viewModel.isAutoScrolling ? .white : .green.opacity(0.5))
-                                .cornerRadius(12)
-                        }
-
-                        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
-                            viewModel.goForward()
-                        }
-                        
-                        if viewModel.isReadAloudPlaying {
-                            Button(action: {
-                                viewModel.stopReadAloud()
-                            }) {
-                                Image(systemName: "stop.fill")
-                                    .font(.subheadline.weight(.semibold))
-                                    .frame(width: 34, height: 34)
-                                    .background(Color.red.opacity(0.12))
-                                    .foregroundColor(.red)
-                                    .clipShape(Circle())
-                            }
-                            .transition(.scale.combined(with: .opacity))
-                        }
-
-                        Button(action: {
-                            if viewModel.isReadAloudPlaying {
-                                viewModel.pauseReadAloud()
-                            } else if viewModel.isReadAloudAvailable {
-                                viewModel.resumeReadAloud()
-                            } else if let webView = viewModel.currentWebView {
-                                viewModel.startReadAloud(from: webView)
-                            } else {
-                                viewModel.startSampleReadAloud()
-                            }
-                        }) {
-                            if viewModel.serverManager.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .orange))
-                                    .frame(width: 44, height: 44)
-                                    .background(Color.white)
-                                    .cornerRadius(12)
-                            } else {
-                                Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
-                                    .font(.title3)
-                                    .frame(width: 44, height: 44)
-                                    .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
-                                    .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
-                                    .cornerRadius(12)
-                            }
-                        }
-                        .disabled(viewModel.serverManager.isLoading)
-                    }
-                    .padding(.horizontal, Theme.Spacing.lg)
-                    .padding(.bottom, 20)
-                }
-                .padding(.top, 4)
-                .background(
-                    ZStack {
-                        // Glassmorphism background
-                        RoundedRectangle(cornerRadius: 45)
-                            .fill(Theme.primary.opacity(0.98))
-                        RoundedRectangle(cornerRadius: 45)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    }
-                    .background(
-                        RoundedRectangle(cornerRadius: 45)
-                            .fill(Theme.primary)
-                            .blur(radius: 10)
-                    )
-                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-                )
-
-                // MARK: - Offset (Controls Visibility)
-                .offset(y: bottomBarOffset)
-
-                // MARK: - Drag Gesture
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            // Reversed: dragging DOWN (positive translation) now reduces offset to 0
-                            let dragAmount = -value.translation.height
-
-                            bottomBarOffset = min(
-                                max(bottomBarOffset + dragAmount * 0.8, 0),
-                                85
-                            )
-
-                            lastDragValue = dragAmount
-                        }
-                        .onEnded { value in
-                            let velocity = -value.velocity.height
-
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                if velocity < -300 || bottomBarOffset > 40 {
-                                    // Hide (resting hidden position lowered to 75)
-                                    bottomBarOffset = 75
-                                    isBottomBarExpanded = false
-                                } else {
-                                    // Show fully
-                                    bottomBarOffset = 0
-                                    isBottomBarExpanded = true
-                                }
-                            }
-                        }
-                )
-
-                // MARK: - Tap to Toggle
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                        bottomBarOffset = bottomBarOffset > 30 ? 0 : 75
-                    }
-                }
-            }
-        }
-        .padding(.vertical, Theme.Spacing.sm)
+          browserContent
+          
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
             headerContent
               .padding(.top, 8)
               .padding(.bottom, 8)
               .transition(.move(edge: .bottom).combined(with: .opacity))
           }
-        }  
-
-        if viewModel.selectedDrawer != nil {
-          DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
-            DrawerContentView(viewModel: viewModel)
-          }
-          .transition(.move(edge: .trailing).combined(with: .opacity))
         }
 
+        // Drawers overlay
+        if viewModel.selectedDrawer != nil {
+          drawerOverlay
+        }
+
+        // Toast overlay
         if let message = toastMessage {
           VStack {
             Spacer()
@@ -218,7 +69,6 @@ struct HomeView: View {
           .padding(.horizontal, 20)
           .zIndex(3)
         }
-
       }
       .navigationBarHidden(true)
     }
@@ -226,24 +76,202 @@ struct HomeView: View {
       AccountFlowView(viewModel: viewModel, startDestination: destination)
     }
     .sheet(isPresented: $showTabManager) {
-        TabManagerView(viewModel: viewModel)
+      TabManagerView(viewModel: viewModel)
     }
     .navigationViewStyle(StackNavigationViewStyle())
-    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
-    { _ in
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
       withAnimation(.easeOut(duration: 0.2)) { isKeyboardVisible = true }
     }
-    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
-    { _ in
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
       withAnimation(.easeIn(duration: 0.2)) { isKeyboardVisible = false }
     }
-    .onChange(of: viewModel.serverManager.lastAudioEventMessage) { message in
+    .onChange(of: viewModel.serverManager.lastAudioEventMessage) { _, message in
       guard let message = message else { return }
       showToast(message)
     }
-    .onChange(of: viewModel.serverManager.errorMessage) { message in
+    .onChange(of: viewModel.serverManager.errorMessage) { _, message in
       guard let message = message else { return }
       showToast(message)
+    }
+  }
+
+  private var browserContent: some View {
+    BrowserView(viewModel: viewModel)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(Theme.primary)
+      .clipShape(RoundedRectangle(cornerRadius: 18))
+      .padding(.horizontal, Theme.Spacing.sm)
+      .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+      .overlay(statusOverlay, alignment: .top)
+      .overlay(alignment: .bottom) {
+        if !isKeyboardVisible {
+          draggableBottomBar
+        }
+      }
+  }
+
+  private var draggableBottomBar: some View {
+    VStack(spacing: 0) {
+      gripHandle
+      bottomBarButtons
+    }
+    .padding(.top, 4)
+    .background(bottomBarBackground)
+    .offset(y: bottomBarOffset)
+    .gesture(dragGesture)
+    .onTapGesture {
+      withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+        bottomBarOffset = bottomBarOffset > 30 ? 0 : 75
+      }
+    }
+  }
+
+  private var gripHandle: some View {
+    RoundedRectangle(cornerRadius: 3)
+      .fill(Color.secondary.opacity(0.35))
+      .frame(width: 40, height: 5)
+      .padding(.top, 8)
+      .padding(.bottom, 4)
+      .contentShape(Rectangle())
+  }
+
+  private var bottomBarButtons: some View {
+    HStack(alignment: .center, spacing: Theme.Spacing.md) {
+      ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
+        viewModel.goBack()
+      }
+
+      autoScrollButton
+
+      ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
+        viewModel.goForward()
+      }
+
+      if viewModel.isReadAloudPlaying {
+        stopReadAloudButton
+      }
+
+      readAloudButton
+    }
+    .padding(.horizontal, Theme.Spacing.lg)
+    .padding(.bottom, 20)
+  }
+
+  private var autoScrollButton: some View {
+    Button(action: {
+      print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
+      viewModel.toggleAutoScroll()
+      print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
+    }) {
+      Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
+        .font(.title3)
+        .frame(width: 44, height: 44)
+        .background(viewModel.isAutoScrolling ? Color.green : .white)
+        .foregroundColor(viewModel.isAutoScrolling ? .white : .green.opacity(0.5))
+        .cornerRadius(12)
+    }
+  }
+
+  private var stopReadAloudButton: some View {
+    Button(action: {
+      viewModel.stopReadAloud()
+    }) {
+      Image(systemName: "stop.fill")
+        .font(.subheadline.weight(.semibold))
+        .frame(width: 34, height: 34)
+        .background(Color.red.opacity(0.12))
+        .foregroundColor(.red)
+        .clipShape(Circle())
+    }
+    .transition(.scale.combined(with: .opacity))
+  }
+
+  private var readAloudButton: some View {
+    Button(action: {
+      if viewModel.isReadAloudPlaying {
+        viewModel.pauseReadAloud()
+      } else if viewModel.isReadAloudAvailable {
+        viewModel.resumeReadAloud()
+      } else if let webView = viewModel.currentWebView {
+        viewModel.startReadAloud(from: webView)
+      } else {
+        viewModel.startSampleReadAloud()
+      }
+    }) {
+      if viewModel.serverManager.isLoading {
+        ProgressView()
+          .progressViewStyle(CircularProgressViewStyle(tint: .orange))
+          .frame(width: 44, height: 44)
+          .background(Color.white)
+          .cornerRadius(12)
+      } else {
+        Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
+          .font(.title3)
+          .frame(width: 44, height: 44)
+          .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
+          .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
+          .cornerRadius(12)
+      }
+    }
+    .disabled(viewModel.serverManager.isLoading)
+  }
+
+  private var bottomBarBackground: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 45)
+        .fill(Theme.primary.opacity(0.98))
+      RoundedRectangle(cornerRadius: 45)
+        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+    }
+    .background(
+      RoundedRectangle(cornerRadius: 45)
+        .fill(Theme.primary)
+        .blur(radius: 10)
+    )
+    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
+  }
+
+  private var dragGesture: some Gesture {
+    DragGesture()
+      .onChanged { value in
+        let dragAmount = -value.translation.height
+        bottomBarOffset = min(
+          max(bottomBarOffset + dragAmount * 0.8, 0),
+          85
+        )
+        lastDragValue = dragAmount
+      }
+      .onEnded { value in
+        let velocity = -value.velocity.height
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+          if velocity < -300 || bottomBarOffset > 40 {
+            bottomBarOffset = 75
+            isBottomBarExpanded = false
+          } else {
+            bottomBarOffset = 0
+            isBottomBarExpanded = true
+          }
+        }
+      }
+  }
+
+  private var drawerOverlay: some View {
+    if viewModel.selectedDrawer != nil {
+      DrawerView(title: drawerTitle, isOpen: drawerOpenBinding) {
+        DrawerContentView(viewModel: viewModel)
+      }
+      .transition(.move(edge: .trailing).combined(with: .opacity))
+    } else {
+      EmptyView()
+    }
+  }
+
+  private var drawerTitle: String {
+    switch viewModel.selectedDrawer {
+    case .history: return "History"
+    case .bookmarks: return "Bookmarks"
+    case .settings: return "Settings"
+    case .none: return ""
     }
   }
 
@@ -309,7 +337,7 @@ struct HomeView: View {
                     .keyboardType(.URL)
                     .autocorrectionDisabled(true)
                     .textInputAutocapitalization(.never)
-                    .onChange(of: isAddressBarFocused) { focused in
+                    .onChange(of: isAddressBarFocused) { _, focused in
                         if focused {
                             // Select all text on focus
                             DispatchQueue.main.async {

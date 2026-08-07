@@ -87,13 +87,13 @@ struct BrowserView: UIViewRepresentable {
             self.viewModel = viewModel
             self.autoScrollManager = viewModel.autoScrollManager
             super.init()
-                self.autoScrollManager.didStop = { [weak viewModel] in
+            self.autoScrollManager.didStop = { [weak viewModel] in
                 guard let viewModel = viewModel else { return }
                 Task { @MainActor in
                     print("[AutoScroll] didStop closure running; clearing viewModel.isAutoScrolling")
                     viewModel.isAutoScrolling = false
                 }
-                }
+            }
         }
 
         deinit {
@@ -111,33 +111,41 @@ struct BrowserView: UIViewRepresentable {
             }
         }
 
-        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-            viewModel.isLoading = true
+        nonisolated func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            Task { @MainActor in
+                viewModel.isLoading = true
+            }
         }
 
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            viewModel.isLoading = false
-            viewModel.updateNavigationState(canGoBack: webView.canGoBack,
-                                            canGoForward: webView.canGoForward,
-                                            title: webView.title,
-                                            url: webView.url)
-            autoScrollManager.scrollView = webView.scrollView
-            print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
+        nonisolated func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Task { @MainActor in
+                viewModel.isLoading = false
+                viewModel.updateNavigationState(canGoBack: webView.canGoBack,
+                                                canGoForward: webView.canGoForward,
+                                                title: webView.title,
+                                                url: webView.url)
+                autoScrollManager.scrollView = webView.scrollView
+                print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
+            }
         }
 
-        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            viewModel.isLoading = false
-            viewModel.updateNavigationState(canGoBack: webView.canGoBack,
-                                            canGoForward: webView.canGoForward,
-                                            title: webView.title,
-                                            url: webView.url)
+        nonisolated func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            Task { @MainActor in
+                viewModel.isLoading = false
+                viewModel.updateNavigationState(canGoBack: webView.canGoBack,
+                                                canGoForward: webView.canGoForward,
+                                                title: webView.title,
+                                                url: webView.url)
+            }
         }
 
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            viewModel.isLoading = false
+        nonisolated func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            Task { @MainActor in
+                viewModel.isLoading = false
+            }
         }
-        
-        func webView(_ webView: WKWebView,
+
+        nonisolated func webView(_ webView: WKWebView,
              decidePolicyFor navigationAction: WKNavigationAction,
              decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
@@ -150,8 +158,8 @@ struct BrowserView: UIViewRepresentable {
                     decisionHandler(.cancel)
                     return
                 }
-                
-                // If it's a web link and the user tapped it, cancel standard navigation 
+
+                // If it's a web link and the user tapped it, cancel standard navigation
                 // to prevent Universal Links, and manually load it to force it in WKWebView.
                 if navigationAction.navigationType == .linkActivated {
                     decisionHandler(.cancel)
@@ -171,7 +179,7 @@ struct BrowserView: UIViewRepresentable {
             decisionHandler(.allow)
         }
 
-        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        nonisolated func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             // Intercept navigation attempts that would normally open in a new window or tab.
             // Instead of returning a new WKWebView, we load the request in the current one.
             guard navigationAction.targetFrame == nil || navigationAction.targetFrame?.isMainFrame == false else {
@@ -187,9 +195,9 @@ struct BrowserView: UIViewRepresentable {
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             // Only update visibility if the user is actively dragging
             guard scrollView.isDragging else { return }
-            
+
             let translation = scrollView.panGestureRecognizer.translation(in: scrollView.superview)
-            
+
             if viewModel.toolbarPosition == .top {
                 // Top Bar Logic
                 if translation.y < -10 {

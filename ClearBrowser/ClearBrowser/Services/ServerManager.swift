@@ -488,15 +488,19 @@ func preparePlayer(with audioData: Data) throws {
 
     // MARK: - AVAudioPlayerDelegate
 
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        isPlaying = false
-        currentTime = 0
-        stopProgressTracking()
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            isPlaying = false
+            currentTime = 0
+            stopProgressTracking()
+        }
     }
 
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
-        errorMessage = "Audio playback error: \(error?.localizedDescription ?? "Unknown error")"
-        isPlaying = false
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        Task { @MainActor in
+            errorMessage = "Audio playback error: \(error?.localizedDescription ?? "Unknown error")"
+            isPlaying = false
+        }
     }
 }
 
