@@ -6,9 +6,9 @@ import WebKit
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
     private let fallbackServerBaseURLs: [URL] = [
-        URL(string: "https://mirror-api-991075429415.us-central1.run.app")!,
-        URL(string: "https://mike-tts.fly.dev")! 
+        URL(string: "https://mirror-api-991075429415.us-central1.run.app")!
     ]
+
     private var audioPlayer: AVAudioPlayer?
     private(set) var lastAudioData: Data? = nil
 
@@ -260,34 +260,45 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         if !attempts.isEmpty {
-            let primaryURL = configuredServerBaseURLs.first
-            
-            func rank(_ attempt: AttemptError) -> Int {
-                let isPrimary = (primaryURL != nil && attempt.baseURL == primaryURL)
-                let scoreMultiplier = isPrimary ? 10 : 1
+            // Try TTS fallback
+            do {
+                lastAudioEventMessage = "Falling back to TTS server..."
+                let player = try await fallbackToTTSService(text: text, voice: voice, rate: rate)
+                audioReceived = true
+                return player
+            } catch {
+                // If TTS also fails, throw the best original error
+                let primaryURL = configuredServerBaseURLs.first
                 
-                if let statusCode = attempt.statusCode {
-                    if statusCode == 404 || statusCode == 405 {
-                        return 5 * scoreMultiplier
+                func rank(_ attempt: AttemptError) -> Int {
+                    let isPrimary = (primaryURL != nil && attempt.baseURL == primaryURL)
+                    let scoreMultiplier = isPrimary ? 10 : 1
+                    
+                    if let statusCode = attempt.statusCode {
+                        if statusCode == 404 || statusCode == 405 {
+                            return 5 * scoreMultiplier
+                        } else {
+                            return 10 * scoreMultiplier
+                        }
                     } else {
-                        return 10 * scoreMultiplier
+                        return 2 * scoreMultiplier
                     }
-                } else {
-                    return 2 * scoreMultiplier
                 }
-            }
-            
-            var bestAttempt = attempts[0]
-            var bestRank = rank(bestAttempt)
-            for attempt in attempts.dropFirst() {
-                let r = rank(attempt)
-                if r > bestRank {
-                    bestAttempt = attempt
-                    bestRank = r
+                
+                var bestAttempt = attempts[0]
+                var bestRank = rank(bestAttempt)
+                for attempt in attempts.dropFirst() {
+                    let r = rank(attempt)
+                    if r > bestRank {
+                        bestAttempt = attempt
+                        bestRank = r
+                    }
                 }
+                
+                throw bestAttempt.error
             }
-            throw bestAttempt.error
         }
+
 
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
     }
@@ -463,6 +474,22 @@ func preparePlayer(with audioData: Data) throws {
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         errorMessage = "Audio playback error: \(error?.localizedDescription ?? "Unknown error")"
         isPlaying = false
+    }
+}
+extension ServerManager {
+
+    func fallbackToTTSService(text: String, voice: String, rate: Double) async throws -> AVAudioPlayer {
+        let tts = TTSService(baseURL: URL(string: "https://mike-tts.fly.dev")!)
+        let verses = [text]   // ServerManager sends whole text, not verse-by-verse
+
+        let (audioData, _) = try await tts.synthesize(verses: verses, voice: voice)
+
+        let player = try AVAudioPlayer(data: audioData)
+        player.delegate = self
+        self.audioPlayer = player
+        self.lastAudioData = audioData
+        player.prepareToPlay()
+        return player
     }
 }
 
