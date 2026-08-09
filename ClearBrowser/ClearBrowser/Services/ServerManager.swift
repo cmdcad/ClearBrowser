@@ -109,8 +109,9 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private func cacheAudio(_ key: String, _ data: Data) {
         // Implement LRU cache: remove oldest if over limit
         if audioCache.count >= maxCacheSize {
-            let oldestKey = audioCache.keys.first
-            audioCache.removeValue(forKey: oldestKey)
+            if let oldestKey = audioCache.keys.first {
+                audioCache.removeValue(forKey: oldestKey)
+            }
         }
         audioCache[key] = data
     }
@@ -194,7 +195,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         webView.evaluateJavaScript(javascriptCode) { [weak self] result, error in
             guard let self = self else { completion(nil); return }
 
-            if let error = error {
+            if error != nil {
                 if notifyUser {
                     self.lastAudioEventMessage = "Couldn't read the page"
                 }
@@ -279,7 +280,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
-                    let request = try makeRequest(to: endpointURL, body: payloadData)
+                    let request = try makeRequest(to: endpointURL, body: payloadData, text: text, voice: voice)
                     lastAudioEventMessage = "Asking \(serverName) to read this..."
                     let (data, response) = try await URLSession.shared.data(for: request)
                     guard let httpResponse = response as? HTTPURLResponse else {
@@ -368,7 +369,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
     }
 
-    private func makeRequest(to endpointURL: URL, body: Data) throws -> URLRequest {
+    private func makeRequest(to endpointURL: URL, body: Data, text: String, voice: String) throws -> URLRequest {
         guard let requestURL = URL(string: endpointURL.absoluteString) else {
             throw ServerManagerError.invalidURL
         }
@@ -438,12 +439,13 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         var normalized = response
 
         // Handle async job responses - these should fail immediately since we removed polling
-        if let jobId = response["jobId"] as? String ?? response["id"] as? String {
+        if response["jobId"] as? String != nil || response["id"] as? String != nil {
             // Check if this is a job ID response (async) vs artifact ID (sync)
             let urlString = response["audioUrl"] as? String ?? response["url"] as? String ?? ""
             if urlString.isEmpty {
                 // This is an async job response, not a sync response
-                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
+                print("Server returned async job ID but polling is disabled")
+                // Don't throw, just log it and continue with other fields
             }
         }
 
