@@ -278,7 +278,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             let serverName = getFriendlyServerName(for: baseURL)
             lastAudioEventMessage = "Trying \(serverName)..."
 
-            // Give servers up to 3 minutes to complete audio generation after acknowledgment
+            // Give servers up to 3 minutes to complete audio generation
             let timeout: TimeInterval = 180
 
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
@@ -292,9 +292,15 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         continue
                     }
 
-                    // Connection acknowledged - inform user
                     if (200..<300).contains(httpResponse.statusCode) {
-                        lastAudioEventMessage = "\(serverName) accepted the request..."
+                        // Mirror service processes synchronously, no separate acknowledgment
+                        if serverName == "cloud server" {
+                            lastAudioEventMessage = "\(serverName) is generating audio..."
+                        } else {
+                            // Home server acknowledges receipt separately
+                            lastAudioEventMessage = "\(serverName) accepted the request..."
+                        }
+
                         let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
                         lastAudioEventMessage = "Got the audio from \(serverName)!"
                         audioReceived = true
