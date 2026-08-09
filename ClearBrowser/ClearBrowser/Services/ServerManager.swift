@@ -377,9 +377,12 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Handle async job response - any server that returns a job ID
             if let jobId = jsonObject["id"] as? String ?? jsonObject["jobId"] as? String {
                 currentJobId = jobId
-                currentJobBaseURL = response.url?.deletingLastPathComponent()
+                // Extract the base server URL without the /api/audio path
+                let requestURL = response.url ?? URL(string: "http://10.0.0.41:4000")!
+                let baseURL = getBaseServerURL(from: requestURL)
+                currentJobBaseURL = baseURL
                 lastAudioEventMessage = "Waiting for audio generation..."
-                let audioData = try await pollHomeServerJob(jobId: jobId, baseURL: response.url?.deletingLastPathComponent())
+                let audioData = try await pollHomeServerJob(jobId: jobId, baseURL: baseURL)
                 currentJobId = nil
                 currentJobBaseURL = nil
                 return audioData
@@ -412,6 +415,17 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         return data
     }
 
+    private func getBaseServerURL(from url: URL) -> URL {
+        let urlString = url.absoluteString
+        // Remove /api/audio and any trailing path components to get the base server URL
+        if let range = urlString.range(of: "/api/audio") {
+            let baseURLString = String(urlString[..<range.lowerBound])
+            return URL(string: baseURLString) ?? url
+        }
+        // Fallback: just remove the last path component
+        return url.deletingLastPathComponent()
+    }
+
     private func pollHomeServerJob(jobId: String, baseURL: URL?) async throws -> Data {
         guard let baseURL = baseURL else {
             throw ServerManagerError.invalidURL
@@ -425,7 +439,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         if isMikeTTS {
             pollURL = baseURL.appendingPathComponent("tts").appendingPathComponent("status").appendingPathComponent(jobId)
         } else {
-            pollURL = baseURL.appendingPathComponent("api/audio").appendingPathComponent(jobId)
+            pollURL = baseURL.appendingPathComponent("api").appendingPathComponent("audio").appendingPathComponent(jobId)
         }
 
         let maxAttempts = 30
@@ -448,7 +462,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                             if isMikeTTS {
                                 audioURL = baseURL.appendingPathComponent("audio").appendingPathComponent("\(jobId).wav")
                             } else {
-                                audioURL = baseURL.appendingPathComponent("api/audio").appendingPathComponent("\(jobId).mp3")
+                                audioURL = baseURL.appendingPathComponent("api").appendingPathComponent("audio").appendingPathComponent("\(jobId).mp3")
                             }
                             lastAudioEventMessage = "Downloading the audio file..."
                             return try await downloadAudioData(from: audioURL.absoluteString)
