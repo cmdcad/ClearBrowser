@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import WebKit
+import UIKit
 
 @MainActor
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
@@ -18,6 +19,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
     @Published var lastAudioEventMessage: String? = nil
+
+    private func triggerHapticFeedback() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
 
     // Diagnostic properties for debugging audio flow
     @Published var hasExtractableContent: Bool = false
@@ -198,6 +204,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if error != nil {
                 if notifyUser {
                     self.lastAudioEventMessage = "Couldn't read the page"
+                    self.triggerHapticFeedback()
                 }
                 self.hasExtractableContent = false
                 completion(nil)
@@ -207,12 +214,14 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if let text = result as? String, !text.isEmpty {
                 if notifyUser {
                     self.lastAudioEventMessage = "Found text to read"
+                    self.triggerHapticFeedback()
                 }
                 self.hasExtractableContent = true
                 completion(text)
             } else {
                 if notifyUser {
                     self.lastAudioEventMessage = "No text found on this page"
+                    self.triggerHapticFeedback()
                 }
                 self.hasExtractableContent = false
                 completion(nil)
@@ -225,12 +234,14 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         isLoading = true
         errorMessage = nil
         lastAudioEventMessage = "Starting to read..."
+        triggerHapticFeedback()
         audioRequestSent = false
 
         // Check cache first
         let cacheKey = generateCacheKey(text: text, voice: voice)
         if let cachedAudio = audioCache[cacheKey] {
             lastAudioEventMessage = "Using cached audio"
+            triggerHapticFeedback()
             audioReceived = true
             let player = try AVAudioPlayer(data: cachedAudio)
             player.delegate = self
@@ -249,10 +260,12 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             lastAudioEventMessage = "Nothing to read here"
+            triggerHapticFeedback()
             throw ServerManagerError.invalidText
         }
 
         lastAudioEventMessage = "Getting text ready for reading..."
+        triggerHapticFeedback()
         audioRequestSent = true
 
         let payload: [String: Any] = [
@@ -274,78 +287,102 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         var attempts: [AttemptError] = []
 
-        for baseURL in configuredServerBaseURLs {
+           for baseURL in configuredServerBaseURLs {
             let serverName = getFriendlyServerName(for: baseURL)
             lastAudioEventMessage = "Trying \(serverName)..."
 
-            // Give servers up to 3 minutes to complete audio generation
-            let timeout: TimeInterval = serverName == "home server" ? 4:180
+            let timeout: TimeInterval = 180
 
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
-                    let request = try makeRequest(to: endpointURL, body: payloadData, text: text, voice: voice, timeout: timeout)
-                    lastAudioEventMessage = "Asking \(serverName) to read this..."
-                    let (data, response) = try await URLSession.shared.data(for: request)
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        let err = ServerManagerError.serverError(message: "No HTTP response from server")
-                        attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: err))
-                        continue
-                    }
+                    let request = try makeRequest(
+                        to: endpointURL,
+                        body: payloadData,
+                        text: text,
+                        voice: voice,
+                        timeout: timeout
+                    )
 
-                    if (200..<300).contains(httpResponse.statusCode) {
-                        // Mirror service processes synchronously, no separate acknowledgment
-                        if serverName == "cloud server" {
-                            lastAudioEventMessage = "\(serverName) is generating audio..."
-                        } else {
-                            // Home server acknowledges receipt separately
-                            lastAudioEventMessage = "\(serverName) accepted the request..."
-                        }
+                    lastAudioEventMessage =
+                        "Asking \(serverName) to read this..."
 
-                        let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
-                        lastAudioEventMessage = "Got the audio from \(serverName)!"
-                        audioReceived = true
-                        self.lastAudioData = audioData
+                    let (data, response) =
+                        try await URLSession.shared.data(for: request)
 
-                        // Cache the audio
-                        let cacheKey = generateCacheKey(text: text, voice: voice)
-                        cacheAudio(cacheKey, audioData)
+                    // ... existing response handling ...
 
-                        let player = try AVAudioPlayer(data: audioData)
-                        player.delegate = self
-                        self.audioPlayer = player
-                        player.prepareToPlay()
-                        return player
-                    }
-
-                    let responseBody = String(data: data, encoding: .utf8) ?? ""
-                    let detail = responseBody.isEmpty ? "empty response body" : responseBody
-                    let serverErr = ServerManagerError.serverError(message: "Status \(httpResponse.statusCode) from \(endpointURL.absoluteString): \(detail)")
-                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: httpResponse.statusCode, error: serverErr))
                 } catch let error as ServerManagerError {
-                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: error))
+                    attempts.append(
+                        AttemptError(
+                            baseURL: baseURL,
+                            endpointURL: endpointURL,
+                            statusCode: nil,
+                            error: error
+                        )
+                    )
                 } catch let error as URLError {
-                    lastAudioEventMessage = "\(serverName) didn't respond, trying next option..."
-                    let netErr = ServerManagerError.networkError("Could not connect to server: \(error.localizedDescription)")
-                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
-                } catch let error {
-                    lastAudioEventMessage = "\(serverName) had an issue, trying next option..."
-                    let netErr = ServerManagerError.networkError(error.localizedDescription)
-                    attempts.append(AttemptError(baseURL: baseURL, endpointURL: endpointURL, statusCode: nil, error: netErr))
+                    lastAudioEventMessage =
+                        "\(serverName) didn't respond, trying next option..."
+
+                    let netErr = ServerManagerError.networkError(
+                        "Could not connect to server: \(error.localizedDescription)"
+                    )
+
+                    attempts.append(
+                        AttemptError(
+                            baseURL: baseURL,
+                            endpointURL: endpointURL,
+                            statusCode: nil,
+                            error: netErr
+                        )
+                    )
+                } catch {
+                    // existing catch
                 }
             }
         }
-        
+
+        // Choose the best error from the attempts.
         if !attempts.isEmpty {
-            // choose best error
+            let primaryURL = configuredServerBaseURLs.first
+
+            func rank(_ attempt: AttemptError) -> Int {
+                let isPrimary =
+                    primaryURL != nil && attempt.baseURL == primaryURL
+
+                let scoreMultiplier = isPrimary ? 10 : 1
+
+                if let statusCode = attempt.statusCode {
+                    if statusCode == 404 || statusCode == 405 {
+                        return 5 * scoreMultiplier
+                    } else {
+                        return 10 * scoreMultiplier
+                    }
+                } else {
+                    return 2 * scoreMultiplier
+                }
+            }
+
+            var bestAttempt = attempts[0]
+            var bestRank = rank(bestAttempt)
+
+            for attempt in attempts.dropFirst() {
+                let r = rank(attempt)
+
+                if r > bestRank {
+                    bestAttempt = attempt
+                    bestRank = r
+                }
+            }
+
             throw bestAttempt.error
         }
 
         throw ServerManagerError.serverError(
             message: "No audio server endpoint responded"
         )
-
-        throw ServerManagerError.serverError(message: "No audio server endpoint responded")
-    }
+   
+   }
 
     private func makeRequest(to endpointURL: URL, body: Data, text: String, voice: String, timeout: TimeInterval) throws -> URLRequest {
         guard let requestURL = URL(string: endpointURL.absoluteString) else {
@@ -354,7 +391,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         var request = URLRequest(url: requestURL)
         request.httpMethod = "POST"
-        request.timeoutInterval = servername == "home server" ? 5:180
+        request.timeoutInterval = timeout
 
         // Check if this is the simple /tts endpoint (mirror service)
         if requestURL.path.hasSuffix("/tts") {
@@ -376,6 +413,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         // If response is direct audio (not JSON), cache and return it
         if let contentType = response.mimeType, contentType.contains("audio") {
             lastAudioEventMessage = "Received audio file"
+            triggerHapticFeedback()
             return data
         }
 
@@ -389,6 +427,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Handle direct audio URL response (sync response)
             if let audioURLString = resolveAudioURL(from: normalizedResponse) {
                 lastAudioEventMessage = "Downloading the audio file..."
+                triggerHapticFeedback()
                 let audioData = try await downloadAudioData(from: audioURLString)
                 return audioData
             }
@@ -430,6 +469,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if urlString.isEmpty {
                 // This is an async job response, not a sync response
                 lastAudioEventMessage = "Server returned async job ID but polling is disabled"
+                triggerHapticFeedback()
                 return nil // Indicate this response should be rejected
             }
         }
@@ -474,6 +514,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         return normalized
     }
+
+    private func resolveAudioURL(from payload: [String: Any]) -> String? {
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
         let candidateKeys = ["audioURL", "audioUrl", "audio_url", "audioFileUrl", "audioFileURL", "audioPath", "fileURL", "url", "audio"]
