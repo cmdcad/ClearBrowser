@@ -516,8 +516,6 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
-
-    private func resolveAudioURL(from payload: [String: Any]) -> String? {
         let candidateKeys = ["audioURL", "audioUrl", "audio_url", "audioFileUrl", "audioFileURL", "audioPath", "fileURL", "url", "audio"]
         for key in candidateKeys {
             if let value = payload[key] as? String, !value.isEmpty {
