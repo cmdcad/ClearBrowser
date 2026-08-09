@@ -6,8 +6,7 @@ import WebKit
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
     private let fallbackServerBaseURLs: [URL] = [
-        // URL(string: "https://mike-tts.fly.dev")!,
-        // URL(string: "https://mirror-api-991075429415.us-central1.run.app")!
+        URL(string: "https://mirror-api-991075429415.us-central1.run.app")!
     ]
 
     private var audioPlayer: AVAudioPlayer?
@@ -26,6 +25,10 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var audioReceived: Bool = false
 
     private var displayLink: CADisplayLink?
+
+    // Audio caching
+    private var audioCache: [String: Data] = [:]
+    private let maxCacheSize = 3
 
     override init() {
         super.init()
@@ -71,7 +74,14 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func synthesizeEndpointCandidates(for baseURL: URL) -> [URL] {
-        // All servers use the same /api/audio endpoint
+        let urlString = baseURL.absoluteString.lowercased()
+
+        // Mirror service only uses /tts endpoint (no timings)
+        if urlString.contains("mirror-api") {
+            return [baseURL.appendingPathComponent("tts")]
+        }
+
+        // Other servers use /api/audio
         return [baseURL.appendingPathComponent("api/audio")]
     }
     
@@ -87,6 +97,22 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         } else {
             return "server"
         }
+    }
+
+    // MARK: - Audio Caching
+
+    private func generateCacheKey(text: String, voice: String) -> String {
+        let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(normalizedText)_\(voice)".hashValue.description
+    }
+
+    private func cacheAudio(_ key: String, _ data: Data) {
+        // Implement LRU cache: remove oldest if over limit
+        if audioCache.count >= maxCacheSize {
+            let oldestKey = audioCache.keys.first
+            audioCache.removeValue(forKey: oldestKey)
+        }
+        audioCache[key] = data
     }
 
     /// Extracts article text content from HTML using JavaScript injection.
@@ -199,6 +225,24 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         errorMessage = nil
         lastAudioEventMessage = "Starting to read..."
         audioRequestSent = false
+
+        // Check cache first
+        let cacheKey = generateCacheKey(text: text, voice: voice)
+        if let cachedAudio = audioCache[cacheKey] {
+            lastAudioEventMessage = "Using cached audio"
+            audioReceived = true
+            let player = try AVAudioPlayer(data: cachedAudio)
+            player.delegate = self
+            player.enableRate = true
+            player.rate = Float(rate)
+            self.audioPlayer = player
+            self.lastAudioData = cachedAudio
+            player.prepareToPlay()
+            currentTime = 0
+            duration = player.duration
+            isLoading = false
+            return player
+        }
         audioReceived = false
         defer { isLoading = false }
 
@@ -250,6 +294,11 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         lastAudioEventMessage = "Got the audio from \(serverName)!"
                         audioReceived = true
                         self.lastAudioData = audioData
+
+                        // Cache the audio
+                        let cacheKey = generateCacheKey(text: text, voice: voice)
+                        cacheAudio(cacheKey, audioData)
+
                         let player = try AVAudioPlayer(data: audioData)
                         player.delegate = self
                         self.audioPlayer = player
@@ -326,32 +375,53 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         var request = URLRequest(url: requestURL)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 60
-        request.httpBody = body
+
+        // Check if this is the simple /tts endpoint (mirror service)
+        if requestURL.path.hasSuffix("/tts") {
+            // Simple form data for /tts endpoint
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            let formData = "text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text)&voice=\(voice.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? voice)"
+            request.httpBody = formData.data(using: .utf8)
+        } else {
+            // JSON for /api/audio endpoint
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.httpBody = body
+        }
+
         return request
     }
 
     private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
+        // If response is direct audio (not JSON), cache and return it
+        if let contentType = response.mimeType, contentType.contains("audio") {
+            lastAudioEventMessage = "Received audio file"
+            return data
+        }
+
         if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            // Normalize server response to standard format
+            let normalizedResponse = normalizeServerResponse(jsonObject)
+
             // Handle direct audio URL response (sync response)
-            if let audioURLString = resolveAudioURL(from: jsonObject) {
+            if let audioURLString = resolveAudioURL(from: normalizedResponse) {
                 lastAudioEventMessage = "Downloading the audio file..."
-                return try await downloadAudioData(from: audioURLString)
+                let audioData = try await downloadAudioData(from: audioURLString)
+                return audioData
             }
 
-            if let base64String = jsonObject["audioData"] as? String,
+            if let base64String = normalizedResponse["audioData"] as? String,
                let decoded = Data(base64Encoded: base64String) {
                 return decoded
             }
 
-            if let dataString = jsonObject["data"] as? String,
+            if let dataString = normalizedResponse["data"] as? String,
                let decoded = Data(base64Encoded: dataString) {
                 return decoded
             }
 
-            if let status = jsonObject["status"] as? String, status.lowercased() != "ok" && status.lowercased() != "success" {
+            if let status = normalizedResponse["status"] as? String, status.lowercased() != "ok" && status.lowercased() != "success" {
                 throw ServerManagerError.serverError(message: "Server status: \(status)")
             }
         }
@@ -361,6 +431,61 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         return data
+    }
+
+    /// Normalize different server response formats to a standard format
+    private func normalizeServerResponse(_ response: [String: Any]) -> [String: Any] {
+        var normalized = response
+
+        // Handle async job responses - these should fail immediately since we removed polling
+        if let jobId = response["jobId"] as? String ?? response["id"] as? String {
+            // Check if this is a job ID response (async) vs artifact ID (sync)
+            let urlString = response["audioUrl"] as? String ?? response["url"] as? String ?? ""
+            if urlString.isEmpty {
+                // This is an async job response, not a sync response
+                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
+            }
+        }
+
+        // Ensure standard field names are present
+        if response["audioUrl"] == nil, let url = response["url"] as? String {
+            normalized["audioUrl"] = url
+        }
+        if response["url"] == nil, let audioUrl = response["audioUrl"] as? String {
+            normalized["url"] = audioUrl
+        }
+
+        // Normalize timings structure
+        if var timings = response["timings"] as? [String: Any] {
+            // Ensure all timing types are present
+            if timings["wordTimings"] == nil, let words = timings["words"] as? [Any] {
+                timings["wordTimings"] = words
+            }
+            if timings["verseTimings"] == nil, let verses = timings["verses"] as? [Any] {
+                timings["verseTimings"] = verses
+            }
+            if timings["sentenceTimings"] == nil, let sentences = timings["sentences"] as? [Any] {
+                timings["sentenceTimings"] = sentences
+            }
+            normalized["timings"] = timings
+        }
+
+        // Normalize counts structure
+        if var counts = response["counts"] as? [String: Any] {
+            // Ensure standard count fields
+            if counts["words"] == nil, let wordCount = response["wordCount"] as? Int {
+                counts["words"] = wordCount
+            }
+            if counts["verses"] == nil, let verseCount = response["verseCount"] as? Int {
+                counts["verses"] = verseCount
+            }
+            if counts["sentences"] == nil, let sentenceCount = response["sentenceCount"] as? Int {
+                counts["sentences"] = sentenceCount
+            }
+            normalized["counts"] = counts
+        }
+
+        return normalized
     }
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
