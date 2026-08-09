@@ -279,7 +279,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             lastAudioEventMessage = "Trying \(serverName)..."
 
             // Give servers up to 3 minutes to complete audio generation
-            let timeout: TimeInterval = 180
+            let timeout: TimeInterval = serverName == "home server" ? 4:180
 
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
@@ -386,7 +386,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         var request = URLRequest(url: requestURL)
         request.httpMethod = "POST"
-        request.timeoutInterval = timeout
+        request.timeoutInterval = servername == "home server" ? 5:180
 
         // Check if this is the simple /tts endpoint (mirror service)
         if requestURL.path.hasSuffix("/tts") {
