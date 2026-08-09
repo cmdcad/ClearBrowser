@@ -334,47 +334,15 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 }
             }
         }
-
+        
         if !attempts.isEmpty {
-            // Try cloud server fallback
-            do {
-                lastAudioEventMessage = "Trying cloud server..."
-                let player = try await fallbackToTTSService(text: text, voice: voice, rate: rate)
-                audioReceived = true
-                return player
-            } catch {
-                // If cloud server also fails, throw the best original error
-                let primaryURL = configuredServerBaseURLs.first
-
-                func rank(_ attempt: AttemptError) -> Int {
-                    let isPrimary = (primaryURL != nil && attempt.baseURL == primaryURL)
-                    let scoreMultiplier = isPrimary ? 10 : 1
-
-                    if let statusCode = attempt.statusCode {
-                        if statusCode == 404 || statusCode == 405 {
-                            return 5 * scoreMultiplier
-                        } else {
-                            return 10 * scoreMultiplier
-                        }
-                    } else {
-                        return 2 * scoreMultiplier
-                    }
-                }
-                
-                var bestAttempt = attempts[0]
-                var bestRank = rank(bestAttempt)
-                for attempt in attempts.dropFirst() {
-                    let r = rank(attempt)
-                    if r > bestRank {
-                        bestAttempt = attempt
-                        bestRank = r
-                    }
-                }
-                
-                throw bestAttempt.error
-            }
+            // choose best error
+            throw bestAttempt.error
         }
 
+        throw ServerManagerError.serverError(
+            message: "No audio server endpoint responded"
+        )
 
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
     }
@@ -643,23 +611,6 @@ func preparePlayer(with audioData: Data) throws {
 }
 
 
-extension ServerManager {
-
-    func fallbackToTTSService(text: String, voice: String, rate: Double) async throws -> AVAudioPlayer {
-        let tts = TTSService(baseURL: URL(string: "https://mirror-api-991075429415.us-central1.run.app")!)
-        let verses = [text]   // ServerManager sends whole text, not verse-by-verse
-
-        lastAudioEventMessage = "Trying cloud server..."
-        let (audioData, _) = try await tts.synthesize(verses: verses, voice: voice)
-
-        let player = try AVAudioPlayer(data: audioData)
-        player.delegate = self
-        self.audioPlayer = player
-        self.lastAudioData = audioData
-        player.prepareToPlay()
-        return player
-    }
-}
 
 typealias AudioVixService = ServerManager
 typealias AudioVixError = ServerManagerError
