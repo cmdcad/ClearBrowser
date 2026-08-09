@@ -375,7 +375,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
         if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             // Handle async job response - any server that returns a job ID
-            if let jobId = jsonObject["id"] as? String ?? jsonObject["jobId"] as? String {
+            // Server returns "jobId" for AudioVixServer
+            if let jobId = jsonObject["jobId"] as? String ?? jsonObject["id"] as? String {
                 currentJobId = jobId
                 // Extract the base server URL without the /api/audio path
                 let requestURL = response.url ?? URL(string: "http://10.0.0.41:4000")!
@@ -388,6 +389,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 return audioData
             }
 
+            // Handle direct audio URL response (sync response)
             if let audioURLString = resolveAudioURL(from: jsonObject) {
                 lastAudioEventMessage = "Downloading the audio file..."
                 return try await downloadAudioData(from: audioURLString)
@@ -456,7 +458,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if (200..<300).contains(httpResponse.statusCode) {
                 if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let status = jsonObject["status"] as? String {
-                        if status.lowercased() == "completed" || status.lowercased() == "done" || status.lowercased() == "success" {
+                        if status.lowercased() == "done" || status.lowercased() == "completed" || status.lowercased() == "success" {
                             // Download the audio file
                             let audioURL: URL
                             if isMikeTTS {
@@ -466,7 +468,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                             }
                             lastAudioEventMessage = "Downloading the audio file..."
                             return try await downloadAudioData(from: audioURL.absoluteString)
-                        } else if status.lowercased() == "failed" || status.lowercased() == "error" {
+                        } else if status.lowercased() == "failed" || status.lowercased() == "error" || status.lowercased() == "cancelled" {
                             throw ServerManagerError.serverError(message: "Audio generation failed")
                         }
                         // Continue polling for other statuses
