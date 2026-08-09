@@ -278,9 +278,12 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             let serverName = getFriendlyServerName(for: baseURL)
             lastAudioEventMessage = "Trying \(serverName)..."
 
+            // Give servers up to 3 minutes to complete audio generation after acknowledgment
+            let timeout: TimeInterval = 180
+
             for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
                 do {
-                    let request = try makeRequest(to: endpointURL, body: payloadData, text: text, voice: voice)
+                    let request = try makeRequest(to: endpointURL, body: payloadData, text: text, voice: voice, timeout: timeout)
                     lastAudioEventMessage = "Asking \(serverName) to read this..."
                     let (data, response) = try await URLSession.shared.data(for: request)
                     guard let httpResponse = response as? HTTPURLResponse else {
@@ -289,8 +292,9 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         continue
                     }
 
+                    // Connection acknowledged - inform user
                     if (200..<300).contains(httpResponse.statusCode) {
-                        lastAudioEventMessage = "\(serverName) is preparing the audio..."
+                        lastAudioEventMessage = "\(serverName) accepted the request..."
                         let audioData = try await resolveAudioPayload(from: data, response: httpResponse)
                         lastAudioEventMessage = "Got the audio from \(serverName)!"
                         audioReceived = true
@@ -326,20 +330,20 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         if !attempts.isEmpty {
-            // Try TTS fallback
+            // Try cloud server fallback
             do {
-                lastAudioEventMessage = "Using backup voice service..."
+                lastAudioEventMessage = "Trying cloud server..."
                 let player = try await fallbackToTTSService(text: text, voice: voice, rate: rate)
                 audioReceived = true
                 return player
             } catch {
-                // If TTS also fails, throw the best original error
+                // If cloud server also fails, throw the best original error
                 let primaryURL = configuredServerBaseURLs.first
-                
+
                 func rank(_ attempt: AttemptError) -> Int {
                     let isPrimary = (primaryURL != nil && attempt.baseURL == primaryURL)
                     let scoreMultiplier = isPrimary ? 10 : 1
-                    
+
                     if let statusCode = attempt.statusCode {
                         if statusCode == 404 || statusCode == 405 {
                             return 5 * scoreMultiplier
@@ -369,14 +373,14 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         throw ServerManagerError.serverError(message: "No audio server endpoint responded")
     }
 
-    private func makeRequest(to endpointURL: URL, body: Data, text: String, voice: String) throws -> URLRequest {
+    private func makeRequest(to endpointURL: URL, body: Data, text: String, voice: String, timeout: TimeInterval) throws -> URLRequest {
         guard let requestURL = URL(string: endpointURL.absoluteString) else {
             throw ServerManagerError.invalidURL
         }
 
         var request = URLRequest(url: requestURL)
         request.httpMethod = "POST"
-        request.timeoutInterval = 60
+        request.timeoutInterval = timeout
 
         // Check if this is the simple /tts endpoint (mirror service)
         if requestURL.path.hasSuffix("/tts") {
@@ -629,9 +633,10 @@ func preparePlayer(with audioData: Data) throws {
 extension ServerManager {
 
     func fallbackToTTSService(text: String, voice: String, rate: Double) async throws -> AVAudioPlayer {
-        let tts = TTSService(baseURL: URL(string: "https://mike-tts.fly.dev")!)
+        let tts = TTSService(baseURL: URL(string: "https://mirror-api-991075429415.us-central1.run.app")!)
         let verses = [text]   // ServerManager sends whole text, not verse-by-verse
 
+        lastAudioEventMessage = "Trying cloud server..."
         let (audioData, _) = try await tts.synthesize(verses: verses, voice: voice)
 
         let player = try AVAudioPlayer(data: audioData)

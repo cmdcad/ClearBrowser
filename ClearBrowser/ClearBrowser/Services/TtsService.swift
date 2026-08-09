@@ -12,7 +12,7 @@ import Foundation
 final class TTSService {
     private let baseURL: URL
 
-    init(baseURL: URL = URL(string: "https://mike-tts.fly.dev")!) {
+    init(baseURL: URL = URL(string: "https://mirror-api-991075429415.us-central1.run.app")!) {
         self.baseURL = baseURL
     }
 
@@ -22,9 +22,8 @@ final class TTSService {
         var request = URLRequest(url: baseURL.appendingPathComponent("tts"))
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        // Long chapters (e.g. Psalm 119) can take a couple minutes to
-        // synthesize + align server-side — give this real headroom.
-        request.timeoutInterval = 360
+        // Give server up to 3 minutes to complete audio generation
+        request.timeoutInterval = 180
 
         // Server splits on "\n" to recover verse boundaries — same contract
         // as the WinUI client.
