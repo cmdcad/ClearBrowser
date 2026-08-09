@@ -435,6 +435,9 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if let status = normalizedResponse["status"] as? String, status.lowercased() != "ok" && status.lowercased() != "success" {
                 throw ServerManagerError.serverError(message: "Server status: \(status)")
             }
+
+            // If we got here, the response is JSON but we couldn't extract audio
+            throw ServerManagerError.serverError(message: "Server returned JSON but no audio data found")
         }
 
         if let contentType = response.mimeType, contentType.contains("json") {
@@ -454,8 +457,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             let urlString = response["audioUrl"] as? String ?? response["url"] as? String ?? ""
             if urlString.isEmpty {
                 // This is an async job response, not a sync response
-                print("Server returned async job ID but polling is disabled")
-                // Don't throw, just log it and continue with other fields
+                lastAudioEventMessage = "Server returned async job ID but polling is disabled"
+                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
             }
         }
 
