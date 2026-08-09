@@ -413,7 +413,10 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             // Normalize server response to standard format
-            let normalizedResponse = normalizeServerResponse(jsonObject)
+            guard let normalizedResponse = normalizeServerResponse(jsonObject) else {
+                // normalizeServerResponse returned nil, indicating async job response
+                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
+            }
 
             // Handle direct audio URL response (sync response)
             if let audioURLString = resolveAudioURL(from: normalizedResponse) {
@@ -448,7 +451,8 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     /// Normalize different server response formats to a standard format
-    private func normalizeServerResponse(_ response: [String: Any]) -> [String: Any] {
+    /// Returns nil if the response indicates an async job (polling required)
+    private func normalizeServerResponse(_ response: [String: Any]) -> [String: Any]? {
         var normalized = response
 
         // Handle async job responses - these should fail immediately since we removed polling
@@ -458,7 +462,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if urlString.isEmpty {
                 // This is an async job response, not a sync response
                 lastAudioEventMessage = "Server returned async job ID but polling is disabled"
-                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
+                return nil // Indicate this response should be rejected
             }
         }
 
@@ -501,6 +505,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         return normalized
+    }
     }
 
     private func resolveAudioURL(from payload: [String: Any]) -> String? {
