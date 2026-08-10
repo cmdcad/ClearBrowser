@@ -5,10 +5,7 @@ import UIKit
 
 @MainActor
 final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
-    private let defaultServerBaseURL = URL(string: "http://10.0.0.41:4000")!
-    private let fallbackServerBaseURLs: [URL] = [
-        URL(string: "https://mirror-api-991075429415.us-central1.run.app")!
-    ]
+    private let mirrorService = MirrorTTSService()
 
     private var audioPlayer: AVAudioPlayer?
     private(set) var lastAudioData: Data? = nil
@@ -48,60 +45,6 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             try audioSession.setActive(true)
         } catch {
             errorMessage = "Failed to setup audio session: \(error.localizedDescription)"
-        }
-    }
-
-    private var configuredServerBaseURLs: [URL] {
-        var urls: [URL] = []
-
-
-        if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "AudioServerBaseURL") as? String,
-           let url = URL(string: configuredURL) {
-            urls.append(url)
-        }
-
-        if let fallbackURLs = Bundle.main.object(forInfoDictionaryKey: "AudioServerFallbackURLs") as? [String] {
-            for entry in fallbackURLs {
-                if let url = URL(string: entry) {
-                    urls.append(url)
-                }
-            }
-        }
-
-        for fallback in fallbackServerBaseURLs where !urls.contains(fallback) {
-            urls.append(fallback)
-        }
-
-        if urls.isEmpty {
-            urls.append(defaultServerBaseURL)
-        }
-
-        return urls
-    }
-
-    private func synthesizeEndpointCandidates(for baseURL: URL) -> [URL] {
-        let urlString = baseURL.absoluteString.lowercased()
-
-        // Mirror service only uses /tts endpoint (no timings)
-        if urlString.contains("mirror-api") {
-            return [baseURL.appendingPathComponent("tts")]
-        }
-
-        // Other servers use /api/audio
-        return [baseURL.appendingPathComponent("api/audio")]
-    }
-    
-    private func getFriendlyServerName(for url: URL) -> String {
-        let urlString = url.absoluteString.lowercased()
-
-        if urlString.contains("10.0.0.41") || urlString.contains("localhost") {
-            return "home server"
-        } else if urlString.contains("mirror-api") {
-            return "cloud server"
-        } else if urlString.contains("mike-tts") || urlString.contains("fly.dev") {
-            return "cloud backup"
-        } else {
-            return "server"
         }
     }
 
@@ -268,289 +211,38 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         triggerHapticFeedback()
         audioRequestSent = true
 
-        let payload: [String: Any] = [
-            "text": text,
-            "voice": voice,
-            "rate": rate,
-            "source": "ClearBrowser",
-            "requestType": "synthesize"
-        ]
+        // Use mirror service for audio generation
+        lastAudioEventMessage = "Generating audio..."
+        triggerHapticFeedback()
 
-        let payloadData = try JSONSerialization.data(withJSONObject: payload)
+        do {
+            let audioData = try await mirrorService.getAudio(from: text, voice: voice)
 
-        struct AttemptError {
-            let baseURL: URL
-            let endpointURL: URL
-            let statusCode: Int?
-            let error: Error
-        }
-
-        var attempts: [AttemptError] = []
-
-           for baseURL in configuredServerBaseURLs {
-            let serverName = getFriendlyServerName(for: baseURL)
-            lastAudioEventMessage = "Trying \(serverName)..."
-
-            let timeout: TimeInterval = 180
-
-            for endpointURL in synthesizeEndpointCandidates(for: baseURL) {
-                do {
-                    let request = try makeRequest(
-                        to: endpointURL,
-                        body: payloadData,
-                        text: text,
-                        voice: voice,
-                        timeout: timeout
-                    )
-
-                    lastAudioEventMessage =
-                        "Asking \(serverName) to read this..."
-
-                    let (data, response) =
-                        try await URLSession.shared.data(for: request)
-
-                    // ... existing response handling ...
-
-                } catch let error as ServerManagerError {
-                    attempts.append(
-                        AttemptError(
-                            baseURL: baseURL,
-                            endpointURL: endpointURL,
-                            statusCode: nil,
-                            error: error
-                        )
-                    )
-                } catch let error as URLError {
-                    lastAudioEventMessage =
-                        "\(serverName) didn't respond, trying next option..."
-
-                    let netErr = ServerManagerError.networkError(
-                        "Could not connect to server: \(error.localizedDescription)"
-                    )
-
-                    attempts.append(
-                        AttemptError(
-                            baseURL: baseURL,
-                            endpointURL: endpointURL,
-                            statusCode: nil,
-                            error: netErr
-                        )
-                    )
-                } catch {
-                    // existing catch
-                }
-            }
-        }
-
-        // Choose the best error from the attempts.
-        if !attempts.isEmpty {
-            let primaryURL = configuredServerBaseURLs.first
-
-            func rank(_ attempt: AttemptError) -> Int {
-                let isPrimary =
-                    primaryURL != nil && attempt.baseURL == primaryURL
-
-                let scoreMultiplier = isPrimary ? 10 : 1
-
-                if let statusCode = attempt.statusCode {
-                    if statusCode == 404 || statusCode == 405 {
-                        return 5 * scoreMultiplier
-                    } else {
-                        return 10 * scoreMultiplier
-                    }
-                } else {
-                    return 2 * scoreMultiplier
-                }
-            }
-
-            var bestAttempt = attempts[0]
-            var bestRank = rank(bestAttempt)
-
-            for attempt in attempts.dropFirst() {
-                let r = rank(attempt)
-
-                if r > bestRank {
-                    bestAttempt = attempt
-                    bestRank = r
-                }
-            }
-
-            throw bestAttempt.error
-        }
-
-        throw ServerManagerError.serverError(
-            message: "No audio server endpoint responded"
-        )
-   
-   }
-
-    private func makeRequest(to endpointURL: URL, body: Data, text: String, voice: String, timeout: TimeInterval) throws -> URLRequest {
-        guard let requestURL = URL(string: endpointURL.absoluteString) else {
-            throw ServerManagerError.invalidURL
-        }
-
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.timeoutInterval = timeout
-
-        // Check if this is the simple /tts endpoint (mirror service)
-        if requestURL.path.hasSuffix("/tts") {
-            // Simple form data for /tts endpoint
-            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-            let formData = "text=\(text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? text)&voice=\(voice.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? voice)"
-            request.httpBody = formData.data(using: .utf8)
-        } else {
-            // JSON for /api/audio endpoint
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            request.httpBody = body
-        }
-
-        return request
-    }
-
-    private func resolveAudioPayload(from data: Data, response: HTTPURLResponse) async throws -> Data {
-        // If response is direct audio (not JSON), cache and return it
-        if let contentType = response.mimeType, contentType.contains("audio") {
-            lastAudioEventMessage = "Received audio file"
+            lastAudioEventMessage = "Got the audio!"
             triggerHapticFeedback()
-            return data
+            audioReceived = true
+            self.lastAudioData = audioData
+
+            // Cache the audio
+            cacheAudio(cacheKey, audioData)
+
+            let player = try AVAudioPlayer(data: audioData)
+            player.delegate = self
+            player.enableRate = true
+            player.rate = Float(rate)
+            self.audioPlayer = player
+            player.prepareToPlay()
+            currentTime = 0
+            duration = player.duration
+
+            return player
+        } catch {
+            lastAudioEventMessage = "Failed to generate audio"
+            triggerHapticFeedback()
+            throw ServerManagerError.serverError(message: "Audio generation failed: \(error.localizedDescription)")
         }
-
-        if let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            // Normalize server response to standard format
-            guard let normalizedResponse = normalizeServerResponse(jsonObject) else {
-                // normalizeServerResponse returned nil, indicating async job response
-                throw ServerManagerError.serverError(message: "Server returned async job ID but polling is disabled")
-            }
-
-            // Handle direct audio URL response (sync response)
-            if let audioURLString = resolveAudioURL(from: normalizedResponse) {
-                lastAudioEventMessage = "Downloading the audio file..."
-                triggerHapticFeedback()
-                let audioData = try await downloadAudioData(from: audioURLString)
-                return audioData
-            }
-
-            if let base64String = normalizedResponse["audioData"] as? String,
-               let decoded = Data(base64Encoded: base64String) {
-                return decoded
-            }
-
-            if let dataString = normalizedResponse["data"] as? String,
-               let decoded = Data(base64Encoded: dataString) {
-                return decoded
-            }
-
-            if let status = normalizedResponse["status"] as? String, status.lowercased() != "ok" && status.lowercased() != "success" {
-                throw ServerManagerError.serverError(message: "Server status: \(status)")
-            }
-
-            // If we got here, the response is JSON but we couldn't extract audio
-            throw ServerManagerError.serverError(message: "Server returned JSON but no audio data found")
-        }
-
-        if let contentType = response.mimeType, contentType.contains("json") {
-            throw ServerManagerError.serverError(message: "Server returned JSON instead of audio")
-        }
-
-        return data
-    }
-
-    /// Normalize different server response formats to a standard format
-    /// Returns nil if the response indicates an async job (polling required)
-    private func normalizeServerResponse(_ response: [String: Any]) -> [String: Any]? {
-        var normalized = response
-
-        // Handle async job responses - these should fail immediately since we removed polling
-        if response["jobId"] as? String != nil || response["id"] as? String != nil {
-            // Check if this is a job ID response (async) vs artifact ID (sync)
-            let urlString = response["audioUrl"] as? String ?? response["url"] as? String ?? ""
-            if urlString.isEmpty {
-                // This is an async job response, not a sync response
-                lastAudioEventMessage = "Server returned async job ID but polling is disabled"
-                triggerHapticFeedback()
-                return nil // Indicate this response should be rejected
-            }
-        }
-
-        // Ensure standard field names are present
-        if response["audioUrl"] == nil, let url = response["url"] as? String {
-            normalized["audioUrl"] = url
-        }
-        if response["url"] == nil, let audioUrl = response["audioUrl"] as? String {
-            normalized["url"] = audioUrl
-        }
-
-        // Normalize timings structure
-        if var timings = response["timings"] as? [String: Any] {
-            // Ensure all timing types are present
-            if timings["wordTimings"] == nil, let words = timings["words"] as? [Any] {
-                timings["wordTimings"] = words
-            }
-            if timings["verseTimings"] == nil, let verses = timings["verses"] as? [Any] {
-                timings["verseTimings"] = verses
-            }
-            if timings["sentenceTimings"] == nil, let sentences = timings["sentences"] as? [Any] {
-                timings["sentenceTimings"] = sentences
-            }
-            normalized["timings"] = timings
-        }
-
-        // Normalize counts structure
-        if var counts = response["counts"] as? [String: Any] {
-            // Ensure standard count fields
-            if counts["words"] == nil, let wordCount = response["wordCount"] as? Int {
-                counts["words"] = wordCount
-            }
-            if counts["verses"] == nil, let verseCount = response["verseCount"] as? Int {
-                counts["verses"] = verseCount
-            }
-            if counts["sentences"] == nil, let sentenceCount = response["sentenceCount"] as? Int {
-                counts["sentences"] = sentenceCount
-            }
-            normalized["counts"] = counts
-        }
-
-        return normalized
-    }
-
-    private func resolveAudioURL(from payload: [String: Any]) -> String? {
-        let candidateKeys = ["audioURL", "audioUrl", "audio_url", "audioFileUrl", "audioFileURL", "audioPath", "fileURL", "url", "audio"]
-        for key in candidateKeys {
-            if let value = payload[key] as? String, !value.isEmpty {
-                return value
-            }
-        }
-
-        for key in payload.keys {
-            if let nested = payload[key] as? [String: Any], let resolved = resolveAudioURL(from: nested) {
-                return resolved
-            }
-        }
-
-        return nil
-    }
-
-    private func downloadAudioData(from remoteString: String) async throws -> Data {
-        guard let remoteURL = URL(string: remoteString) else {
-            throw ServerManagerError.invalidURL
-        }
-
-        let resolvedURL: URL
-        if remoteURL.scheme != nil {
-            resolvedURL = remoteURL
-        } else {
-            resolvedURL = (configuredServerBaseURLs.first ?? defaultServerBaseURL).appendingPathComponent(remoteString)
-        }
-
-        let (downloadedData, downloadedResponse) = try await URLSession.shared.data(from: resolvedURL)
-        guard let response = downloadedResponse as? HTTPURLResponse,
-              (200..<300).contains(response.statusCode) else {
-            throw ServerManagerError.serverError(message: "Audio download failed")
-        }
-
-        return downloadedData
+                            baseURL: baseURL,
+                            endpointURL: endpointURL,
     }
 
     // MARK: - Playback Controls
@@ -649,11 +341,6 @@ func preparePlayer(with audioData: Data) throws {
         }
     }
 }
-
-
-
-typealias AudioVixService = ServerManager
-typealias AudioVixError = ServerManagerError
 
 enum ServerManagerError: Error, LocalizedError {
     case invalidURL
