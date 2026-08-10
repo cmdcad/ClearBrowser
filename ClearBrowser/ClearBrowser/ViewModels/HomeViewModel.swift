@@ -279,6 +279,10 @@ final class HomeViewModel: NSObject, ObservableObject {
         navigationCommand = .forward
     }
 
+    func goHome() {
+        loadAddress("https://www.google.com")
+    }
+
     func stopLoading() {
         navigationCommand = .stop
     }

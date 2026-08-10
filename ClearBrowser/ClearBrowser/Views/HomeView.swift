@@ -2,6 +2,9 @@ import SwiftUI
 import UIKit
 import PhotosUI
 import AudioToolbox
+/*
+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
+*/
 
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
@@ -10,8 +13,10 @@ struct HomeView: View {
 
   @State private var showTabManager = false
   @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
+  @State private var headerBarOffset: CGFloat = 75   // Header bar resting position
   @State private var lastDragValue: CGFloat = 0
   @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
+  @State private var isHeaderBarExpanded = false     // Track header bar state
   @State private var toastMessage: String? = nil
 
   private var drawerOpenBinding: Binding<Bool> {
@@ -33,12 +38,12 @@ struct HomeView: View {
 
         VStack(spacing: 0) {
           if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
-            headerContent
+            draggableHeaderBar
               .transition(.move(edge: .top).combined(with: .opacity))
           }
 
           browserContent
-          
+
           if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
             headerContent
               .padding(.top, 8)
@@ -204,7 +209,7 @@ struct HomeView: View {
           .background(Color.white)
           .cornerRadius(12)
       } else {
-        Image(systemName: viewModel.isReadAloudPlaying ? "speaker.wave.2.fill" : "play.circle.fill")
+        Image(systemName: viewModel.isReadAloudPlaying ? "pause.circle.fill" : "play.circle.fill")
           .font(.title3)
           .frame(width: 44, height: 44)
           .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
@@ -316,7 +321,54 @@ struct HomeView: View {
        
     }
   }
- 
+
+  private var draggableHeaderBar: some View {
+    VStack(spacing: 0) {
+      headerContent
+      headerGripHandle
+    }
+    .offset(y: -headerBarOffset)
+    .gesture(headerDragGesture)
+    .onTapGesture {
+      withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+        headerBarOffset = headerBarOffset > 30 ? 0 : 75
+      }
+    }
+  }
+
+  private var headerGripHandle: some View {
+    RoundedRectangle(cornerRadius: 3)
+      .fill(Color.secondary.opacity(0.35))
+      .frame(width: 40, height: 5)
+      .padding(.top, 8)
+      .padding(.bottom, 4)
+      .contentShape(Rectangle())
+  }
+
+  private var headerDragGesture: some Gesture {
+    DragGesture()
+      .onChanged { value in
+        let dragAmount = value.translation.height
+        headerBarOffset = min(
+          max(headerBarOffset + dragAmount * 0.8, 0),
+          85
+        )
+        lastDragValue = dragAmount
+      }
+      .onEnded { value in
+        let velocity = value.velocity.height
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+          if velocity > 300 || headerBarOffset > 40 {
+            headerBarOffset = 75
+            isHeaderBarExpanded = false
+          } else {
+            headerBarOffset = 0
+            isHeaderBarExpanded = true
+          }
+        }
+      }
+  }
+
 
   private var searchBar: some View {
            ZStack(alignment: .bottom) {
@@ -387,6 +439,10 @@ struct HomeView: View {
   private var actionRow: some View {
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
+      ActionButton(label: "Home", symbol: "house", tint: .blue) {
+        viewModel.goHome()
+      }
+
       ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
           viewModel.selectedDrawer = .bookmarks
@@ -402,14 +458,14 @@ struct HomeView: View {
       ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal, isActive: viewModel.showAIField) {
         viewModel.toggleAIField()
       }
-      
+
       ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {
           showTabManager = true
       }
       .overlay(
         Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
       )
-      
+
       Spacer()
       
       Menu {
