@@ -467,10 +467,7 @@ struct HomeView: View {
         Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
       )
 
-      ActionButton(label: "More", symbol: "ellipsis", tint: .gray) {
-        // This button doesn't do anything directly, it's just for the menu
-      }
-      .contextMenu {
+      Menu {
         Button(action: {
           withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             viewModel.selectedDrawer = .settings
@@ -489,6 +486,10 @@ struct HomeView: View {
           viewModel.isPrivateMode.toggle()
         }) {
           Label(viewModel.isPrivateMode ? "Exit Private" : "Private", systemImage: viewModel.isPrivateMode ? "eye.slash.fill" : "eye")
+        }
+      } label: {
+        ActionButton(label: "More", symbol: "ellipsis", tint: .gray) {
+          // Button action handled by Menu
         }
       }
 
