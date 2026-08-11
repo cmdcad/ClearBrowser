@@ -280,7 +280,8 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func goHome() {
-        loadAddress("https://www.google.com")
+        addressBarText = "https://www.google.com"
+        loadAddress()
     }
 
     func stopLoading() {
@@ -933,7 +934,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                     } catch {
                         guard !Task.isCancelled else { return }
                         await MainActor.run {
-                            if let error = error as? AudioVixError {
+                            if let error = error as? ServerManagerError {
                                 self.serverManager.errorMessage = error.localizedDescription
                             } else {
                                 self.serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
