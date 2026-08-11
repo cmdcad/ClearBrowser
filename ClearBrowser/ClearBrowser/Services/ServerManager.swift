@@ -173,7 +173,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     /// Sends text to the configured server and resolves the returned audio payload.
-    func synthesizeSpeech(text: String, voice: String = "Eric", rate: Double = 1.0) async throws -> AVAudioPlayer {
+    func synthesizeSpeech(text: String, voice: String = "en-US-AndrewNeural", rate: Double = 1.0) async throws -> AVAudioPlayer {
         isLoading = true
         errorMessage = nil
         lastAudioEventMessage = "Starting to read..."

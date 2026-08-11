@@ -286,7 +286,8 @@ struct HomeView: View {
     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
       toastMessage = message
     }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+    // Show toast for longer duration (5 seconds) to give users more time to read
+    DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
       withAnimation(.easeOut(duration: 0.25)) {
         if toastMessage == message {
           toastMessage = nil
@@ -466,9 +467,10 @@ struct HomeView: View {
         Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
       )
 
-      Spacer()
-      
-      Menu {
+      ActionButton(label: "More", symbol: "ellipsis", tint: .gray) {
+        // This button doesn't do anything directly, it's just for the menu
+      }
+      .contextMenu {
         Button(action: {
           withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             viewModel.selectedDrawer = .settings
@@ -476,25 +478,18 @@ struct HomeView: View {
         }) {
           Label("Settings", systemImage: "gearshape")
         }
-        
+
         Button(action: {
           viewModel.shareCurrentPage()
         }) {
           Label("Share", systemImage: "square.and.arrow.up")
         }
-        
+
         Button(action: {
           viewModel.isPrivateMode.toggle()
         }) {
           Label(viewModel.isPrivateMode ? "Exit Private" : "Private", systemImage: viewModel.isPrivateMode ? "eye.slash.fill" : "eye")
         }
-      } label: {
-        Image(systemName: "ellipsis")
-          .font(.title3)
-          .frame(width: 44, height: 44)
-          .background(.white)
-          .foregroundColor(.gray.opacity(0.6))
-          .cornerRadius(12)
       }
 
       Spacer()
