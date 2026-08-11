@@ -240,9 +240,7 @@ final class ServerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
             lastAudioEventMessage = "Failed to generate audio"
             triggerHapticFeedback()
             throw ServerManagerError.serverError(message: "Audio generation failed: \(error.localizedDescription)")
-        }
-                            baseURL: baseURL,
-                            endpointURL: endpointURL,
+        } 
     }
 
     // MARK: - Playback Controls
