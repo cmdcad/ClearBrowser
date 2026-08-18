@@ -12,11 +12,7 @@ struct HomeView: View {
   @FocusState private var isAddressBarFocused: Bool
 
   @State private var showTabManager = false
-  @State private var bottomBarOffset: CGFloat = 75   // Lowered resting position
-  @State private var headerBarOffset: CGFloat = 75   // Header bar resting position
-  @State private var lastDragValue: CGFloat = 0
-  @State private var isBottomBarExpanded = false     // Optional: track expanded state for animations
-  @State private var isHeaderBarExpanded = false     // Track header bar state
+  @State private var showBrowserControls = false
   @State private var toastMessage: String? = nil
 
   private var drawerOpenBinding: Binding<Bool> {
@@ -75,6 +71,11 @@ struct HomeView: View {
           .padding(.horizontal, 20)
           .zIndex(3)
         }
+
+        if showBrowserControls {
+          browserControlsOverlay
+            .zIndex(4)
+        }
       }
       .navigationBarHidden(true)
     }
@@ -130,154 +131,26 @@ struct HomeView: View {
       .padding(.horizontal, Theme.Spacing.sm)
       .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
       .overlay(statusOverlay, alignment: .top)
-      .overlay(alignment: .bottom) {
-        if !isKeyboardVisible {
-          draggableBottomBar
-        }
-      }
   }
 
-  private var draggableBottomBar: some View {
-    VStack(spacing: 0) {
-      gripHandle
-      bottomBarButtons
-    }
-    .padding(.top, 4)
-    .background(bottomBarBackground)
-    .offset(y: bottomBarOffset)
-    .gesture(dragGesture)
-    .onTapGesture {
-      withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-        bottomBarOffset = bottomBarOffset > 30 ? 0 : 75
-      }
+  private var browserControlsOverlay: some View {
+    ZStack(alignment: .top) {
+      Color.black.opacity(0.18)
+        .ignoresSafeArea()
+        .contentShape(Rectangle())
+        .onTapGesture { dismissBrowserControls() }
+
+      BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.top, 118)
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
   }
 
-  private var gripHandle: some View {
-    RoundedRectangle(cornerRadius: 3)
-      .fill(Color.secondary.opacity(0.35))
-      .frame(width: 40, height: 5)
-      .padding(.top, 8)
-      .padding(.bottom, 4)
-      .contentShape(Rectangle())
-  }
-
-  private var bottomBarButtons: some View {
-    HStack(alignment: .center, spacing: Theme.Spacing.md) {
-      ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
-        viewModel.goBack()
-      }
-
-      autoScrollButton
-
-      if viewModel.isReadAloudPlaying {
-        stopReadAloudButton
-      }
-
-      readAloudButton
-
-        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
-          viewModel.goForward()
-        }
+  private func dismissBrowserControls() {
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+      showBrowserControls = false
     }
-    .padding(.horizontal, Theme.Spacing.lg)
-    .padding(.bottom, 20)
-  }
-
-  private var autoScrollButton: some View {
-    Button(action: {
-      print("[AutoScroll] auto button tapped (before toggle). isAutoScrolling=\(viewModel.isAutoScrolling)")
-      viewModel.toggleAutoScroll()
-      print("[AutoScroll] auto button action completed. isAutoScrolling now=\(viewModel.isAutoScrolling)")
-    }) {
-      Image(systemName: viewModel.isAutoScrolling ? "pause.fill" : "play.fill")
-        .font(.title3)
-        .frame(width: 44, height: 44)
-        .background(viewModel.isAutoScrolling ? Color.green : .white)
-        .foregroundColor(viewModel.isAutoScrolling ? .white : .green.opacity(0.5))
-        .cornerRadius(12)
-    }
-  }
-
-  private var stopReadAloudButton: some View {
-    Button(action: {
-      viewModel.stopReadAloud()
-    }) {
-      Image(systemName: "stop.fill")
-        .font(.subheadline.weight(.semibold))
-        .frame(width: 34, height: 34)
-        .background(Color.red.opacity(0.12))
-        .foregroundColor(.red)
-        .clipShape(Circle())
-    }
-    .transition(.scale.combined(with: .opacity))
-  }
-
-  private var readAloudButton: some View {
-    Button(action: {
-      if viewModel.isReadAloudPlaying {
-        viewModel.pauseReadAloud()
-      } else if viewModel.isReadAloudAvailable {
-        viewModel.resumeReadAloud()
-      } else if let webView = viewModel.currentWebView {
-        viewModel.startReadAloud(from: webView)
-      }
-    }) {
-      if viewModel.serverManager.isLoading {
-        ProgressView()
-          .progressViewStyle(CircularProgressViewStyle(tint: .orange))
-          .frame(width: 44, height: 44)
-          .background(Color.white)
-          .cornerRadius(12)
-      } else {
-        Image(systemName: viewModel.isReadAloudPlaying ? "pause.circle.fill" : "play.circle.fill")
-          .font(.title3)
-          .frame(width: 44, height: 44)
-          .background(viewModel.isReadAloudPlaying ? Color.orange : .white)
-          .foregroundColor(viewModel.isReadAloudPlaying ? .white : .orange.opacity(0.75))
-          .cornerRadius(12)
-      }
-    }
-    .disabled(viewModel.serverManager.isLoading)
-  }
-
-  private var bottomBarBackground: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: 45)
-        .fill(Theme.primary.opacity(0.98))
-      RoundedRectangle(cornerRadius: 45)
-        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-    }
-    .background(
-      RoundedRectangle(cornerRadius: 45)
-        .fill(Theme.primary)
-        .blur(radius: 10)
-    )
-    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-  }
-
-  private var dragGesture: some Gesture {
-    DragGesture()
-      .onChanged { value in
-        let dragAmount = -value.translation.height
-        bottomBarOffset = min(
-          max(bottomBarOffset + dragAmount * 0.8, 0),
-          85
-        )
-        lastDragValue = dragAmount
-      }
-      .onEnded { value in
-        let velocity = -value.velocity.height
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-          if velocity < -300 || bottomBarOffset > 40 {
-            bottomBarOffset = 75
-            isBottomBarExpanded = false
-          } else {
-            bottomBarOffset = 0
-            isBottomBarExpanded = true
-          }
-        }
-      }
   }
 
   @ViewBuilder
@@ -350,6 +223,13 @@ struct HomeView: View {
   private var searchBar: some View {
            ZStack(alignment: .bottom) {
             HStack(spacing: Theme.Spacing.sm) {
+               //Move the home button here to the left of the address bar
+                Button(action: { viewModel.goHome() }) {
+                    Image(systemName: "house.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.blue)
+                }
+
                 Image(systemName: viewModel.currentURL?.scheme == "https" ? "lock.fill" : "info.circle")
                     .font(.system(size: 12))
                     .foregroundColor(viewModel.currentURL?.scheme == "https" ? .green : .secondary)
@@ -416,9 +296,11 @@ struct HomeView: View {
   private var actionRow: some View {
        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 24) {
-      ActionButton(label: "Home", symbol: "house", tint: .blue) {
-        viewModel.goHome()
-      }
+        ActionButton(label: "Controls", symbol: "slider.horizontal.3", tint: .blue, isActive: showBrowserControls) {
+          withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+            showBrowserControls = true
+          }
+        }
 
       ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {

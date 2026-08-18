@@ -886,7 +886,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         let item = BrowserItem(title: title, url: url)
         history.removeAll { $0.url == url }
         history.insert(item, at: 0)
-        history = Array(history.prefix(5))
+        history = Array(history.prefix(50)) // Keep only the latest 50 items
         storageManager.saveHistory(history)
         storageManager.syncHistoryToFirebase(history)
     }
