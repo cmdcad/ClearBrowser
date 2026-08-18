@@ -38,7 +38,7 @@ struct HomeView: View {
 
         VStack(spacing: 0) {
           if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
-            draggableHeaderBar
+            headerContent
               .transition(.move(edge: .top).combined(with: .opacity))
           }
 
@@ -98,6 +98,27 @@ struct HomeView: View {
     .onChange(of: viewModel.serverManager.errorMessage) { _, message in
       guard let message = message else { return }
       showToast(message)
+    }
+    .alert("Send text to server?", isPresented: Binding<Bool>(
+      get: { viewModel.pendingTextConfirmation != nil },
+      set: { if !$0 { viewModel.pendingTextConfirmation = nil } }
+    )) {
+      if let confirmation = viewModel.pendingTextConfirmation {
+        Button("Cancel", role: .cancel) {
+          viewModel.pendingTextConfirmation = nil
+        }
+        Button("Send") {
+          viewModel.proceedWithReadAloud(text: confirmation.text)
+        }
+      } else {
+        Button("OK", role: .cancel) { }
+      }
+    } message: {
+      if let confirmation = viewModel.pendingTextConfirmation {
+        Text("Send \(confirmation.size) of text to the server for audio generation?")
+      } else {
+        Text("Confirm text send")
+      }
     }
   }
 
@@ -323,52 +344,7 @@ struct HomeView: View {
     }
   }
 
-  private var draggableHeaderBar: some View {
-    VStack(spacing: 0) {
-      headerContent
-      headerGripHandle
-    }
-    .offset(y: -headerBarOffset)
-    .gesture(headerDragGesture)
-    .onTapGesture {
-      withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-        headerBarOffset = headerBarOffset > 30 ? 0 : 75
-      }
-    }
-  }
-
-  private var headerGripHandle: some View {
-    RoundedRectangle(cornerRadius: 3)
-      .fill(Color.secondary.opacity(0.35))
-      .frame(width: 40, height: 5)
-      .padding(.top, 8)
-      .padding(.bottom, 4)
-      .contentShape(Rectangle())
-  }
-
-  private var headerDragGesture: some Gesture {
-    DragGesture()
-      .onChanged { value in
-        let dragAmount = value.translation.height
-        headerBarOffset = min(
-          max(headerBarOffset + dragAmount * 0.8, 0),
-          85
-        )
-        lastDragValue = dragAmount
-      }
-      .onEnded { value in
-        let velocity = value.velocity.height
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-          if velocity > 300 || headerBarOffset > 40 {
-            headerBarOffset = 75
-            isHeaderBarExpanded = false
-          } else {
-            headerBarOffset = 0
-            isHeaderBarExpanded = true
-          }
-        }
-      }
-  }
+ 
 
 
   private var searchBar: some View {

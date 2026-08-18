@@ -102,6 +102,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var invertColorsEnabled: Bool = false {
         didSet { settings.invertColorsEnabled = invertColorsEnabled; saveSettings() }
     }
+    @Published var showTextConfirmation: Bool = true {
+        didSet { settings.showTextConfirmation = showTextConfirmation; saveSettings() }
+    }
+    @Published var pendingTextConfirmation: (text: String, size: String)? = nil
     @Published var highlightVerseEnabled: Bool = true {
         didSet { settings.highlightVerseEnabled = highlightVerseEnabled; saveSettings() }
     }
@@ -901,10 +905,10 @@ final class HomeViewModel: NSObject, ObservableObject {
         audioContentCandidate = false
         audioRequestSent = false
         audioReceived = false
-        
+
         serverManager.extractArticleContent(from: webView, notifyUser: true) { [weak self] content in
             guard let self = self else { return }
-            
+
             Task { @MainActor in
                 guard let content = content, !content.isEmpty else {
                     self.serverManager.errorMessage = "No article content found"
@@ -912,38 +916,65 @@ final class HomeViewModel: NSObject, ObservableObject {
                 }
                 self.currentReadAloudText = content
 
-                // Cancel any task that might have started in the meantime
-                self.activeReadAloudTask?.cancel()
+                // Calculate text size for confirmation
+                let textSize = self.formatTextSize(content.count)
 
-                let task = Task {
-                    do {
-                        let player = try await self.serverManager.synthesizeSpeech(text: content)
-                        
-                        try Task.checkCancellation()
-                        
-                        await MainActor.run {
-                            guard !Task.isCancelled else { return }
-                            if let url = self.activeTab?.url, let audioData = self.serverManager.lastAudioData {
-                                self.cacheAudioData(audioData, for: url)
-                                self.currentReadAloudURL = url
-                            }
-                            self.serverManager.play(audioPlayer: player)
-                            self.isReadAloudPlaying = true
-                            self.isReadAloudAvailable = true
-                        }
-                    } catch {
-                        guard !Task.isCancelled else { return }
-                        await MainActor.run {
-                            if let error = error as? ServerManagerError {
-                                self.serverManager.errorMessage = error.localizedDescription
-                            } else {
-                                self.serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
-                            }
-                        }
+                // Show confirmation if enabled
+                if self.showTextConfirmation {
+                    self.pendingTextConfirmation = (content, textSize)
+                } else {
+                    // Proceed directly without confirmation
+                    self.proceedWithReadAloud(text: content)
+                }
+            }
+        }
+    }
+
+    func proceedWithReadAloud(text: String) {
+        currentReadAloudText = text
+        pendingTextConfirmation = nil
+
+        // Cancel any task that might have started in the meantime
+        activeReadAloudTask?.cancel()
+
+        let task = Task {
+            do {
+                let player = try await serverManager.synthesizeSpeech(text: text)
+
+                try Task.checkCancellation()
+
+                await MainActor.run {
+                    guard !Task.isCancelled else { return }
+                    if let url = activeTab?.url, let audioData = serverManager.lastAudioData {
+                        cacheAudioData(audioData, for: url)
+                        currentReadAloudURL = url
+                    }
+                    serverManager.play(audioPlayer: player)
+                    isReadAloudPlaying = true
+                    isReadAloudAvailable = true
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if let error = error as? ServerManagerError {
+                        serverManager.errorMessage = error.localizedDescription
+                    } else {
+                        serverManager.errorMessage = "Failed to synthesize speech: \(error.localizedDescription)"
                     }
                 }
-                self.activeReadAloudTask = task
             }
+        }
+        activeReadAloudTask = task
+    }
+
+    private func formatTextSize(_ characterCount: Int) -> String {
+        let bytes = characterCount
+        if bytes < 1024 {
+            return "\(bytes) characters"
+        } else if bytes < 1024 * 1024 {
+            return String(format: "%.1f KB", Double(bytes) / 1024.0)
+        } else {
+            return String(format: "%.2f MB", Double(bytes) / (1024.0 * 1024.0))
         }
     }
     

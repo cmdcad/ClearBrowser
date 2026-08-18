@@ -11,6 +11,7 @@ struct BrowserSettings: Codable {
     var darkModeEnabled: Bool = false
     var invertColorsEnabled: Bool = false
     var highlightVerseEnabled: Bool = true
+    var showTextConfirmation: Bool = true
 }
 
 struct UserProfileSnapshot: Codable {

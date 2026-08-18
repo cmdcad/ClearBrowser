@@ -199,6 +199,8 @@ struct DrawerContentView: View {
                 SettingsSection(title: "Reading") {
                     Toggle("Highlight Current Verse", isOn: $viewModel.highlightVerseEnabled)
                         .tint(Theme.accent)
+                    Toggle("Confirm before sending text to server", isOn: $viewModel.showTextConfirmation)
+                        .tint(Theme.accent)
                 }
 
                 SettingsSection(title: "Auto-Scroll") {
