@@ -170,15 +170,15 @@ struct HomeView: View {
 
       autoScrollButton
 
-      ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
-        viewModel.goForward()
-      }
-
       if viewModel.isReadAloudPlaying {
         stopReadAloudButton
       }
 
       readAloudButton
+
+        ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
+          viewModel.goForward()
+        }
     }
     .padding(.horizontal, Theme.Spacing.lg)
     .padding(.bottom, 20)
