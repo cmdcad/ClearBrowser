@@ -72,10 +72,7 @@ struct HomeView: View {
           .zIndex(3)
         }
 
-        if showBrowserControls {
-          browserControlsOverlay
-            .zIndex(4)
-        }
+      
       }
       .navigationBarHidden(true)
     }
@@ -214,6 +211,10 @@ struct HomeView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
       }
        
+      if showBrowserControls {
+          browserControlsOverlay
+          //  .zIndex(4)
+      }
     }
   }
 
