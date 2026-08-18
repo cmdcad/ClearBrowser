@@ -5,11 +5,30 @@ struct AIResponseView: View {
     let response: String?
     let isWorking: Bool
     let onSubmit: () -> Void
+    let onDismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Divider()
                 .padding(.vertical, 8)
+            HStack {
+                Text("Ask AI")
+                    .font(.headline)
+
+                Spacer()
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(Color(.tertiarySystemFill))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Dismiss AI")
+                .buttonStyle(.plain)
+            }
+
             HStack {
                 TextField("Ask the AI - Zooma...", text: $query)
                     .textFieldStyle(.roundedBorder)
@@ -61,5 +80,18 @@ struct AIResponseView: View {
             }
         }
         .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.2), radius: 18, y: -4)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    if value.translation.height < -80 {
+                        onDismiss()
+                    }
+                }
+        )
     }
 }

@@ -72,6 +72,32 @@ struct HomeView: View {
           .zIndex(3)
         }
 
+        if viewModel.showAIField {
+          GeometryReader { proxy in
+            Color.black.opacity(0.28)
+              .ignoresSafeArea()
+              .contentShape(Rectangle())
+              .onTapGesture {
+                dismissAI()
+              }
+
+            VStack {
+              Spacer()
+              AIResponseView(
+                query: $viewModel.aiQuery,
+                response: viewModel.aiResponse,
+                isWorking: viewModel.isAIWorking,
+                onSubmit: viewModel.fetchAIResponse,
+                onDismiss: dismissAI
+              )
+              .frame(maxHeight: min(600, proxy.size.height * 0.75))
+            }
+            .ignoresSafeArea(edges: .bottom)
+          }
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .zIndex(2)
+        }
+
       
       }
       .navigationBarHidden(true)
@@ -184,19 +210,6 @@ struct HomeView: View {
       .padding(.bottom, !viewModel.showAIField ? Theme.Spacing.md   : 0)
       .background(Theme.secondary.opacity(0.95))
       
-      if viewModel.showAIField {
-        AIResponseView(
-          query: $viewModel.aiQuery,
-          response: viewModel.aiResponse,
-          isWorking: viewModel.isAIWorking,
-          onSubmit: viewModel.fetchAIResponse
-        )
-        .padding(.horizontal, Theme.Spacing.lg)
-        .padding(.bottom, Theme.Spacing.md)
-        .background(Theme.secondary.opacity(0.95))
-        .transition(.move(edge: .top).combined(with: .opacity))
-      }
-       
       if showBrowserControls {
            BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
               .padding(.horizontal, Theme.Spacing.lg)
@@ -205,6 +218,12 @@ struct HomeView: View {
               .transition(.move(edge: .top).combined(with: .opacity))
 
       }
+    }
+  }
+
+  private func dismissAI() {
+    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+      viewModel.showAIField = false
     }
   }
 
