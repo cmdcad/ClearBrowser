@@ -91,6 +91,7 @@ struct HomeView: View {
                 onDismiss: dismissAI
               )
               .frame(maxHeight: min(600, proxy.size.height * 0.75))
+              .padding()
             }
             .ignoresSafeArea(edges: .bottom)
           }
@@ -303,67 +304,82 @@ struct HomeView: View {
     .padding(.horizontal, Theme.Spacing.lg)
   }
 
-  private var actionRow: some View {
-       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 24) {
-        ActionButton(label: "Controls", symbol: "slider.horizontal.3", tint: .blue, isActive: showBrowserControls) {
-          withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-              showBrowserControls.toggle()
-          }
-        }
+    private var actionRow: some View {
+        HStack(spacing: 4) {
+            ActionButton(label: "Controls",
+                         symbol: "slider.horizontal.3",
+                         tint: .blue,
+                         isActive: showBrowserControls) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    showBrowserControls.toggle()
+                }
+            }
+                         .fixedSize()
 
-      ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-          viewModel.selectedDrawer = .bookmarks
-        }
-      }
+            Divider()
+                .frame(width: 1, height: 24)   // keep it small
 
-      ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-          viewModel.selectedDrawer = .history
-        }
-      }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.selectedDrawer = .bookmarks
+                        }
+                    }
 
-      ActionButton(label: "AI", symbol: "bubble.left.and.bubble.right", tint: .teal, isActive: viewModel.showAIField) {
-        viewModel.toggleAIField()
-      }
+                    ActionButton(label: "History", symbol: "clock.arrow.circlepath", tint: .orange) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.selectedDrawer = .history
+                        }
+                    }
 
-      ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {
-          showTabManager = true
-      }
-      .overlay(
-        Text("\(viewModel.tabs.count)").font(.caption2.bold()).offset(x: 10, y: -10)
-      )
+                    ActionButton(label: "AI",
+                                 symbol: "bubble.left.and.bubble.right",
+                                 tint: .teal,
+                                 isActive: viewModel.showAIField) {
+                        viewModel.toggleAIField()
+                    }
 
-      Menu {
-        Button(action: {
-          withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            viewModel.selectedDrawer = .settings
-          }
-        }) {
-          Label("Settings", systemImage: "gearshape")
-        }
+                    ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {
+                        showTabManager = true
+                    }
+                    .overlay(
+                        Text("\(viewModel.tabs.count)")
+                            .font(.caption2.bold())
+                            .offset(x: 10, y: -10)
+                    )
 
-        Button(action: {
-          viewModel.shareCurrentPage()
-        }) {
-          Label("Share", systemImage: "square.and.arrow.up")
-        }
+                    Menu {
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                viewModel.selectedDrawer = .settings
+                            }
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
 
-        Button(action: {
-          viewModel.isPrivateMode.toggle()
-        }) {
-          Label(viewModel.isPrivateMode ? "Exit Private" : "Private", systemImage: viewModel.isPrivateMode ? "eye.slash.fill" : "eye")
-        }
-      } label: {
-        ActionButton(label: "More", symbol: "ellipsis", tint: .gray) {
-          // Button action handled by Menu
-        }
-      }
+                        Button {
+                            viewModel.shareCurrentPage()
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
 
-      Spacer()
+                        Button {
+                            viewModel.isPrivateMode.toggle()
+                        } label: {
+                            Label(viewModel.isPrivateMode ? "Exit Private" : "Private",
+                                  systemImage: viewModel.isPrivateMode ? "eye.slash.fill" : "eye")
+                        }
+                    } label: {
+                        ActionButton(label: "More", symbol: "ellipsis", tint: .gray) { }
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            .frame(maxWidth: .infinity).frame(height: 44)   // 🔥 THIS FIXES THE HEIGHT
         }
-      }
+        .padding(.horizontal)
+
     }
 
   private var statusOverlay: some View {
