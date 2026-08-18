@@ -129,21 +129,7 @@ struct HomeView: View {
       .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
       .overlay(statusOverlay, alignment: .top)
   }
-
-  private var browserControlsOverlay: some View {
-    ZStack(alignment: .top) {
-      Color.black.opacity(0.18)
-        .ignoresSafeArea()
-        .contentShape(Rectangle())
-        .onTapGesture { dismissBrowserControls() }
-
-      BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
-        .padding(.horizontal, Theme.Spacing.lg)
-        .padding(.top, 118)
-        .transition(.move(edge: .top).combined(with: .opacity))
-    }
-  }
-
+ 
   private func dismissBrowserControls() {
     withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
       showBrowserControls = false
@@ -212,8 +198,18 @@ struct HomeView: View {
       }
        
       if showBrowserControls {
-          browserControlsOverlay
-          //  .zIndex(4)
+        ZStack(alignment: .top) {
+          Color.black.opacity(0.18)
+              .ignoresSafeArea()
+              .contentShape(Rectangle())
+              .onTapGesture { dismissBrowserControls() }
+
+          BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
+              .padding(.horizontal, Theme.Spacing.lg)
+              .padding(.bottom, Theme.Spacing.md)
+              .background(Theme.secondary.opacity(0.95))
+              .transition(.move(edge: .top).combined(with: .opacity))
+        } 
       }
     }
   }

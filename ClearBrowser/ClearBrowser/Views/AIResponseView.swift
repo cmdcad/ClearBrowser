@@ -11,7 +11,7 @@ struct AIResponseView: View {
             Divider()
                 .padding(.vertical, 8)
             HStack {
-                TextField("Ask the AI assistant...", text: $query)
+                TextField("Ask the AI - Zooma...", text: $query)
                     .textFieldStyle(.roundedBorder)
                     .submitLabel(.search)
                     .onSubmit(onSubmit)
@@ -45,7 +45,9 @@ struct AIResponseView: View {
                         .foregroundColor(.secondary)
 
                     ScrollView {
-                        Text(response)
+                        Text(response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                             ? "AI returned an empty response."
+                             : response)
                             .font(.body)
                             .foregroundColor(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)

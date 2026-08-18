@@ -7,17 +7,17 @@ struct BrowserControlsView: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                Text("Browser Controls")
-                    .font(.headline)
-
-                Spacer()
-
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
                 .accessibilityLabel("Close browser controls")
+                
+                Spacer()
+
+                Text("Browser Controls")
+                    .font(.headline)
             }
 
             HStack(spacing: 12) {

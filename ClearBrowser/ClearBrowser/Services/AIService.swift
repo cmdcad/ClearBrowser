@@ -6,7 +6,11 @@ final class AIService {
     private let serviceName = Bundle.main.bundleIdentifier ?? "ClearBrowser"
 
     func answer(query: String) async -> String {
-        guard let apiKey = KeychainHelper.standard.read(service: serviceName, account: keyAccount), !apiKey.isEmpty else {
+        guard let storedKey = KeychainHelper.standard.read(service: serviceName, account: keyAccount) else {
+            return "OpenAI API key not configured. Add your key in Settings to enable the AI assistant."
+        }
+        let apiKey = storedKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !apiKey.isEmpty else {
             return "OpenAI API key not configured. Add your key in Settings to enable the AI assistant."
         }
 
@@ -34,7 +38,8 @@ final class AIService {
 
             let decoded = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
             if let content = decoded.choices.first?.message.content {
-                return content.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmedContent.isEmpty ? "AI returned an empty response." : trimmedContent
             } else {
                 return "No answer returned by AI."
             }
