@@ -289,7 +289,7 @@ struct HomeView: View {
         HStack(spacing: 24) {
         ActionButton(label: "Controls", symbol: "slider.horizontal.3", tint: .blue, isActive: showBrowserControls) {
           withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-            showBrowserControls = true
+              showBrowserControls.toggle()
           }
         }
 
