@@ -198,18 +198,12 @@ struct HomeView: View {
       }
        
       if showBrowserControls {
-        ZStack(alignment: .top) {
-          Color.black.opacity(0.18)
-              .ignoresSafeArea()
-              .contentShape(Rectangle())
-              .onTapGesture { dismissBrowserControls() }
-
-          BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
+           BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
               .padding(.horizontal, Theme.Spacing.lg)
               .padding(.bottom, Theme.Spacing.md)
               .background(Theme.secondary.opacity(0.95))
               .transition(.move(edge: .top).combined(with: .opacity))
-        } 
+
       }
     }
   }

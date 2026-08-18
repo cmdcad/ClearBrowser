@@ -5,20 +5,7 @@ struct BrowserControlsView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack {
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityLabel("Close browser controls")
-                
-                Spacer()
-
-                Text("Browser Controls")
-                    .font(.headline)
-            }
+        VStack(spacing: 14) { 
 
             HStack(spacing: 12) {
                 ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
@@ -60,19 +47,6 @@ struct BrowserControlsView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .gesture(
-            DragGesture().onEnded { value in
-                if value.translation.height > 70 {
-                    onDismiss()
-                }
-            }
-        )
+        } 
     }
 }
