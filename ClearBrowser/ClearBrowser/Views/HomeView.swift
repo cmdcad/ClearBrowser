@@ -82,7 +82,7 @@ struct HomeView: View {
               }
 
             VStack {
-              Spacer()
+              //Spacer()
               AIResponseView(
                 query: $viewModel.aiQuery,
                 response: viewModel.aiResponse,
@@ -92,6 +92,7 @@ struct HomeView: View {
               )
               .frame(maxHeight: min(600, proxy.size.height * 0.75))
               .padding()
+              .padding(.top)
             }
             .ignoresSafeArea(edges: .bottom)
           }
