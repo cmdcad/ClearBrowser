@@ -1,22 +1,65 @@
 import SwiftUI
 
+struct CapsuleActionButton: View {
+    let symbol: String
+    let tint: Color
+    var isEnabled: Bool = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(isEnabled ? .white : .gray)
+                .frame(width: 32, height: 10)
+                .background(isEnabled ? tint : Color.gray.opacity(0.3))
+                .clipShape(Capsule())
+        }
+        .disabled(!isEnabled)
+        .buttonStyle(.plain)
+    }
+}
+
+struct FlattenedActionButton: View {
+    let label: String
+    let symbol: String
+    let tint: Color
+    var isActive: Bool = false
+    var isEnabled: Bool = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(isEnabled ? (isActive ? .white : tint) : .gray)
+                .frame(width: 28, height: 28)
+                .background(isEnabled ? (isActive ? tint : tint.opacity(0.12)) : Color.gray.opacity(0.1))
+                .clipShape(Circle())
+        }
+        .disabled(!isEnabled)
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+}
+
 struct BrowserControlsView: View {
     @ObservedObject var viewModel: HomeViewModel
     let onDismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) { 
+        VStack(spacing: 14) {
 
             HStack(spacing: 12) {
-                ActionButton(label: "Back", symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
+                CapsuleActionButton(symbol: "chevron.left", tint: .purple, isEnabled: viewModel.canGoBack) {
                     viewModel.goBack()
                 }
 
-                ActionButton(label: "Forward", symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
+                CapsuleActionButton(symbol: "chevron.right", tint: .teal, isEnabled: viewModel.canGoForward) {
                     viewModel.goForward()
                 }
 
-                ActionButton(
+                FlattenedActionButton(
                     label: viewModel.isAutoScrolling ? "Pause" : "Auto Scroll",
                     symbol: viewModel.isAutoScrolling ? "pause.fill" : "play.fill",
                     tint: .green,
@@ -25,7 +68,7 @@ struct BrowserControlsView: View {
                     viewModel.toggleAutoScroll()
                 }
 
-                ActionButton(
+                FlattenedActionButton(
                     label: viewModel.isReadAloudPlaying ? "Pause" : "Read Aloud",
                     symbol: viewModel.isReadAloudPlaying ? "pause.circle.fill" : "play.circle.fill",
                     tint: .orange,
@@ -41,12 +84,12 @@ struct BrowserControlsView: View {
                 }
 
                 if viewModel.isReadAloudPlaying {
-                    ActionButton(label: "Stop", symbol: "stop.fill", tint: .red) {
+                    FlattenedActionButton(label: "Stop", symbol: "stop.fill", tint: .red) {
                         viewModel.stopReadAloud()
                     }
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-        } 
+        }
     }
 }
