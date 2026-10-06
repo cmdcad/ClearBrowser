@@ -204,7 +204,8 @@ struct HomeView: View {
       
       BrowserControlsView(viewModel: viewModel, onDismiss: {})
          .padding(.horizontal, Theme.Spacing.lg)
-         .padding(.bottom, Theme.Spacing.md)
+         .padding(.top, 4)
+         .padding(.bottom, Theme.Spacing.md-2)
          .background(Theme.secondary.opacity(0.95))
     }
   }
