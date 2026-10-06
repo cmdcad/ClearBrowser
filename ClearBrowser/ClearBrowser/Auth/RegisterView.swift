@@ -10,6 +10,7 @@ struct RegisterView: View {
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var openAIKey = ""
+    @State private var recoveryPassphrase = ""
     @State private var showPassword = false
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -31,7 +32,9 @@ struct RegisterView: View {
     private var isFormValid: Bool {
         !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         isEmailValid &&
-        isPasswordValid
+        isPasswordValid &&
+        (openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+         AIKeyEncryption.isValidPassphrase(recoveryPassphrase))
     }
 
     var body: some View {
@@ -88,10 +91,22 @@ struct RegisterView: View {
 
                 registerCard(
                     title: "AI Key",
-                    footer: "Optional. You can add this later in settings.",
+                    footer: "Optional. To sync the key securely, create a four-word recovery passphrase and keep it safe.",
                     content: {
-                        RegisterTextField(title: "OpenAI API key", systemImage: "key", text: $openAIKey)
-                            .textInputAutocapitalization(.never)
+                        VStack(spacing: 14) {
+                            RegisterTextField(title: "OpenAI API key", systemImage: "key", text: $openAIKey)
+                                .textInputAutocapitalization(.never)
+
+                            if !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                RegisterSecureField(
+                                    title: "Four-word recovery passphrase",
+                                    text: $recoveryPassphrase,
+                                    isSecure: true
+                                )
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled(true)
+                            }
+                        }
                     }
                 )
 
@@ -177,7 +192,8 @@ struct RegisterView: View {
                     email: email,
                     password: password,
                     displayName: displayName,
-                    apiKey: openAIKey
+                    apiKey: openAIKey,
+                    recoveryPassphrase: recoveryPassphrase
                 )
                 await MainActor.run {
                     isLoading = false

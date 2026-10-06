@@ -5,6 +5,8 @@ struct DrawerContentView: View {
     
     @State private var selectedItemForInfo: BrowserItem?
     @State private var searchText: String = ""
+    @State private var aiRecoveryPassphrase = ""
+    @State private var isSavingAIKey = false
 
     private enum BookmarkFilter: String, CaseIterable, Identifiable {
         case all = "All"
@@ -219,11 +221,44 @@ struct DrawerContentView: View {
                         SecureField("OpenAI API Key", text: $viewModel.openAIKey)
                             .textInputAutocapitalization(.none)
                             .autocorrectionDisabled(true)
-                            .onTapGesture {
-                                UIPasteboard.general.string = viewModel.openAIKey
+                        SecureField("Four-word recovery passphrase", text: $aiRecoveryPassphrase)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                        Text("The key is stored in Keychain and synced to your account encrypted. Keep the four-word passphrase safe; it cannot be recovered.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            Button("Save and sync") {
+                                Task {
+                                    isSavingAIKey = true
+                                    defer { isSavingAIKey = false }
+                                    do {
+                                        try await viewModel.saveAIKey(recoveryPassphrase: aiRecoveryPassphrase)
+                                        aiRecoveryPassphrase = ""
+                                    } catch {
+                                        viewModel.aiKeyStatusMessage = error.localizedDescription
+                                    }
+                                }
                             }
-                        Text("Stored securely in Keychain.")
-                            .font(.caption2).foregroundColor(.secondary)
+                            .disabled(isSavingAIKey)
+
+                            Button("Restore") {
+                                Task {
+                                    do {
+                                        try await viewModel.restoreAIKey(recoveryPassphrase: aiRecoveryPassphrase)
+                                        aiRecoveryPassphrase = ""
+                                    } catch {
+                                        viewModel.aiKeyStatusMessage = error.localizedDescription
+                                    }
+                                }
+                            }
+                            .disabled(isSavingAIKey)
+                        }
+                        if let status = viewModel.aiKeyStatusMessage {
+                            Text(status)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
 

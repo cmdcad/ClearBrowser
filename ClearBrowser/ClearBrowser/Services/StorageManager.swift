@@ -150,6 +150,62 @@ final class StorageManager {
     }
 
     // MARK: - Firebase Sync
+
+    func saveEncryptedAIKey(_ encryptedKey: EncryptedAIKey, userID: String) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            db.collection("users").document(userID).setData([
+                "aiKey": [
+                    "version": 1,
+                    "salt": encryptedKey.salt,
+                    "ciphertext": encryptedKey.ciphertext
+                ]
+            ], merge: true) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
+
+    func loadEncryptedAIKey(userID: String) async throws -> EncryptedAIKey? {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<EncryptedAIKey?, Error>) in
+            db.collection("users").document(userID).getDocument { snapshot, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                guard let fields = snapshot?.data()?["aiKey"] as? [String: Any] else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard let version = fields["version"] as? Int,
+                      version == 1,
+                      let salt = fields["salt"] as? String,
+                      let ciphertext = fields["ciphertext"] as? String else {
+                    continuation.resume(throwing: AIKeyEncryptionError.invalidEncryptedData)
+                    return
+                }
+
+                continuation.resume(returning: EncryptedAIKey(salt: salt, ciphertext: ciphertext))
+            }
+        }
+    }
+
+    func deleteEncryptedAIKey(userID: String) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            db.collection("users").document(userID).setData(["aiKey": FieldValue.delete()], merge: true) { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+    }
     
     func syncBookmarksToFirebase(_ items: [BrowserItem]) {
         guard let user = Auth.auth().currentUser else { return }

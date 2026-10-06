@@ -9,14 +9,18 @@ class KeychainHelper {
     func save(_ string: String, service: String, account: String) -> Bool {
         guard let data = string.data(using: .utf8) else { return false }
         
-        let query: [String: Any] = [
+        let identity: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String: data
+            kSecAttrAccount as String: account
         ]
+        SecItemDelete(identity as CFDictionary)
+
+        let query: [String: Any] = identity.merging([
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            kSecValueData as String: data
+        ]) { _, newValue in newValue }
         
-        SecItemDelete(query as CFDictionary) // Delete existing item if it exists
         let status = SecItemAdd(query as CFDictionary, nil)
         return status == errSecSuccess
     }
@@ -47,6 +51,6 @@ class KeychainHelper {
         ]
         
         let status = SecItemDelete(query as CFDictionary)
-        return status == errSecSuccess
+        return status == errSecSuccess || status == errSecItemNotFound
     }
 }

@@ -308,11 +308,13 @@ struct HomeView: View {
                         }
                     }
 
-                    ActionButton(label: "AI",
-                                 symbol: "bubble.left.and.bubble.right",
-                                 tint: .teal,
-                                 isActive: viewModel.showAIField) {
-                        viewModel.toggleAIField()
+                    if viewModel.hasConfiguredAIKey {
+                        ActionButton(label: "AI",
+                                     symbol: "bubble.left.and.bubble.right",
+                                     tint: .teal,
+                                     isActive: viewModel.showAIField) {
+                            viewModel.toggleAIField()
+                        }
                     }
 
                     ActionButton(label: "Tabs", symbol: "square.on.square", tint: .indigo) {

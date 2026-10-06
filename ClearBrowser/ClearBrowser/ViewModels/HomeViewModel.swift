@@ -80,8 +80,20 @@ final class HomeViewModel: NSObject, ObservableObject {
     @Published var accountSheet: AccountSheetDestination? = nil
     @Published var openAIKey: String = "" {
         didSet {
-            _ = KeychainHelper.standard.save(openAIKey, service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey")
+            let service = Bundle.main.bundleIdentifier ?? "ClearBrowser"
+            let account = aiKeychainAccount(for: Auth.auth().currentUser?.uid)
+            let didPersist = openAIKey.isEmpty
+                ? KeychainHelper.standard.delete(service: service, account: account)
+                : KeychainHelper.standard.save(openAIKey, service: service, account: account)
+            if !didPersist {
+                aiKeyStatusMessage = "The AI key could not be securely saved on this device."
+            }
         }
+    }
+    @Published var aiKeyStatusMessage: String?
+
+    var hasConfiguredAIKey: Bool {
+        !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var _rawAutoScrollSpeed: Double = 0.35
@@ -518,12 +530,19 @@ final class HomeViewModel: NSObject, ObservableObject {
         storageManager.syncHistoryToFirebase(history)
     }
 
-    func login(email: String, password: String) async throws {
+    func login(email: String, password: String, recoveryPassphrase: String = "") async throws {
         let result = try await Auth.auth().signIn(withEmail: email, password: password)
         syncUser(result.user)
+        await restoreAIKeyAfterSignIn(passphrase: recoveryPassphrase)
     }
 
-    func register(email: String, password: String, displayName: String, apiKey: String) async throws {
+    func register(
+        email: String,
+        password: String,
+        displayName: String,
+        apiKey: String,
+        recoveryPassphrase: String
+    ) async throws {
         let result = try await Auth.auth().createUser(withEmail: email, password: password)
         let user = result.user
 
@@ -533,8 +552,85 @@ final class HomeViewModel: NSObject, ObservableObject {
             try await changeRequest.commitChanges()
         }
 
-        openAIKey = apiKey
         syncUser(Auth.auth().currentUser ?? user)
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedKey.isEmpty {
+            let encryptedKey = try AIKeyEncryption.encrypt(trimmedKey, passphrase: recoveryPassphrase)
+            try await storageManager.saveEncryptedAIKey(encryptedKey, userID: user.uid)
+        }
+        openAIKey = trimmedKey
+        let storedKey = KeychainHelper.standard.read(
+            service: Bundle.main.bundleIdentifier ?? "ClearBrowser",
+            account: aiKeychainAccount(for: user.uid)
+        )
+        guard storedKey == (trimmedKey.isEmpty ? nil : trimmedKey) else {
+            throw AIKeyEncryptionError.keychainStorageFailed
+        }
+    }
+
+    func saveAIKey(recoveryPassphrase: String) async throws {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            throw AIKeyEncryptionError.notSignedIn
+        }
+
+        let trimmedKey = openAIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedKey.isEmpty {
+            try await storageManager.deleteEncryptedAIKey(userID: userID)
+            openAIKey = ""
+            guard KeychainHelper.standard.read(
+                service: Bundle.main.bundleIdentifier ?? "ClearBrowser",
+                account: aiKeychainAccount(for: userID)
+            ) == nil else {
+                throw AIKeyEncryptionError.keychainStorageFailed
+            }
+            aiKeyStatusMessage = "AI key removed from this device and synced account."
+            return
+        }
+
+        let encryptedKey = try AIKeyEncryption.encrypt(trimmedKey, passphrase: recoveryPassphrase)
+        try await storageManager.saveEncryptedAIKey(encryptedKey, userID: userID)
+        openAIKey = trimmedKey
+        guard KeychainHelper.standard.read(
+            service: Bundle.main.bundleIdentifier ?? "ClearBrowser",
+            account: aiKeychainAccount(for: userID)
+        ) == trimmedKey else {
+            throw AIKeyEncryptionError.keychainStorageFailed
+        }
+        aiKeyStatusMessage = "AI key encrypted and synced. Keep your four-word passphrase safe."
+    }
+
+    func restoreAIKey(recoveryPassphrase: String) async throws {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            throw AIKeyEncryptionError.notSignedIn
+        }
+        guard let encryptedKey = try await storageManager.loadEncryptedAIKey(userID: userID) else {
+            aiKeyStatusMessage = "No AI key is synced for this account."
+            return
+        }
+
+        let restoredKey = try AIKeyEncryption.decrypt(encryptedKey, passphrase: recoveryPassphrase)
+        openAIKey = restoredKey
+        guard KeychainHelper.standard.read(
+            service: Bundle.main.bundleIdentifier ?? "ClearBrowser",
+            account: aiKeychainAccount(for: userID)
+        ) == restoredKey else {
+            throw AIKeyEncryptionError.keychainStorageFailed
+        }
+        aiKeyStatusMessage = "AI key restored to this device."
+    }
+
+    private func restoreAIKeyAfterSignIn(passphrase: String) async {
+        guard !passphrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if !hasConfiguredAIKey {
+                aiKeyStatusMessage = "Enter your four-word AI recovery passphrase in Settings to restore your key."
+            }
+            return
+        }
+        do {
+            try await restoreAIKey(recoveryPassphrase: passphrase)
+        } catch {
+            aiKeyStatusMessage = error.localizedDescription
+        }
     }
     
     
@@ -563,7 +659,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         Bundle.main.object(forInfoDictionaryKey: "GOOGLE_REDIRECT_URI") as? String
     }
 
-    func loginWithGoogle(completion: ((Bool) -> Void)? = nil) {
+    func loginWithGoogle(recoveryPassphrase: String = "", completion: ((Bool) -> Void)? = nil) {
         guard let clientID = googleClientID, !clientID.isEmpty,
               let redirectURI = googleRedirectURI, !redirectURI.isEmpty,
               let authURL = makeGoogleAuthURL(clientID: clientID, redirectURI: redirectURI) else {
@@ -593,6 +689,7 @@ final class HomeViewModel: NSObject, ObservableObject {
                     let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: "")
                     let result = try await Auth.auth().signIn(with: credential)
                     self.syncUser(result.user)
+                    await self.restoreAIKeyAfterSignIn(passphrase: recoveryPassphrase)
                     completion?(true)
                 } catch {
                     print("Firebase Google Auth Error: \(error.localizedDescription)")
@@ -702,6 +799,22 @@ final class HomeViewModel: NSObject, ObservableObject {
         }
 
         isLoggedIn = true
+        let keychainService = Bundle.main.bundleIdentifier ?? "ClearBrowser"
+        let userKeychainAccount = aiKeychainAccount(for: user.uid)
+        if let savedKey = KeychainHelper.standard.read(service: keychainService, account: userKeychainAccount) {
+            openAIKey = savedKey
+        } else if let legacyKey = KeychainHelper.standard.read(service: keychainService, account: "openAIKey") {
+            if KeychainHelper.standard.save(legacyKey, service: keychainService, account: userKeychainAccount) {
+                if !KeychainHelper.standard.delete(service: keychainService, account: "openAIKey") {
+                    aiKeyStatusMessage = "The existing AI key was copied, but its older Keychain entry could not be removed."
+                }
+            } else {
+                aiKeyStatusMessage = "The existing AI key could not be migrated into this account's Keychain storage."
+            }
+            openAIKey = legacyKey
+        } else {
+            openAIKey = ""
+        }
         currentUserEmail = user.email ?? cachedProfile?.email
         displayName = user.displayName ?? cachedProfile?.displayName ?? user.email
 
@@ -739,12 +852,12 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     func fetchAIResponse() {
         let query = aiQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return }
+        guard !query.isEmpty, hasConfiguredAIKey else { return }
         isAIWorking = true
         aiResponse = nil
 
         Task {
-            let response = await aiService.answer(query: query)
+            let response = await aiService.answer(query: query, apiKey: openAIKey)
             await MainActor.run {
                 self.aiResponse = response
                 self.isAIWorking = false
@@ -806,7 +919,11 @@ final class HomeViewModel: NSObject, ObservableObject {
         defaultSearchEngine = settings.defaultSearchEngine
         autoScrollSpeed = settings.autoScrollSpeed
         highlightVerseEnabled = settings.highlightVerseEnabled
-        openAIKey = KeychainHelper.standard.read(service: Bundle.main.bundleIdentifier ?? "ClearBrowser", account: "openAIKey") ?? ""
+        let keychainService = Bundle.main.bundleIdentifier ?? "ClearBrowser"
+        let keychainAccount = aiKeychainAccount(for: Auth.auth().currentUser?.uid)
+        openAIKey = KeychainHelper.standard.read(service: keychainService, account: keychainAccount)
+            ?? KeychainHelper.standard.read(service: keychainService, account: "openAIKey")
+            ?? ""
 
         if let pos = UserDefaults.standard.string(forKey: "toolbarPosition"),
            let position = ToolbarPosition(rawValue: pos) {
@@ -827,6 +944,10 @@ final class HomeViewModel: NSObject, ObservableObject {
             currentURL = active.url
             addressBarText = active.url.absoluteString
         }
+    }
+
+    private func aiKeychainAccount(for userID: String?) -> String {
+        userID.map { "openAIKey.\($0)" } ?? "openAIKey.local"
     }
 
     private func saveSettings() {
@@ -1041,5 +1162,3 @@ extension HomeViewModel: ASWebAuthenticationPresentationContextProviding {
             .first?.windows.first ?? ASPresentationAnchor()
     }
 }
-
-

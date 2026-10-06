@@ -7,6 +7,7 @@ struct LoginView: View {
 
     @State private var email = ""
     @State private var password = ""
+    @State private var recoveryPassphrase = ""
     @State private var showPassword = false
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -49,6 +50,15 @@ struct LoginView: View {
                         text: $password,
                         isSecure: !showPassword
                     )
+
+                    LoginInputField(
+                        title: "AI recovery passphrase (four words, optional)",
+                        systemImage: "key",
+                        text: $recoveryPassphrase,
+                        isSecure: true
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
 
                     Toggle("Show password", isOn: $showPassword)
                         .font(.footnote)
@@ -128,7 +138,11 @@ struct LoginView: View {
         isLoading = true
         Task {
             do {
-                try await viewModel.login(email: email, password: password)
+                try await viewModel.login(
+                    email: email,
+                    password: password,
+                    recoveryPassphrase: recoveryPassphrase
+                )
                 await MainActor.run {
                     isLoading = false
                     if let onSuccess {
@@ -150,7 +164,7 @@ struct LoginView: View {
         guard !isLoading else { return }
 
         isLoading = true
-        viewModel.loginWithGoogle { success in
+        viewModel.loginWithGoogle(recoveryPassphrase: recoveryPassphrase) { success in
             DispatchQueue.main.async {
                 isLoading = false
                 if success {
