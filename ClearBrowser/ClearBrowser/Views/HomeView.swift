@@ -2,9 +2,6 @@ import SwiftUI
 import UIKit
 import PhotosUI
 import AudioToolbox
-/*
-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
-*/
 
 struct HomeView: View {
   @StateObject var viewModel: HomeViewModel
@@ -12,7 +9,6 @@ struct HomeView: View {
   @FocusState private var isAddressBarFocused: Bool
 
   @State private var showTabManager = false
-  @State private var showBrowserControls = false
   @State private var toastMessage: String? = nil
 
   private var drawerOpenBinding: Binding<Bool> {
@@ -158,12 +154,6 @@ struct HomeView: View {
       .overlay(statusOverlay, alignment: .top)
   }
  
-  private func dismissBrowserControls() {
-    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-      showBrowserControls = false
-    }
-  }
-
   @ViewBuilder
   private var drawerOverlay: some View {
     if viewModel.selectedDrawer != nil {
@@ -212,14 +202,10 @@ struct HomeView: View {
       .padding(.bottom, !viewModel.showAIField ? Theme.Spacing.md   : 0)
       .background(Theme.secondary.opacity(0.95))
       
-      if showBrowserControls {
-           BrowserControlsView(viewModel: viewModel, onDismiss: dismissBrowserControls)
-              .padding(.horizontal, Theme.Spacing.lg)
-              .padding(.bottom, Theme.Spacing.md)
-              .background(Theme.secondary.opacity(0.95))
-              .transition(.move(edge: .top).combined(with: .opacity))
-
-      }
+      BrowserControlsView(viewModel: viewModel, onDismiss: {})
+         .padding(.horizontal, Theme.Spacing.lg)
+         .padding(.bottom, Theme.Spacing.md)
+         .background(Theme.secondary.opacity(0.95))
     }
   }
 
@@ -307,19 +293,6 @@ struct HomeView: View {
 
     private var actionRow: some View {
         HStack(spacing: 4) {
-            ActionButton(label: "Controls",
-                         symbol: "slider.horizontal.3",
-                         tint: .blue,
-                         isActive: showBrowserControls) {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                    showBrowserControls.toggle()
-                }
-            }
-                         .fixedSize()
-
-            Divider()
-                .frame(width: 1, height: 24)   // keep it small
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     ActionButton(label: "Sites", symbol: "bookmark", tint: .green) {
@@ -350,15 +323,13 @@ struct HomeView: View {
                             .offset(x: 10, y: -10)
                     )
 
-                    Menu {
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                viewModel.selectedDrawer = .settings
-                            }
-                        } label: {
-                            Label("Settings", systemImage: "gearshape")
+                    ActionButton(label: "Settings", symbol: "gearshape", tint: .gray) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.selectedDrawer = .settings
                         }
+                    }
 
+                    Menu {
                         Button {
                             viewModel.shareCurrentPage()
                         } label: {
