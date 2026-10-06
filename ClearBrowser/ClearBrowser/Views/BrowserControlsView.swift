@@ -3,27 +3,6 @@ import SwiftUI
 struct CapsuleActionButton: View {
     let symbol: String
     let tint: Color
-    var isEnabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(isEnabled ? .white : .gray)
-                .frame(width: 32, height: 10)
-                .background(isEnabled ? tint : Color.gray.opacity(0.3))
-                .clipShape(Capsule())
-        }
-        .disabled(!isEnabled)
-        .buttonStyle(.plain)
-    }
-}
-
-struct FlattenedActionButton: View {
-    let label: String
-    let symbol: String
-    let tint: Color
     var isActive: Bool = false
     var isEnabled: Bool = true
     let action: () -> Void
@@ -31,15 +10,14 @@ struct FlattenedActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(isEnabled ? (isActive ? .white : tint) : .gray)
-                .frame(width: 28, height: 28)
-                .background(isEnabled ? (isActive ? tint : tint.opacity(0.12)) : Color.gray.opacity(0.1))
-                .clipShape(Circle())
+                .frame(width: 32, height: 10)
+                .background(isEnabled ? (isActive ? tint : tint.opacity(0.3)) : Color.gray.opacity(0.3))
+                .clipShape(Capsule())
         }
         .disabled(!isEnabled)
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -59,8 +37,10 @@ struct BrowserControlsView: View {
                     viewModel.goForward()
                 }
 
-                FlattenedActionButton(
-                    label: viewModel.isAutoScrolling ? "Pause" : "Auto Scroll",
+                Spacer()
+                    .frame(width: 20)
+
+                CapsuleActionButton(
                     symbol: viewModel.isAutoScrolling ? "pause.fill" : "play.fill",
                     tint: .green,
                     isActive: viewModel.isAutoScrolling
@@ -68,8 +48,7 @@ struct BrowserControlsView: View {
                     viewModel.toggleAutoScroll()
                 }
 
-                FlattenedActionButton(
-                    label: viewModel.isReadAloudPlaying ? "Pause" : "Read Aloud",
+                CapsuleActionButton(
                     symbol: viewModel.isReadAloudPlaying ? "pause.circle.fill" : "play.circle.fill",
                     tint: .orange,
                     isEnabled: viewModel.isReadAloudPlaying || viewModel.isReadAloudAvailable || viewModel.currentWebView != nil
@@ -84,7 +63,7 @@ struct BrowserControlsView: View {
                 }
 
                 if viewModel.isReadAloudPlaying {
-                    FlattenedActionButton(label: "Stop", symbol: "stop.fill", tint: .red) {
+                    CapsuleActionButton(symbol: "stop.fill", tint: .red) {
                         viewModel.stopReadAloud()
                     }
                     .transition(.scale.combined(with: .opacity))
