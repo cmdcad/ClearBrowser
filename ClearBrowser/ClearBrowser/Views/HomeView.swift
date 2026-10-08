@@ -11,7 +11,6 @@ struct HomeView: View {
 
   @State private var showTabManager = false
   @State private var isShowingApps = false
-  @State private var isShowingReloCalc = false
   @State private var toastMessage: String? = nil
 
   private var drawerOpenBinding: Binding<Bool> {
@@ -31,88 +30,75 @@ struct HomeView: View {
         Color(uiColor: .systemGroupedBackground)
           .ignoresSafeArea()
 
-        if isShowingReloCalc {
-          VStack(spacing: 0) {
-            reloCalcHeader
-            ReloCalcView(model: reloCalcModel)
-          }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if isShowingApps {
-          AppsView(
-            onClose: { isShowingApps = false },
-            onOpenReloCalc: {
-              isShowingApps = false
-              isShowingReloCalc = true
-            }
-          )
-        } else {
-          VStack(spacing: 0) {
-            if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
-              headerContent
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-
-            browserContent
-
-            if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
-              headerContent
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+        VStack(spacing: 0) {
+          if viewModel.toolbarPosition == .top && viewModel.isHeaderVisible {
+            headerContent
+              .transition(.move(edge: .top).combined(with: .opacity))
           }
 
-          if viewModel.selectedDrawer != nil {
-            drawerOverlay
+          browserContent
+
+          if viewModel.toolbarPosition == .bottom && viewModel.isHeaderVisible {
+            headerContent
+              .padding(.top, 8)
+              .padding(.bottom, 8)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
           }
+        }
 
-          if let message = toastMessage {
-            VStack {
-              Spacer()
-              Text(message)
-                .font(.footnote)
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(.ultraThinMaterial.opacity(0.95))
-                .background(Color.black.opacity(0.75))
-                .cornerRadius(16)
-                .padding(.bottom, 140)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            .padding(.horizontal, 20)
-            .zIndex(3)
+        if viewModel.selectedDrawer != nil {
+          drawerOverlay
+        }
+
+        if let message = toastMessage {
+          VStack {
+            Spacer()
+            Text(message)
+              .font(.footnote)
+              .foregroundColor(.white)
+              .padding(.horizontal, 16)
+              .padding(.vertical, 12)
+              .background(.ultraThinMaterial.opacity(0.95))
+              .background(Color.black.opacity(0.75))
+              .cornerRadius(16)
+              .padding(.bottom, 140)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
           }
+          .padding(.horizontal, 20)
+          .zIndex(3)
+        }
 
-          if viewModel.showAIField {
-            GeometryReader { proxy in
-              Color.black.opacity(0.28)
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture {
-                  dismissAI()
-                }
-
-              VStack {
-                AIResponseView(
-                  query: $viewModel.aiQuery,
-                  response: viewModel.aiResponse,
-                  isWorking: viewModel.isAIWorking,
-                  onSubmit: viewModel.fetchAIResponse,
-                  onDismiss: dismissAI
-                )
-                .frame(maxHeight: min(600, proxy.size.height * 0.75))
-                .padding()
-                .padding(.top)
+        if viewModel.showAIField {
+          GeometryReader { proxy in
+            Color.black.opacity(0.28)
+              .ignoresSafeArea()
+              .contentShape(Rectangle())
+              .onTapGesture {
+                dismissAI()
               }
-              .ignoresSafeArea(edges: .bottom)
+
+            VStack {
+              AIResponseView(
+                query: $viewModel.aiQuery,
+                response: viewModel.aiResponse,
+                isWorking: viewModel.isAIWorking,
+                onSubmit: viewModel.fetchAIResponse,
+                onDismiss: dismissAI
+              )
+              .frame(maxHeight: min(600, proxy.size.height * 0.75))
+              .padding()
+              .padding(.top)
             }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-            .zIndex(2)
+            .ignoresSafeArea(edges: .bottom)
           }
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+          .zIndex(2)
         }
       }
       .navigationBarHidden(true)
+    }
+    .fullScreenCover(isPresented: $isShowingApps) {
+      AppsView(onClose: { isShowingApps = false }, model: reloCalcModel)
     }
     .fullScreenCover(item: $viewModel.accountSheet) { destination in
       AccountFlowView(viewModel: viewModel, startDestination: destination)
@@ -168,30 +154,6 @@ struct HomeView: View {
       .overlay(statusOverlay, alignment: .top)
   }
 
-  private var reloCalcHeader: some View {
-    HStack {
-      Button {
-        isShowingReloCalc = false
-        isShowingApps = true
-      } label: {
-        Label("Apps", systemImage: "chevron.left")
-          .font(.subheadline)
-      }
-      .buttonStyle(.plain)
-
-      Spacer()
-      Text("ReloCalc")
-        .font(.headline)
-      Spacer()
-
-      Color.clear
-        .frame(width: 54)
-    }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 12)
-    .background(Theme.secondary.opacity(0.95))
-  }
- 
   @ViewBuilder
   private var drawerOverlay: some View {
     if viewModel.selectedDrawer != nil {
