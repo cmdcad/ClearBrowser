@@ -45,6 +45,10 @@
 		AB652DEF2F7EC6CB00816346 /* SearchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DEC2F7EC6CB00816346 /* SearchManager.swift */; };
 		AB652DF02F7EC6CB00816346 /* AutoScrollManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DEB2F7EC6CB00816346 /* AutoScrollManager.swift */; };
 		AB652DF12F7EC6CB00816346 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DED2F7EC6CB00816346 /* StorageManager.swift */; };
+		D10000012F90000100000002 /* AppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000001 /* AppsView.swift */; };
+		D10000012F90000100000004 /* ReloCalcModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000003 /* ReloCalcModel.swift */; };
+		D10000012F90000100000006 /* ReloCalcSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000005 /* ReloCalcSteps.swift */; };
+		D10000012F90000100000008 /* ReloCalcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000007 /* ReloCalcView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -86,6 +90,10 @@
 		AB652DEB2F7EC6CB00816346 /* AutoScrollManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoScrollManager.swift; sourceTree = "<group>"; };
 		AB652DEC2F7EC6CB00816346 /* SearchManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchManager.swift; sourceTree = "<group>"; };
 		AB652DED2F7EC6CB00816346 /* StorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
+		D10000012F90000100000001 /* AppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsView.swift; sourceTree = "<group>"; };
+		D10000012F90000100000003 /* ReloCalcModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcModel.swift; sourceTree = "<group>"; };
+		D10000012F90000100000005 /* ReloCalcSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcSteps.swift; sourceTree = "<group>"; };
+		D10000012F90000100000007 /* ReloCalcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +199,10 @@
 				AB652DDE2F7EC67C00816346 /* AIResponseView.swift */,
 				C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
+				D10000012F90000100000001 /* AppsView.swift */,
+				D10000012F90000100000003 /* ReloCalcModel.swift */,
+				D10000012F90000100000005 /* ReloCalcSteps.swift */,
+				D10000012F90000100000007 /* ReloCalcView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -325,6 +337,10 @@
 				5B62930F2F89FCAE00272F64 /* DrawerContentView.swift in Sources */,
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 				5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */,
+				D10000012F90000100000002 /* AppsView.swift in Sources */,
+				D10000012F90000100000004 /* ReloCalcModel.swift in Sources */,
+				D10000012F90000100000006 /* ReloCalcSteps.swift in Sources */,
+				D10000012F90000100000008 /* ReloCalcView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
