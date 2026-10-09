@@ -1,0 +1,366 @@
+import SwiftUI
+
+// MARK: - Start
+
+struct StartStep: View {
+    @ObservedObject var m: ReloCalcModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            VStack(spacing: 4) {
+                Image(systemName: "globe").font(.system(size: 40)).foregroundStyle(.tint)
+                Text("Ready to Relocate?").font(.title3.bold())
+                Text("Let's figure out if you can thrive in your new city.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 8)
+
+            Card(title: "Your Profile") {
+                textField("Your Name (optional)", text: $m.userName, placeholder: "e.g. Tosin")
+                textField("Relocating To (optional)", text: $m.city, placeholder: "e.g. Austin, TX")
+            }
+            Card(title: "Starting Finances") {
+                NumberField(title: "Starting Savings", value: $m.savings, prefix: m.currency.rawValue)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Currency").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Picker("Currency", selection: $m.currency) {
+                        ForEach(Currency.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+        }
+    }
+
+    private func textField(_ title: String, text: Binding<String>, placeholder: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            TextField(placeholder, text: text)
+                .padding(10)
+                .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
+
+// MARK: - Income
+
+struct IncomeStep: View {
+    @ObservedObject var m: ReloCalcModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Card(title: "Earnings") {
+                NumberField(title: "Hourly Wage", value: $m.wage, prefix: m.currency.rawValue, suffix: "/hr")
+                NumberField(title: "Hours Per Day", value: $m.hoursPerDay, suffix: "hrs")
+                DaysPicker(title: "Income Work Week", days: $m.incomeDays)
+                DisclosureGroup("Advanced Options") {
+                    VStack(spacing: 12) {
+                        NumberField(title: "Tax Rate", value: $m.taxRate, suffix: "%")
+                        NumberField(title: "Overtime Rate", value: $m.overtimeRate,
+                                    prefix: m.currency.rawValue, suffix: "/hr")
+                        NumberField(title: "Overtime Hrs / Week", value: $m.overtimeHours, suffix: "hrs")
+                    }
+                    .padding(.top, 8)
+                }
+                .font(.footnote.weight(.semibold))
+            }
+
+            Card(title: "Income Summary") {
+                Grid(alignment: .trailing, horizontalSpacing: 8, verticalSpacing: 8) {
+                    GridRow {
+                        Text("Period").gridColumnAlignment(.leading)
+                        Text("Gross"); Text("Net")
+                    }
+                    .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    row("Daily", m.grossDaily, m.netDaily)
+                    row("Weekly", m.grossWeekly, m.netWeekly)
+                    row("Monthly", m.grossMonthly, m.netMonthly)
+                    row("Yearly", m.grossYearly, m.netYearly)
+                }
+            }
+        }
+    }
+
+    private func row(_ label: String, _ gross: Double, _ net: Double) -> some View {
+        GridRow {
+            Text(label).font(.footnote).gridColumnAlignment(.leading)
+            Text(m.money(gross)).font(.system(.caption, design: .monospaced).weight(.semibold))
+            Text(m.money(net)).font(.system(.caption, design: .monospaced).weight(.semibold))
+        }
+    }
+}
+
+// MARK: - Expenses
+
+private enum ExpenseSection: String, CaseIterable, Identifiable {
+    case normal = "Normal Day", first = "First Day", setup = "Setup"
+    var id: String { rawValue }
+}
+
+struct ExpensesStep: View {
+    @ObservedObject var m: ReloCalcModel
+    @State private var section: ExpenseSection = .normal
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Picker("Section", selection: $section) {
+                ForEach(ExpenseSection.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            switch section {
+            case .normal: normal
+            case .first: first
+            case .setup: setup
+            }
+        }
+    }
+
+    private var cur: String { m.currency.rawValue }
+
+    private var normal: some View {
+        VStack(spacing: 12) {
+            Card {
+                DaysPicker(title: "Expense Work Week", days: $m.expenseDays)
+                Text("Rest days include food and housing only.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                NumberField(title: "Transport / day", value: $m.transport, prefix: cur, suffix: "/day")
+                NumberField(title: "Food / day", value: $m.food, prefix: cur, suffix: "/day")
+                VStack(alignment: .leading, spacing: 6) {
+                    Picker("Housing", selection: $m.housingIsHotel) {
+                        Text("Apartment").tag(false)
+                        Text("Hotel").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    NumberField(title: "Housing / day", value: $m.housing, prefix: cur, suffix: "/day")
+                }
+                NumberField(title: "Miscellaneous / day", value: $m.misc, prefix: cur, suffix: "/day")
+            }
+            Card(title: "Expense Summary") {
+                SummaryRow(label: "Transport", value: m.money(m.transport))
+                SummaryRow(label: "Food", value: m.money(m.food))
+                SummaryRow(label: "Housing", value: m.money(m.housing))
+                SummaryRow(label: "Misc", value: m.money(m.misc))
+                Divider()
+                SummaryRow(label: "Workday Total", value: m.money(m.dailyExpense), bold: true)
+                SummaryRow(label: "Rest Day Total", value: m.money(m.reducedDailyExpense))
+                SummaryRow(label: "Weekly", value: m.money(m.weeklyExpense))
+                SummaryRow(label: "Monthly", value: m.money(m.monthlyExpense))
+                SummaryRow(label: "Yearly", value: m.money(m.yearlyExpense))
+            }
+        }
+    }
+
+    private var first: some View {
+        VStack(spacing: 12) {
+            Card {
+                Text("Your arrival-day costs — typically higher than a normal day.")
+                    .font(.caption).foregroundStyle(.secondary)
+                NumberField(title: "Transport to Airport", value: $m.toAirport, prefix: cur)
+                NumberField(title: "Airport to Work Site", value: $m.airportToSite, prefix: cur)
+                NumberField(title: "Work Site to Hotel", value: $m.siteToHotel, prefix: cur)
+                NumberField(title: "Hotel (First Night)", value: $m.firstHotel, prefix: cur)
+                NumberField(title: "Food (First Day)", value: $m.firstFood, prefix: cur)
+                NumberField(title: "Other First-Day Costs", value: $m.firstOther, prefix: cur)
+            }
+            Card(title: "First Day Total") {
+                SummaryRow(label: "Transport (3 legs)", value: m.money(m.firstDayTransport))
+                SummaryRow(label: "Hotel", value: m.money(m.firstHotel))
+                SummaryRow(label: "Food", value: m.money(m.firstFood))
+                SummaryRow(label: "Other", value: m.money(m.firstOther))
+                Divider()
+                SummaryRow(label: "Total First Day", value: m.money(m.firstDayTotal), bold: true)
+                SummaryRow(label: "vs Normal Day", value: m.signed(m.firstDayDiff),
+                           color: m.firstDayDiff > 0 ? .red : .green)
+            }
+        }
+    }
+
+    private var setup: some View {
+        VStack(spacing: 12) {
+            Card {
+                Text("One-time costs during relocation (not recurring).")
+                    .font(.caption).foregroundStyle(.secondary)
+                NumberField(title: "Security Deposit", value: $m.deposit, prefix: cur)
+                NumberField(title: "SIM / Phone Plan", value: $m.sim, prefix: cur)
+                NumberField(title: "Groceries / Supplies", value: $m.groceries, prefix: cur)
+                NumberField(title: "Work Equipment", value: $m.equipment, prefix: cur)
+                NumberField(title: "Visa / Permit Fees", value: $m.visa, prefix: cur)
+            }
+            Card(title: "Setup Cost Total") {
+                Text(m.money(m.setupTotal))
+                    .font(.system(size: 30, weight: .heavy, design: .monospaced))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+}
+
+// MARK: - Dashboard
+
+struct DashboardStep: View {
+    @ObservedObject var m: ReloCalcModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            gauge
+            netSummary
+            firstWeek
+            runway
+            breakEven
+        }
+    }
+
+    private func netColor(_ n: Double) -> Color { n >= 0 ? .green : .red }
+
+    private var gauge: some View {
+        Card {
+            VStack(spacing: 4) {
+                Text("\(m.score)%")
+                    .font(.system(size: 48, weight: .heavy, design: .monospaced))
+                Text(m.verdict.title).font(.footnote.weight(.bold))
+                Text(m.verdict.message).font(.caption).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(m.verdict.color)
+            .frame(maxWidth: .infinity)
+            ProgressView(value: Double(m.score), total: 100).tint(m.verdict.color)
+            HStack {
+                Text("At Risk"); Spacer(); Text("Manageable"); Spacer(); Text("Thriving")
+            }
+            .font(.system(size: 9)).foregroundStyle(.secondary)
+        }
+    }
+
+    private var netSummary: some View {
+        Card(title: "Net Income Summary") {
+            Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 8) {
+                GridRow {
+                    Text("Period").gridColumnAlignment(.leading)
+                    Text("Income"); Text("Expense"); Text("Net")
+                }
+                .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                row("Daily", m.netDaily, m.dailyExpense, m.dailyNet)
+                row("Weekly", m.netWeekly, m.weeklyExpense, m.weeklyNet)
+                row("Monthly", m.netMonthly, m.monthlyExpense, m.monthlyNet)
+                row("Yearly", m.netYearly, m.yearlyExpense, m.yearlyNet)
+            }
+        }
+    }
+
+    private func row(_ label: String, _ inc: Double, _ exp: Double, _ net: Double) -> some View {
+        GridRow {
+            Text(label).font(.footnote).gridColumnAlignment(.leading)
+            Text(m.money(inc)); Text(m.money(exp))
+            Text(m.signed(net)).foregroundStyle(netColor(net))
+        }
+        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .minimumScaleFactor(0.7).lineLimit(1)
+    }
+
+    private var firstWeek: some View {
+        Card(title: "First Week Total") {
+            SummaryRow(label: "Day 1 (Special)", value: m.money(m.firstDayTotal))
+            SummaryRow(
+                label: "Days 2-7 (\(m.firstWeekNormalDays) workdays + \(m.firstWeekReducedDays) rest days)",
+                value: "\(m.money(m.firstWeekNormalCost)) + \(m.money(m.firstWeekReducedCost))"
+            )
+            Divider()
+            SummaryRow(label: "Total Week 1 Expense", value: m.money(m.firstWeekExpense), bold: true)
+            SummaryRow(label: "Income Week 1", value: m.money(m.netWeekly), color: .green)
+            SummaryRow(label: "Net Week 1", value: m.signed(m.firstWeekNet), color: netColor(m.firstWeekNet))
+        }
+    }
+
+    private var runway: some View {
+        Card(title: "Runway") {
+            SummaryRow(label: "Starting Savings", value: m.money(m.savings))
+            SummaryRow(label: "Monthly Net", value: m.signed(m.monthlyNet), color: netColor(m.monthlyNet))
+            SummaryRow(label: "If income stops",
+                       value: m.runwayNoIncome.map { String(format: "%.1f months", $0) } ?? "∞")
+            let positive = m.monthsUntilDepleted == nil
+            Text(positive
+                 ? "✅ Net Positive — Savings grow over time"
+                 : "⚠️ Funds deplete in " + String(format: "%.1f", m.monthsUntilDepleted ?? 0) + " months")
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(positive ? .green : .red)
+                .frame(maxWidth: .infinity)
+                .padding(10)
+                .background((positive ? Color.green : Color.red).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private var breakEven: some View {
+        Card(title: "Break-Even Analysis") {
+            SummaryRow(label: "Total Relocation Cost", value: m.money(m.relocationCost))
+            SummaryRow(label: "Daily Net Surplus", value: m.signed(m.dailyNet), color: netColor(m.dailyNet))
+            let days = m.breakEvenDays
+            VStack(spacing: 3) {
+                Text("BREAK-EVEN POINT").font(.caption2).foregroundStyle(.secondary)
+                Text(days.map { "Day \($0) (~" + String(format: "%.1f", Double($0) / 7) + " wks)" } ?? "Never")
+                    .font(.system(size: 22, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(days == nil ? .red : .green)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background((days == nil ? Color.red : Color.green).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
+
+// MARK: - Weekly
+
+struct WeeklyStep: View {
+    @ObservedObject var m: ReloCalcModel
+    private let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Card(title: "What day do you start?") {
+                Picker("Start day", selection: $m.startDay) {
+                    ForEach(0..<7, id: \.self) { Text(names[$0]).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+            Card(title: "Your First Week") {
+                Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 6) {
+                    GridRow {
+                        Text("").gridColumnAlignment(.leading)
+                        Text("Income"); Text("Expense"); Text("Net")
+                    }
+                    .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+
+                    ForEach(m.weekRows) { r in
+                        GridRow {
+                            Text(r.name + (r.isFirst ? " ★" : ""))
+                                .font(.footnote.weight(.bold)).gridColumnAlignment(.leading)
+                            Text(r.income > 0 ? m.money(r.income) : "—").foregroundStyle(.green)
+                            Text(m.money(r.expense)).foregroundStyle(.red)
+                            Text(m.signed(r.net)).foregroundStyle(r.net >= 0 ? .green : .red)
+                        }
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .minimumScaleFactor(0.7).lineLimit(1)
+                        .opacity((r.isWeekend || !r.isExpenseWorkday) && !r.isFirst ? 0.7 : 1)
+                    }
+
+                    Divider().gridCellUnsizedAxes(.horizontal)
+                    GridRow {
+                        Text("Total").font(.footnote.weight(.bold)).gridColumnAlignment(.leading)
+                        Text(m.money(m.weekIncome))
+                        Text(m.money(m.weekExpense))
+                        Text(m.signed(m.weekIncome - m.weekExpense))
+                            .foregroundStyle((m.weekIncome - m.weekExpense) >= 0 ? .green : .red)
+                    }
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .minimumScaleFactor(0.7).lineLimit(1)
+                }
+            }
+            Text("💡 You'll spend **\(m.weekExpensePct)%** of your first week's income on expenses. By week 2, this drops to **\(m.normalWeekExpensePct)%** as the special first-day costs are gone.")
+                .font(.footnote)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
