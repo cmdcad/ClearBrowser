@@ -50,6 +50,8 @@ struct HomeView: View {
           drawerOverlay
         }
 
+
+
         if let message = toastMessage {
           VStack {
             Spacer()
@@ -94,12 +96,16 @@ struct HomeView: View {
           .transition(.move(edge: .bottom).combined(with: .opacity))
           .zIndex(2)
         }
+
+        
+        if (isShowingApps) {
+          AppsView(onClose: { isShowingApps = false }, model: reloCalcModel)
+        }
+
       }
       .navigationBarHidden(true)
     }
-    .fullScreenCover(isPresented: $isShowingApps) {
-      AppsView(onClose: { isShowingApps = false }, model: reloCalcModel)
-    }
+  
     .fullScreenCover(item: $viewModel.accountSheet) { destination in
       AccountFlowView(viewModel: viewModel, startDestination: destination)
     }
