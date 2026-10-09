@@ -490,10 +490,10 @@ struct ReloCalcExportStep: View {
         VStack(spacing: 12) {
             Card(title: "Your data is saved on this device") {
                 Text("Your current inputs stay on this device automatically. Export a JSON backup to move your plan to another device.")
-                    .font(.footnote)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text(model.autosaveError ?? statusMessage ?? "Autosave is on for this device.")
-                    .font(.caption.weight(.semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(model.autosaveError == nil ? (statusMessage == nil ? .green : .secondary) : .red)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityAddTraits(.updatesFrequently)
@@ -507,7 +507,7 @@ struct ReloCalcExportStep: View {
 
             Card(title: "Restore your plan") {
                 Text("Import a version 1.0 ReloCalc JSON backup. This replaces the current plan.")
-                    .font(.footnote)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Button {
                     isImporting = true
@@ -546,7 +546,7 @@ struct ReloCalcExportStep: View {
             NavigationStack {
                 ScrollView {
                     Text(report.text)
-                        .font(.system(.footnote, design: .monospaced))
+                        .font(.system(.subheadline, design: .monospaced))
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -598,13 +598,13 @@ struct ReloCalcExportStep: View {
                 .foregroundStyle(tint)
                 .frame(width: 32)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                Text(detail).font(.caption).foregroundStyle(.secondary)
+                Text(title).font(.headline.weight(.semibold)).foregroundStyle(.primary)
+                Text(detail).font(.footnote).foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 6)

@@ -8,10 +8,10 @@ struct StartStep: View {
     var body: some View {
         VStack(spacing: 12) {
             VStack(spacing: 4) {
-                Image(systemName: "globe").font(.system(size: 40)).foregroundStyle(.tint)
+                Image(systemName: "globe").font(.system(size: 44)).foregroundStyle(.tint)
                 Text("Ready to Relocate?").font(.title3.bold())
                 Text("Let's figure out if you can thrive in your new city.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
             .padding(.vertical, 8)
 
@@ -22,7 +22,7 @@ struct StartStep: View {
             Card(title: "Starting Finances") {
                 NumberField(title: "Starting Savings", value: $m.savings, prefix: m.currency.rawValue)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Currency").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Currency").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                     Picker("Currency", selection: $m.currency) {
                         ForEach(Currency.allCases) { Text($0.label).tag($0) }
                     }
@@ -34,7 +34,7 @@ struct StartStep: View {
 
     private func textField(_ title: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             TextField(placeholder, text: text)
                 .padding(10)
                 .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
@@ -62,7 +62,7 @@ struct IncomeStep: View {
                     }
                     .padding(.top, 8)
                 }
-                .font(.footnote.weight(.semibold))
+                .font(.subheadline.weight(.semibold))
             }
 
             Card(title: "Income Summary") {
@@ -71,7 +71,7 @@ struct IncomeStep: View {
                         Text("Period").gridColumnAlignment(.leading)
                         Text("Gross"); Text("Net")
                     }
-                    .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     row("Daily", m.grossDaily, m.netDaily)
                     row("Weekly", m.grossWeekly, m.netWeekly)
                     row("Monthly", m.grossMonthly, m.netMonthly)
@@ -83,9 +83,9 @@ struct IncomeStep: View {
 
     private func row(_ label: String, _ gross: Double, _ net: Double) -> some View {
         GridRow {
-            Text(label).font(.footnote).gridColumnAlignment(.leading)
-            Text(m.money(gross)).font(.system(.caption, design: .monospaced).weight(.semibold))
-            Text(m.money(net)).font(.system(.caption, design: .monospaced).weight(.semibold))
+            Text(label).font(.subheadline).gridColumnAlignment(.leading)
+            Text(m.money(gross)).font(.system(.footnote, design: .monospaced).weight(.semibold))
+            Text(m.money(net)).font(.system(.footnote, design: .monospaced).weight(.semibold))
         }
     }
 }
@@ -123,7 +123,7 @@ struct ExpensesStep: View {
             Card {
                 DaysPicker(title: "Expense Work Week", days: $m.expenseDays)
                 Text("Rest days include food and housing only.")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                 NumberField(title: "Transport / day", value: $m.transport, prefix: cur, suffix: "/day")
                 NumberField(title: "Food / day", value: $m.food, prefix: cur, suffix: "/day")
@@ -156,7 +156,7 @@ struct ExpensesStep: View {
         VStack(spacing: 12) {
             Card {
                 Text("Your arrival-day costs — typically higher than a normal day.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(.secondary)
                 NumberField(title: "Transport to Airport", value: $m.toAirport, prefix: cur)
                 NumberField(title: "Airport to Work Site", value: $m.airportToSite, prefix: cur)
                 NumberField(title: "Work Site to Hotel", value: $m.siteToHotel, prefix: cur)
@@ -181,7 +181,7 @@ struct ExpensesStep: View {
         VStack(spacing: 12) {
             Card {
                 Text("One-time costs during relocation (not recurring).")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(.secondary)
                 NumberField(title: "Security Deposit", value: $m.deposit, prefix: cur)
                 NumberField(title: "SIM / Phone Plan", value: $m.sim, prefix: cur)
                 NumberField(title: "Groceries / Supplies", value: $m.groceries, prefix: cur)
@@ -190,7 +190,7 @@ struct ExpensesStep: View {
             }
             Card(title: "Setup Cost Total") {
                 Text(m.money(m.setupTotal))
-                    .font(.system(size: 30, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 32, weight: .heavy, design: .monospaced))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -218,9 +218,9 @@ struct DashboardStep: View {
         Card {
             VStack(spacing: 4) {
                 Text("\(m.score)%")
-                    .font(.system(size: 48, weight: .heavy, design: .monospaced))
-                Text(m.verdict.title).font(.footnote.weight(.bold))
-                Text(m.verdict.message).font(.caption).foregroundStyle(.secondary)
+                    .font(.system(size: 52, weight: .heavy, design: .monospaced))
+                Text(m.verdict.title).font(.subheadline.weight(.bold))
+                Text(m.verdict.message).font(.footnote).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             .foregroundStyle(m.verdict.color)
@@ -229,7 +229,7 @@ struct DashboardStep: View {
             HStack {
                 Text("At Risk"); Spacer(); Text("Manageable"); Spacer(); Text("Thriving")
             }
-            .font(.system(size: 9)).foregroundStyle(.secondary)
+            .font(.system(size: 11)).foregroundStyle(.secondary)
         }
     }
 
@@ -240,7 +240,7 @@ struct DashboardStep: View {
                     Text("Period").gridColumnAlignment(.leading)
                     Text("Income"); Text("Expense"); Text("Net")
                 }
-                .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                 row("Daily", m.netDaily, m.dailyExpense, m.dailyNet)
                 row("Weekly", m.netWeekly, m.weeklyExpense, m.weeklyNet)
                 row("Monthly", m.netMonthly, m.monthlyExpense, m.monthlyNet)
@@ -251,11 +251,11 @@ struct DashboardStep: View {
 
     private func row(_ label: String, _ inc: Double, _ exp: Double, _ net: Double) -> some View {
         GridRow {
-            Text(label).font(.footnote).gridColumnAlignment(.leading)
+            Text(label).font(.subheadline).gridColumnAlignment(.leading)
             Text(m.money(inc)); Text(m.money(exp))
             Text(m.signed(net)).foregroundStyle(netColor(net))
         }
-        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .font(.system(size: 12, weight: .semibold, design: .monospaced))
         .minimumScaleFactor(0.7).lineLimit(1)
     }
 
@@ -283,7 +283,7 @@ struct DashboardStep: View {
             Text(positive
                  ? "✅ Net Positive — Savings grow over time"
                  : "⚠️ Funds deplete in " + String(format: "%.1f", m.monthsUntilDepleted ?? 0) + " months")
-                .font(.footnote.weight(.bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(positive ? .green : .red)
                 .frame(maxWidth: .infinity)
                 .padding(10)
@@ -297,9 +297,9 @@ struct DashboardStep: View {
             SummaryRow(label: "Daily Net Surplus", value: m.signed(m.dailyNet), color: netColor(m.dailyNet))
             let days = m.breakEvenDays
             VStack(spacing: 3) {
-                Text("BREAK-EVEN POINT").font(.caption2).foregroundStyle(.secondary)
+                Text("BREAK-EVEN POINT").font(.caption).foregroundStyle(.secondary)
                 Text(days.map { "Day \($0) (~" + String(format: "%.1f", Double($0) / 7) + " wks)" } ?? "Never")
-                    .font(.system(size: 22, weight: .heavy, design: .monospaced))
+                    .font(.system(size: 24, weight: .heavy, design: .monospaced))
                     .foregroundStyle(days == nil ? .red : .green)
             }
             .frame(maxWidth: .infinity)
@@ -329,35 +329,35 @@ struct WeeklyStep: View {
                         Text("").gridColumnAlignment(.leading)
                         Text("Income"); Text("Expense"); Text("Net")
                     }
-                    .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                    .font(.caption.weight(.bold)).foregroundStyle(.secondary)
 
                     ForEach(m.weekRows) { r in
                         GridRow {
                             Text(r.name + (r.isFirst ? " ★" : ""))
-                                .font(.footnote.weight(.bold)).gridColumnAlignment(.leading)
+                                .font(.subheadline.weight(.bold)).gridColumnAlignment(.leading)
                             Text(r.income > 0 ? m.money(r.income) : "—").foregroundStyle(.green)
                             Text(m.money(r.expense)).foregroundStyle(.red)
                             Text(m.signed(r.net)).foregroundStyle(r.net >= 0 ? .green : .red)
                         }
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
                         .minimumScaleFactor(0.7).lineLimit(1)
                         .opacity((r.isWeekend || !r.isExpenseWorkday) && !r.isFirst ? 0.7 : 1)
                     }
 
                     Divider().gridCellUnsizedAxes(.horizontal)
                     GridRow {
-                        Text("Total").font(.footnote.weight(.bold)).gridColumnAlignment(.leading)
+                        Text("Total").font(.subheadline.weight(.bold)).gridColumnAlignment(.leading)
                         Text(m.money(m.weekIncome))
                         Text(m.money(m.weekExpense))
                         Text(m.signed(m.weekIncome - m.weekExpense))
                             .foregroundStyle((m.weekIncome - m.weekExpense) >= 0 ? .green : .red)
                     }
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
                     .minimumScaleFactor(0.7).lineLimit(1)
                 }
             }
             Text("💡 You'll spend **\(m.weekExpensePct)%** of your first week's income on expenses. By week 2, this drops to **\(m.normalWeekExpensePct)%** as the special first-day costs are gone.")
-                .font(.footnote)
+                .font(.subheadline)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))

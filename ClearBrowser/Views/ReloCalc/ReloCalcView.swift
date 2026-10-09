@@ -58,7 +58,7 @@ struct ReloCalcView: View {
             //New Nav Button
             Button(action: action) {
                 Label(buttonTitle, systemImage: "chevron.left")
-                    .font(.subheadline)
+                    .font(.body)
             }
             .buttonStyle(.plain)
 
@@ -72,7 +72,7 @@ struct ReloCalcView: View {
 
             Spacer()
             VStack(spacing: 3) {
-                Text(step.title).font(.footnote.weight(.semibold))
+                Text(step.title).font(.subheadline.weight(.semibold))
                 HStack(spacing: 5) {
                     ForEach(ReloStep.allCases, id: \.self) { s in
                         Circle()
@@ -109,7 +109,7 @@ struct Card<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             if let title {
                 Text(title.uppercased())
-                    .font(.caption2.weight(.bold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
             }
             content
@@ -128,13 +128,13 @@ struct NumberField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             HStack {
                 if let prefix { Text(prefix).foregroundStyle(.secondary) }
                 TextField("0", value: $value, format: .number)
                     .keyboardType(.decimalPad)
                     .font(.system(.body, design: .monospaced))
-                if let suffix { Text(suffix).font(.caption).foregroundStyle(.secondary) }
+                if let suffix { Text(suffix).font(.footnote).foregroundStyle(.secondary) }
             }
             .padding(10)
             .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
@@ -147,7 +147,7 @@ struct DaysPicker: View {
     @Binding var days: Int
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             Picker(title, selection: $days) {
                 Text("4 Days").tag(4)
                 Text("5 Days").tag(5)
@@ -167,9 +167,9 @@ struct SummaryRow: View {
             Text(label).foregroundStyle(bold ? .primary : .secondary)
             Spacer()
             Text(value)
-                .font(.system(.footnote, design: .monospaced).weight(.semibold))
+                .font(.system(.subheadline, design: .monospaced).weight(.semibold))
                 .foregroundStyle(color)
         }
-        .font(bold ? .subheadline.weight(.bold) : .footnote)
+        .font(bold ? .headline.weight(.bold) : .subheadline)
     }
 }
