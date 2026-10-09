@@ -17,9 +17,17 @@ enum ReloStep: Int, CaseIterable {
 struct ReloCalcView: View {
     @StateObject private var model: ReloCalcModel
     @State private var step: ReloStep = .start
+    private let action: () -> Void
+    private let buttonTitle: String
 
-    init(model: ReloCalcModel = ReloCalcModel()) {
+    init(
+        model: ReloCalcModel = ReloCalcModel(),
+        action: @escaping () -> Void = {},
+        buttonTitle: String = "Close"
+    ) {
         _model = StateObject(wrappedValue: model)
+        self.action = action
+        self.buttonTitle = buttonTitle
     }
 
     var body: some View {
@@ -45,6 +53,15 @@ struct ReloCalcView: View {
     // Single slim bar: bb  •  title + dots  •  ff
     private var navBar: some View {
         HStack {
+            //New Nav Button
+            Button(action: action) {
+                Label(buttonTitle, systemImage: "chevron.left")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
             Button { move(-1) } label: {
                 Image(systemName: "chevron.left.circle.fill").font(.title2)
             }
