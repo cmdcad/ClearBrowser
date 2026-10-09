@@ -21,15 +21,17 @@ struct AppsView: View {
                 .ignoresSafeArea()
 
             if isShowingReloCalc {
-                VStack(spacing: 0) {
-                    navigationHeader(title: "ReloCalc", buttonTitle: "Apps") {
-                        isShowingReloCalc = false
-                    }
-                    ReloCalcView(model: model)
-                }
+                // VStack(spacing: 0) {
+                //     navigationHeader(title: "ReloCalc", buttonTitle: "Apps") {
+                //         isShowingReloCalc = false
+                //     }
+                    ReloCalcView(model: model , action: onClose)
+               // }
             } else {
                 VStack(alignment: .leading, spacing: 20) {
-                    navigationHeader(title: "Apps", buttonTitle: "Browser", action: onClose)
+                    navigationHeader(title: "Apps", buttonTitle: "Browser"
+                    , action: onClose)
+                    .frame(height: 32)
 
                     Text("Explore apps from the developer.")
                         .font(.subheadline)
