@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 enum Currency: String, CaseIterable, Identifiable {
     case usd = "$", eur = "€", gbp = "£", ngn = "₦", cad = "C$", aud = "A$"
@@ -52,6 +53,11 @@ struct WeekDayRow: Identifiable {
 }
 
 final class ReloCalcModel: ObservableObject {
+    @Published private(set) var autosaveError: String?
+
+    private let autosaveKey = "relocalc.inputs.v1"
+    private var autosaveCancellable: AnyCancellable?
+
     // Profile
     @Published var userName = ""
     @Published var city = ""
@@ -91,6 +97,30 @@ final class ReloCalcModel: ObservableObject {
 
     // Weekly detail: 0 = Mon … 6 = Sun
     @Published var startDay = 2
+
+    init() {
+        var shouldSaveInitialValues = true
+        if let data = UserDefaults.standard.data(forKey: autosaveKey) {
+            do {
+                let backup = try JSONDecoder().decode(ReloCalcBackup.self, from: data)
+                try backup.validate()
+                try backup.apply(to: self)
+            } catch {
+                shouldSaveInitialValues = false
+                autosaveError = "Saved data couldn't be restored: \(error.localizedDescription)"
+            }
+        }
+
+        autosaveCancellable = objectWillChange.sink { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.saveInputs()
+            }
+        }
+
+        if shouldSaveInitialValues {
+            saveInputs()
+        }
+    }
 
     // MARK: Formatting
     func money(_ n: Double) -> String {
@@ -181,4 +211,19 @@ final class ReloCalcModel: ObservableObject {
     var weekExpense: Double { weekRows.reduce(0) { $0 + $1.expense } }
     var weekExpensePct: Int { weekIncome > 0 ? Int(weekExpense / weekIncome * 100) : 0 }
     var normalWeekExpensePct: Int { netWeekly > 0 ? Int(weeklyExpense / netWeekly * 100) : 0 }
+
+    private func saveInputs() {
+        do {
+            let data = try ReloCalcExportFormat.json.data(for: self)
+            UserDefaults.standard.set(data, forKey: autosaveKey)
+            if autosaveError != nil {
+                autosaveError = nil
+            }
+        } catch {
+            let message = "Inputs couldn't be saved: \(error.localizedDescription)"
+            if autosaveError != message {
+                autosaveError = message
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum ReloStep: Int, CaseIterable {
-    case start, income, expenses, dashboard, weekly
+    case start, income, expenses, dashboard, weekly, export
     var title: String {
         switch self {
         case .start: return "Start"
@@ -9,6 +9,7 @@ enum ReloStep: Int, CaseIterable {
         case .expenses: return "Expenses"
         case .dashboard: return "Dashboard"
         case .weekly: return "Weekly"
+        case .export: return "Save & Export"
         }
     }
 }
@@ -40,6 +41,7 @@ struct ReloCalcView: View {
                     case .expenses: ExpensesStep(m: model)
                     case .dashboard: DashboardStep(m: model)
                     case .weekly: WeeklyStep(m: model)
+                    case .export: ReloCalcExportStep(model: model)
                     }
                 }
                 .padding()
@@ -84,7 +86,7 @@ struct ReloCalcView: View {
             Button { move(1) } label: {
                 Image(systemName: "chevron.right.circle.fill").font(.title2)
             }
-            .disabled(step == .weekly)
+            .disabled(step == .export)
             .accessibilityLabel("Forward")
         }
         .padding(.horizontal, 20)

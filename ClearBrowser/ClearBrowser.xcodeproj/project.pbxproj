@@ -49,6 +49,7 @@
 		D10000012F90000100000004 /* ReloCalcModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000003 /* ReloCalcModel.swift */; };
 		D10000012F90000100000006 /* ReloCalcSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000005 /* ReloCalcSteps.swift */; };
 		D10000012F90000100000008 /* ReloCalcView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000007 /* ReloCalcView.swift */; };
+		D10000012F90000100000010 /* ReloCalcExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000009 /* ReloCalcExport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,6 +95,7 @@
 		D10000012F90000100000003 /* ReloCalcModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcModel.swift; sourceTree = "<group>"; };
 		D10000012F90000100000005 /* ReloCalcSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcSteps.swift; sourceTree = "<group>"; };
 		D10000012F90000100000007 /* ReloCalcView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcView.swift; sourceTree = "<group>"; };
+		D10000012F90000100000009 /* ReloCalcExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloCalc2/ReloCalcExport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +205,7 @@
 				D10000012F90000100000003 /* ReloCalcModel.swift */,
 				D10000012F90000100000005 /* ReloCalcSteps.swift */,
 				D10000012F90000100000007 /* ReloCalcView.swift */,
+				D10000012F90000100000009 /* ReloCalcExport.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -341,6 +344,7 @@
 				D10000012F90000100000004 /* ReloCalcModel.swift in Sources */,
 				D10000012F90000100000006 /* ReloCalcSteps.swift in Sources */,
 				D10000012F90000100000008 /* ReloCalcView.swift in Sources */,
+				D10000012F90000100000010 /* ReloCalcExport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
