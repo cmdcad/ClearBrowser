@@ -334,7 +334,11 @@ struct CreditTrackView: View {
                 }
                 Text("Alerts are scheduled for each card’s next due date and refreshed when you record a payment.")
                     .font(.caption).foregroundStyle(.secondary)
-                if let note = model.notificationNote { Text(note).font(.caption).foregroundStyle(.orange) }
+                if let note = model.notificationNote { Text(note).font(.caption).foregroundStyle(.secondary) }
+                Button("Send Test Notification (10 seconds)") { model.sendTestNotification() }
+                    .buttonStyle(.bordered)
+                Text("If the test arrives but a payment reminder does not, check the scheduled date above. Past reminder times are skipped.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if model.reminders.isEmpty {
                 CreditEmptyState(icon: "bell", title: "No reminders yet", message: "Choose when you want a payment reminder.")

@@ -215,6 +215,29 @@ final class CreditTrackModel: ObservableObject {
             catch { self.error = error.localizedDescription }
         }
     }
+    func sendTestNotification() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            do {
+                let allowed = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                notificationStatus = await center.notificationSettings().authorizationStatus
+                guard allowed else {
+                    error = "Notifications are blocked. Allow notifications for ClearBrowser in iPhone Settings."
+                    return
+                }
+                let content = UNMutableNotificationContent()
+                content.title = "CreditTrack test"
+                content.body = "Notifications are working. Your payment reminders use this same iOS notification system."
+                content.sound = .default
+                // Separate from payment requests so opening the app cannot cancel the test.
+                let request = UNNotificationRequest(identifier: "credittrack-test", content: content,
+                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false))
+                try await center.add(request)
+                notificationNote = "Test scheduled for 10 seconds from now. Focus or notification settings may silence it."
+            } catch { self.error = "Test could not be scheduled: \(error.localizedDescription)" }
+        }
+    }
+
     func refreshNotifications() {
         Task {
             notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
@@ -241,7 +264,12 @@ final class CreditTrackModel: ObservableObject {
             }
             let otherCount = pending.filter { !$0.identifier.hasPrefix("credittrack.") }.count
             let capacity = max(0, 64 - otherCount)
-            notificationNote = upcoming.count > capacity ? "Only the next \(capacity) alerts can be scheduled. Open CreditTrack after payments to refresh reminders." : nil
+            notificationNote = nil
+            if upcoming.isEmpty {
+                notificationNote = "No future alerts to schedule. Check that a reminder is enabled, applies to an active card, and its date and time have not passed."
+            }
+            var scheduledCount = 0
+            var nextScheduled: (Date, CreditCard)?
             for (fire, reminder, card) in upcoming.sorted(by: { $0.0 < $1.0 }).prefix(capacity) {
                 guard !Task.isCancelled else { return }
                 let content = UNMutableNotificationContent()
@@ -249,8 +277,21 @@ final class CreditTrackModel: ObservableObject {
                 content.body = "\(card.name) payment of \(CreditDates.money(card.fixedPayment)) is due \(reminder.daysBefore == 0 ? "TODAY" : "in \(reminder.daysBefore) days")."
                 content.sound = .default
                 let trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
-                do { try await center.add(UNNotificationRequest(identifier: "credittrack.\(reminder.id).\(card.id)", content: content, trigger: trigger)) }
+                do {
+                    try await center.add(UNNotificationRequest(identifier: "credittrack.\(reminder.id).\(card.id)", content: content, trigger: trigger))
+                    scheduledCount += 1
+                    if nextScheduled == nil { nextScheduled = (fire, card) }
+                }
                 catch { self.error = "Unable to schedule reminder: \(error.localizedDescription)" }
+            }
+            guard !Task.isCancelled else { return }
+            if let (fire, card) = nextScheduled {
+                notificationNote = "\(scheduledCount) alert(s) scheduled. Next: \(card.name), \(fire.formatted(date: .abbreviated, time: .shortened))."
+            } else if !upcoming.isEmpty {
+                notificationNote = "No alerts were scheduled. Check notification permissions and available notification capacity."
+            }
+            if upcoming.count > capacity {
+                notificationNote = (notificationNote ?? "") + " iOS notification capacity reached; reopen after payments to refresh."
             }
         }
     }
