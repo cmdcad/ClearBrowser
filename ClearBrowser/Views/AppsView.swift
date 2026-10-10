@@ -4,6 +4,7 @@ struct AppsView: View {
     let onClose: () -> Void
     @ObservedObject var model: ReloCalcModel
     @State private var isShowingReloCalc = false
+    @State private var isShowingCreditTrack = false
 
     init(onClose: @escaping () -> Void, model: ReloCalcModel) {
         self.onClose = onClose
@@ -20,7 +21,9 @@ struct AppsView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            if isShowingReloCalc {
+            if isShowingCreditTrack {
+                CreditTrackView { isShowingCreditTrack = false }
+            } else if isShowingReloCalc {
                 // VStack(spacing: 0) {
                 //     navigationHeader(title: "ReloCalc", buttonTitle: "Apps") {
                 //         isShowingReloCalc = false
@@ -64,6 +67,32 @@ struct AppsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open ReloCalc")
+
+                        Button {
+                            isShowingCreditTrack = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Image(systemName: "creditcard.fill")
+                                    .font(.system(size: 28, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 56, height: 56)
+                                    .background(Color.blue.gradient, in: RoundedRectangle(cornerRadius: 16))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("CreditTrack")
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                    Text("Track payments and pay off debt")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
+                            .padding(16)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open CreditTrack")
                     }
 
                     Spacer(minLength: 0)

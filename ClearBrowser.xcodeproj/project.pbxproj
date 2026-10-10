@@ -50,6 +50,8 @@
 		AB652DF12F7EC6CB00816346 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB652DED2F7EC6CB00816346 /* StorageManager.swift */; };
 		C1B7E6A72F8A000100000001 /* BrowserControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */; };
 		D10000012F90000100000002 /* AppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000012F90000100000001 /* AppsView.swift */; };
+		D20000012F90000100000002 /* CreditTrackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000012F90000100000001 /* CreditTrackView.swift */; };
+		D20000012F90000100000006 /* CreditTrackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000012F90000100000005 /* CreditTrackModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +98,8 @@
 		AB652DED2F7EC6CB00816346 /* StorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
 		C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserControlsView.swift; sourceTree = "<group>"; };
 		D10000012F90000100000001 /* AppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsView.swift; sourceTree = "<group>"; };
+		D20000012F90000100000001 /* CreditTrackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CreditTrackView.swift; path = ClearBrowser/Views/CreditTrack/CreditTrackView.swift; sourceTree = SOURCE_ROOT; };
+		D20000012F90000100000005 /* CreditTrackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CreditTrackModel.swift; path = ClearBrowser/Views/CreditTrack/CreditTrackModel.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -214,6 +218,8 @@
 				C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
 				D10000012F90000100000001 /* AppsView.swift */,
+				D20000012F90000100000001 /* CreditTrackView.swift */,
+				D20000012F90000100000005 /* CreditTrackModel.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -353,6 +359,8 @@
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 				5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */,
 				D10000012F90000100000002 /* AppsView.swift in Sources */,
+				D20000012F90000100000002 /* CreditTrackView.swift in Sources */,
+				D20000012F90000100000006 /* CreditTrackModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
