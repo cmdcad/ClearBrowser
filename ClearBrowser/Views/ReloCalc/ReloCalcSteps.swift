@@ -66,10 +66,11 @@ struct IncomeStep: View {
             }
 
             Card(title: "Income Summary") {
-                Grid(alignment: .trailing, horizontalSpacing: 8, verticalSpacing: 8) {
-                    GridRow {
-                        Text("Period").gridColumnAlignment(.leading)
-                        Text("Gross"); Text("Net")
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Text("Period").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Gross").frame(maxWidth: .infinity, alignment: .trailing)
+                        Text("Net").frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     row("Daily", m.grossDaily, m.netDaily)
@@ -82,11 +83,15 @@ struct IncomeStep: View {
     }
 
     private func row(_ label: String, _ gross: Double, _ net: Double) -> some View {
-        GridRow {
-            Text(label).font(.subheadline).gridColumnAlignment(.leading)
+        HStack(spacing: 8) {
+            Text(label).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
             Text(m.money(gross)).font(.system(.footnote, design: .monospaced).weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .trailing)
             Text(m.money(net)).font(.system(.footnote, design: .monospaced).weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .minimumScaleFactor(0.7)
+        .lineLimit(1)
     }
 }
 
@@ -235,10 +240,12 @@ struct DashboardStep: View {
 
     private var netSummary: some View {
         Card(title: "Net Income Summary") {
-            Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 8) {
-                GridRow {
-                    Text("Period").gridColumnAlignment(.leading)
-                    Text("Income"); Text("Expense"); Text("Net")
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Text("Period").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Income").frame(maxWidth: .infinity, alignment: .trailing)
+                    Text("Expense").frame(maxWidth: .infinity, alignment: .trailing)
+                    Text("Net").frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                 row("Daily", m.netDaily, m.dailyExpense, m.dailyNet)
@@ -250,10 +257,12 @@ struct DashboardStep: View {
     }
 
     private func row(_ label: String, _ inc: Double, _ exp: Double, _ net: Double) -> some View {
-        GridRow {
-            Text(label).font(.subheadline).gridColumnAlignment(.leading)
-            Text(m.money(inc)); Text(m.money(exp))
+        HStack(spacing: 6) {
+            Text(label).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            Text(m.money(inc)).frame(maxWidth: .infinity, alignment: .trailing)
+            Text(m.money(exp)).frame(maxWidth: .infinity, alignment: .trailing)
             Text(m.signed(net)).foregroundStyle(netColor(net))
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .font(.system(size: 12, weight: .semibold, design: .monospaced))
         .minimumScaleFactor(0.7).lineLimit(1)
@@ -324,33 +333,41 @@ struct WeeklyStep: View {
                 .pickerStyle(.segmented)
             }
             Card(title: "Your First Week") {
-                Grid(alignment: .trailing, horizontalSpacing: 6, verticalSpacing: 6) {
-                    GridRow {
-                        Text("").gridColumnAlignment(.leading)
-                        Text("Income"); Text("Expense"); Text("Net")
+                VStack(spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text("").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("Income").frame(maxWidth: .infinity, alignment: .trailing)
+                        Text("Expense").frame(maxWidth: .infinity, alignment: .trailing)
+                        Text("Net").frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     .font(.caption.weight(.bold)).foregroundStyle(.secondary)
 
                     ForEach(m.weekRows) { r in
-                        GridRow {
+                        HStack(spacing: 6) {
                             Text(r.name + (r.isFirst ? " ★" : ""))
-                                .font(.subheadline.weight(.bold)).gridColumnAlignment(.leading)
+                                .font(.subheadline.weight(.bold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             Text(r.income > 0 ? m.money(r.income) : "—").foregroundStyle(.green)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                             Text(m.money(r.expense)).foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                             Text(m.signed(r.net)).foregroundStyle(r.net >= 0 ? .green : .red)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .font(.system(size: 12, weight: .semibold, design: .monospaced))
                         .minimumScaleFactor(0.7).lineLimit(1)
                         .opacity((r.isWeekend || !r.isExpenseWorkday) && !r.isFirst ? 0.7 : 1)
                     }
 
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text("Total").font(.subheadline.weight(.bold)).gridColumnAlignment(.leading)
-                        Text(m.money(m.weekIncome))
-                        Text(m.money(m.weekExpense))
+                    Divider()
+                    HStack(spacing: 6) {
+                        Text("Total").font(.subheadline.weight(.bold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(m.money(m.weekIncome)).frame(maxWidth: .infinity, alignment: .trailing)
+                        Text(m.money(m.weekExpense)).frame(maxWidth: .infinity, alignment: .trailing)
                         Text(m.signed(m.weekIncome - m.weekExpense))
                             .foregroundStyle((m.weekIncome - m.weekExpense) >= 0 ? .green : .red)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                     .minimumScaleFactor(0.7).lineLimit(1)
