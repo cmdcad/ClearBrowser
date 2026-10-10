@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct AccountFlowView: View {
     @ObservedObject var viewModel: HomeViewModel
@@ -36,7 +37,7 @@ struct AccountFlowView: View {
                             dismiss()
                         }
                     }
-                }
+            }
         }
     }
 
@@ -173,22 +174,36 @@ private struct ProfileView: View {
     var onDone: (() -> Void)? = nil
 
     @State private var editedDisplayName: String = ""
-    @State private var photoPickerItem: PhotosPickerItem?
+    @State private var photoPickerError: String?
+    @State private var isShowingLegacyPhotoPicker = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 14) {
-                    PhotosPicker(selection: $photoPickerItem, matching: .images) {
-                        ZStack(alignment: .bottomTrailing) {
-                            ProfileAvatarView(viewModel: viewModel, size: 112)
-
-                            Image(systemName: "camera.fill")
-                                .font(.caption.bold())
-                                .foregroundColor(.white)
-                                .padding(9)
-                                .background(Theme.accent)
-                                .clipShape(Circle())
+                    Group {
+                        if #available(iOS 16.0, *) {
+                            ModernProfilePhotoPicker(
+                                viewModel: viewModel,
+                                onError: { photoPickerError = $0 }
+                            )
+                        } else {
+                            Button {
+                                isShowingLegacyPhotoPicker = true
+                            } label: {
+                                profilePhotoButton
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .sheet(isPresented: $isShowingLegacyPhotoPicker) {
+                        LegacyProfilePhotoPicker { result in
+                            switch result {
+                            case .success(let image):
+                                viewModel.uploadProfilePicture(image)
+                            case .failure(let error):
+                                photoPickerError = error.localizedDescription
+                            }
                         }
                     }
 
@@ -270,19 +285,126 @@ private struct ProfileView: View {
         .onAppear {
             editedDisplayName = viewModel.displayName ?? ""
         }
-        .onChange(of: photoPickerItem) { newItem in
-            Task {
-                if let data = try? await newItem?.loadTransferable(type: Data.self),
-                   let image = UIImage(data: data) {
-                    viewModel.uploadProfilePicture(image)
-                }
-            }
+        .alert("Couldn't load photo", isPresented: Binding(
+            get: { photoPickerError != nil },
+            set: { if !$0 { photoPickerError = nil } }
+        )) {
+            Button("OK") { photoPickerError = nil }
+        } message: {
+            Text(photoPickerError ?? "")
+        }
+    }
+
+    private var profilePhotoButton: some View {
+        ZStack(alignment: .bottomTrailing) {
+            ProfileAvatarView(viewModel: viewModel, size: 112)
+            Image(systemName: "camera.fill")
+                .font(.caption.bold())
+                .foregroundColor(.white)
+                .padding(9)
+                .background(Theme.accent)
+                .clipShape(Circle())
         }
     }
 
     private var canSaveName: Bool {
         let trimmed = editedDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmed.isEmpty && trimmed != viewModel.displayName
+    }
+}
+
+@available(iOS 16.0, *)
+private struct ModernProfilePhotoPicker: View {
+    @ObservedObject var viewModel: HomeViewModel
+    let onError: (String) -> Void
+    @State private var photoPickerItem: PhotosPickerItem?
+
+    var body: some View {
+        PhotosPicker(selection: $photoPickerItem, matching: .images) {
+            ZStack(alignment: .bottomTrailing) {
+                ProfileAvatarView(viewModel: viewModel, size: 112)
+                Image(systemName: "camera.fill")
+                    .font(.caption.bold())
+                    .foregroundColor(.white)
+                    .padding(9)
+                    .background(Theme.accent)
+                    .clipShape(Circle())
+            }
+        }
+        .onChange(of: photoPickerItem) { newItem in
+            guard let newItem else { return }
+            Task {
+                do {
+                    guard let data = try await newItem.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data) else {
+                        throw CocoaError(.fileReadCorruptFile)
+                    }
+                    viewModel.uploadProfilePicture(image)
+                } catch {
+                    onError(error.localizedDescription)
+                }
+            }
+        }
+    }
+}
+
+private struct LegacyProfilePhotoPicker: UIViewControllerRepresentable {
+    let onComplete: (Result<UIImage, Error>) -> Void
+    @Environment(\.presentationMode) private var presentationMode
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+        configuration.filter = .images
+        configuration.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: PHPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        private let parent: LegacyProfilePhotoPicker
+
+        init(parent: LegacyProfilePhotoPicker) {
+            self.parent = parent
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard let provider = results.first?.itemProvider else {
+                parent.presentationMode.wrappedValue.dismiss()
+                return
+            }
+            guard provider.canLoadObject(ofClass: UIImage.self) else {
+                let onComplete = parent.onComplete
+                parent.presentationMode.wrappedValue.dismiss()
+                DispatchQueue.main.async {
+                    onComplete(.failure(CocoaError(.fileReadCorruptFile)))
+                }
+                return
+            }
+            provider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    let result: Result<UIImage, Error>
+                    if let error {
+                        result = .failure(error)
+                    } else if let image = object as? UIImage {
+                        result = .success(image)
+                    } else {
+                        result = .failure(CocoaError(.fileReadCorruptFile))
+                    }
+                    self.parent.presentationMode.wrappedValue.dismiss()
+                    DispatchQueue.main.async {
+                        self.parent.onComplete(result)
+                    }
+                }
+            }
+        }
     }
 }
 
