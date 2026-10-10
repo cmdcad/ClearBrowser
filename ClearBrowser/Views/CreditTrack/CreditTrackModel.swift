@@ -1,6 +1,8 @@
 import Foundation
 import Combine
 import UserNotifications
+import FirebaseAuth
+import FirebaseFirestore
 
 // ISO strings preserve compatibility with CreditTrack JSON backups.
 enum CreditPeriod: String, Codable, CaseIterable, Identifiable, Hashable {
@@ -129,7 +131,17 @@ final class CreditTrackModel: ObservableObject {
     @Published var error: String?
     @Published var notificationStatus: UNAuthorizationStatus = .notDetermined
     @Published var notificationNote: String?
+    @Published private(set) var syncStatus = "Saved on this device. Sign in to ClearBrowser to enable cloud backup."
+    @Published private(set) var isRestoringCloud = false
     private let storageKey = "credittrack.native.v1"
+    private var userID: String?
+    private var authListener: AuthStateDidChangeListenerHandle?
+    private var cloudReady = false
+    private var cloudReadInFlight = false
+    private var revision = 0
+    private var generation = UUID()
+    private var localKey: String { userID.map { storageKey + "." + $0 } ?? storageKey }
+    private var dirtyKey: String { localKey + ".pendingSync" }
     private var schedulingTask: Task<Void, Never>?
     var active: [CreditCard] { cards.filter(\.isActive).sorted { $0.dueDate < $1.dueDate } }
     var known: [CreditCard] { cards.filter { $0.initialTotal != nil } }
@@ -146,12 +158,123 @@ final class CreditTrackModel: ObservableObject {
                 cards = saved.cards; payments = saved.payments; reminders = saved.reminders
             } catch { self.error = "Saved CreditTrack data could not be loaded. Restore a JSON backup." }
         }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["credittrack-test"])
+        authListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            let uid = user?.uid
+            Task { @MainActor [weak self] in self?.changeAccount(uid) }
+        }
         refreshNotifications()
     }
-    private func save() {
-        do { UserDefaults.standard.set(try JSONEncoder().encode(backup), forKey: storageKey) }
+    deinit {
+        if let authListener { Auth.auth().removeStateDidChangeListener(authListener) }
+    }
+    private func persistLocal() {
+        do { UserDefaults.standard.set(try JSONEncoder().encode(backup), forKey: localKey) }
         catch { self.error = "Unable to save CreditTrack: \(error.localizedDescription)" }
+    }
+    private func save() {
+        revision += 1
+        persistLocal()
+        if userID != nil {
+            UserDefaults.standard.set(true, forKey: dirtyKey)
+            uploadCloud()
+        }
         scheduleNotifications()
+    }
+
+    private func apply(_ value: CreditBackup) {
+        cards = value.cards.map { var card = $0; card.isActive = card.remaining.map { $0 > 0 } ?? true; return card }
+        payments = value.payments
+        reminders = value.reminders
+    }
+    private func changeAccount(_ uid: String?) {
+        guard uid != userID else { if uid != nil { refreshCloud() }; return }
+        let guest = userID == nil ? backup : nil
+        generation = UUID(); revision = 0; cloudReady = false; cloudReadInFlight = false
+        userID = uid
+        cards = []; payments = []; reminders = []
+        if let data = UserDefaults.standard.data(forKey: localKey) {
+            do { let saved = try JSONDecoder().decode(CreditBackup.self, from: data); try saved.validate(); apply(saved) }
+            catch { self.error = "Saved account data could not be read. Restore a JSON backup." }
+        }
+        if uid != nil {
+            // Stage guest data for this first account only. A cloud backup takes precedence.
+            if UserDefaults.standard.data(forKey: localKey) == nil, let guest { apply(guest); persistLocal() }
+            UserDefaults.standard.removeObject(forKey: storageKey)
+            refreshCloud()
+        } else {
+            isRestoringCloud = false
+            syncStatus = "Saved on this device. Sign in to ClearBrowser to enable cloud backup."
+        }
+        scheduleNotifications()
+    }
+    func refreshCloud() {
+        guard let uid = userID, !cloudReadInFlight else { return }
+        cloudReadInFlight = true; isRestoringCloud = true
+        let token = generation, readRevision = revision
+        syncStatus = "Checking cloud backup…"
+        Firestore.firestore().collection("users").document(uid).getDocument(source: .server) { [weak self] snapshot, readError in
+            Task { @MainActor [weak self] in
+                guard let self, self.generation == token, self.userID == uid else { return }
+                self.cloudReadInFlight = false; self.isRestoringCloud = false
+                if let readError {
+                    self.syncStatus = "Saved on this device. Cloud unavailable: \(readError.localizedDescription)"
+                    return // Never replace an unknown server backup with an empty local snapshot.
+                }
+                do {
+                    let field = snapshot?.data()?["creditTrack"]
+                    if let field {
+                        guard let json = field as? String, let data = json.data(using: .utf8) else {
+                            throw NSError(domain: "CreditTrack", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cloud backup has an unsupported format."])
+                        }
+                        let saved = try JSONDecoder().decode(CreditBackup.self, from: data)
+                        try saved.validate()
+                        if self.revision == readRevision && !UserDefaults.standard.bool(forKey: self.dirtyKey) {
+                            self.apply(saved); self.persistLocal(); self.scheduleNotifications()
+                        }
+                    } else {
+                        UserDefaults.standard.set(true, forKey: self.dirtyKey)
+                    }
+                    self.cloudReady = true
+                    if UserDefaults.standard.bool(forKey: self.dirtyKey) { self.uploadCloud() }
+                    else { self.syncStatus = "Cloud backup up to date." }
+                } catch {
+                    self.cloudReady = false
+                    self.syncStatus = "Cloud backup could not be restored: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+    private func uploadCloud() {
+        guard let uid = userID, cloudReady else {
+            if userID != nil { syncStatus = "Saved on this device. Waiting to sync cloud backup." }
+            return
+        }
+        do {
+            let data = try exportJSON()
+            // Firestore documents have a 1 MiB limit; reserve space for existing browser fields.
+            guard data.count < 500_000 else {
+                syncStatus = "Saved on this device. Backup is too large for cloud sync; export JSON instead."
+                return
+            }
+            guard let json = String(data: data, encoding: .utf8) else { return }
+            let token = generation, writeRevision = revision, pendingKey = dirtyKey
+            syncStatus = "Saved on this device. Uploading cloud backup…"
+            Firestore.firestore().collection("users").document(uid).setData([
+                "creditTrack": json,
+                "creditTrackUpdatedAt": FieldValue.serverTimestamp()
+            ], merge: true) { [weak self] writeError in
+                Task { @MainActor [weak self] in
+                    guard let self, self.generation == token, self.userID == uid, self.revision == writeRevision else { return }
+                    if let writeError {
+                        self.syncStatus = "Saved on this device. Cloud sync failed: \(writeError.localizedDescription)"
+                    } else {
+                        UserDefaults.standard.set(false, forKey: pendingKey)
+                        self.syncStatus = "Cloud backup up to date."
+                    }
+                }
+            }
+        } catch { syncStatus = "Saved on this device. Cloud sync failed: \(error.localizedDescription)" }
     }
     func upsert(_ card: CreditCard) {
         var value = card
@@ -215,29 +338,6 @@ final class CreditTrackModel: ObservableObject {
             catch { self.error = error.localizedDescription }
         }
     }
-    func sendTestNotification() {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            do {
-                let allowed = try await center.requestAuthorization(options: [.alert, .sound, .badge])
-                notificationStatus = await center.notificationSettings().authorizationStatus
-                guard allowed else {
-                    error = "Notifications are blocked. Allow notifications for ClearBrowser in iPhone Settings."
-                    return
-                }
-                let content = UNMutableNotificationContent()
-                content.title = "CreditTrack test"
-                content.body = "Notifications are working. Your payment reminders use this same iOS notification system."
-                content.sound = .default
-                // Separate from payment requests so opening the app cannot cancel the test.
-                let request = UNNotificationRequest(identifier: "credittrack-test", content: content,
-                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false))
-                try await center.add(request)
-                notificationNote = "Test scheduled for 10 seconds from now. Focus or notification settings may silence it."
-            } catch { self.error = "Test could not be scheduled: \(error.localizedDescription)" }
-        }
-    }
-
     func refreshNotifications() {
         Task {
             notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus

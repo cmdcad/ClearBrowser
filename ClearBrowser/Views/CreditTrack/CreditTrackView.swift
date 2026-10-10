@@ -64,6 +64,13 @@ struct CreditTrackView: View {
                 .padding(.bottom, 64)
             }
             .scrollDismissesKeyboard(.interactively)
+            .disabled(model.isRestoringCloud)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if model.isRestoringCloud {
+                    HStack { ProgressView(); Text("Checking saved CreditTrack data…").font(.caption) }
+                        .frame(maxWidth: .infinity).padding(10).background(.bar)
+                }
+            }
             bottomBar
         }
         .background(Color(.systemGroupedBackground))
@@ -75,6 +82,7 @@ struct CreditTrackView: View {
                         .shadow(color: .blue.opacity(0.25), radius: 8, y: 4)
                 }
                 .accessibilityLabel("Add creditor")
+                .disabled(model.isRestoringCloud)
                 .padding(.trailing, 20).padding(.bottom, 76)
             }
         }
@@ -159,7 +167,7 @@ struct CreditTrackView: View {
         }
         .animation(.spring(response: 0.4), value: paidOffCard?.id)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.refreshNotifications() }
+            if phase == .active { model.refreshNotifications(); model.refreshCloud() }
         }
     }
 
@@ -293,6 +301,14 @@ struct CreditTrackView: View {
                 }
                 if model.active.isEmpty { Text("No payments scheduled.").foregroundStyle(.secondary) }
             }
+            Card(title: "Cloud backup") {
+                Label(model.syncStatus, systemImage: "icloud")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("Cards, payments, and reminder settings sync to your signed-in ClearBrowser account. Future notifications are recreated after restoration.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Refresh Cloud Backup") { model.refreshCloud() }.buttonStyle(.bordered)
+                    .disabled(model.isRestoringCloud)
+            }
             Card(title: "Export & backup") {
                 exportButton("CSV Export", subtitle: "For Excel, Google Sheets", icon: "tablecells", color: .green) {
                     exportDocument = CreditExportDocument(data: model.exportCSV()); exportType = .commaSeparatedText; exporting = true
@@ -335,10 +351,7 @@ struct CreditTrackView: View {
                 Text("Alerts are scheduled for each cardâ€™s next due date and refreshed when you record a payment.")
                     .font(.caption).foregroundStyle(.secondary)
                 if let note = model.notificationNote { Text(note).font(.caption).foregroundStyle(.secondary) }
-                Button("Send Test Notification (10 seconds)") { model.sendTestNotification() }
-                    .buttonStyle(.bordered)
-                Text("If the test arrives but a payment reminder does not, check the scheduled date above. Past reminder times are skipped.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text("Past reminder times are skipped.").font(.caption).foregroundStyle(.secondary)
             }
             if model.reminders.isEmpty {
                 CreditEmptyState(icon: "bell", title: "No reminders yet", message: "Choose when you want a payment reminder.")
