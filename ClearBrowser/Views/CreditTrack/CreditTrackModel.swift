@@ -111,8 +111,11 @@ struct CreditBackup: Codable {
                   ($0.initialTotal.map { nonnegative($0) && $0 >= 0.01 } ?? true) && CreditDates.date($0.dueDate) != nil }),
               payments.allSatisfy({ !$0.id.isEmpty && !$0.cardId.isEmpty && nonnegative($0.amount) && CreditDates.date($0.paidDate) != nil &&
                   ($0.balanceBefore.map(nonnegative) ?? true) && ($0.balanceAfter.map(nonnegative) ?? true) }),
-              reminders.allSatisfy({ !$0.id.isEmpty && (0...365).contains($0.daysBefore) && (0...23).contains($0.timeHour) &&
-                  (0...59).contains($0.timeMinute) && ($0.appliesToAll || cards.contains(where: { $0.id == $0.specificCardId })) }) else {
+              reminders.allSatisfy({ reminder in
+                  !reminder.id.isEmpty && (0...365).contains(reminder.daysBefore) && (0...23).contains(reminder.timeHour) &&
+                  (0...59).contains(reminder.timeMinute) &&
+                  (reminder.appliesToAll || cards.contains(where: { $0.id == reminder.specificCardId }))
+              }) else {
             throw NSError(domain: "CreditTrack", code: 1, userInfo: [NSLocalizedDescriptionKey: "This file is not a valid CreditTrack 1.0 backup."])
         }
     }
