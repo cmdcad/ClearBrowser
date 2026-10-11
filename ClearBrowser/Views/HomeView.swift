@@ -338,13 +338,11 @@ struct HomeView: View {
                         }
                     }
 
-                    Menu {
-                        Button {
-                            isShowingApps = true
-                        } label: {
-                            Label("Apps", systemImage: "square.grid.2x2")
-                        }
+                    ActionButton(label: "Apps", symbol: "square.grid.2x2", tint: .blue) {
+                        isShowingApps = true
+                    }
 
+                    Menu {
                         Button {
                             viewModel.shareCurrentPage()
                         } label: {

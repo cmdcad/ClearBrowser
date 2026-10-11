@@ -37,6 +37,7 @@ struct CreditTrackView: View {
     @State private var deletingCard: CreditCard?
     @State private var paidOffCard: CreditCard?
     @State private var addingReminder = false
+    @State private var editingReminder: CreditReminder?
     @State private var historyFilter: String?
     @State private var importing = false
     @State private var pendingBackup: CreditBackup?
@@ -67,7 +68,7 @@ struct CreditTrackView: View {
             .disabled(model.isRestoringCloud)
             .safeAreaInset(edge: .top, spacing: 0) {
                 if model.isRestoringCloud {
-                    HStack { ProgressView(); Text("Checking saved CreditTrack data…").font(.caption) }
+                    HStack { ProgressView(); Text("Checking saved CreditTrack dataâ€¦").font(.caption) }
                         .frame(maxWidth: .infinity).padding(10).background(.bar)
                 }
             }
@@ -107,7 +108,12 @@ struct CreditTrackView: View {
             }
         }
         .sheet(isPresented: $addingReminder) {
-            CreditReminderEditor(cards: model.active) { model.addReminder($0); showToast("Reminder saved") }
+            CreditReminderEditor(cards: model.active) { model.upsertReminder($0); showToast("Reminder saved") }
+        }
+        .sheet(item: $editingReminder) { reminder in
+            CreditReminderEditor(cards: model.cards, reminder: reminder) {
+                model.upsertReminder($0); showToast("Reminder updated")
+            }
         }
         .alert("Delete creditor?", isPresented: Binding(get: { deletingCard != nil }, set: { if !$0 { deletingCard = nil } })) {
             Button("Cancel", role: .cancel) { deletingCard = nil }
@@ -359,13 +365,31 @@ struct CreditTrackView: View {
             ForEach(model.reminders) { reminder in
                 Card {
                     HStack {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(reminder.label).font(.headline)
-                            Text(reminder.time, format: .dateTime.hour().minute()).font(.caption).foregroundStyle(.secondary)
-                            Text(reminder.appliesToAll ? "All cards" : (model.cards.first { $0.id == reminder.specificCardId }?.name ?? "Deleted creditor") + " only")
-                                .font(.caption).foregroundStyle(.secondary)
+                        Button { editingReminder = reminder } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 6) {
+                                    Text(reminder.label).font(.headline)
+                                    Image(systemName: "pencil").font(.caption).foregroundStyle(.blue)
+                                }
+                                Text(reminder.time, format: .dateTime.hour().minute()).font(.caption).foregroundStyle(.secondary)
+                                Text(reminder.appliesToAll ? "All cards" : (model.cards.first { $0.id == reminder.specificCardId }?.name ?? "Deleted creditor") + " only")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                if !reminder.isEnabled {
+                                    Text("Paused").font(.caption).foregroundStyle(.secondary)
+                                } else if let next = model.nextReminderDates[reminder.id] {
+                                    Text("Next alert: \(next.formatted(date: .abbreviated, time: .shortened))")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                } else {
+                                    Text("No upcoming alert scheduled").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
                         }
-                        Spacer()
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Edit reminder: \(reminder.label)")
+                        .accessibilityHint("Change the time, days before payment, or cards.")
+                        Spacer(minLength: 4)
                         Toggle("Enable reminder", isOn: Binding(get: { reminder.isEnabled }, set: { model.toggleReminder(reminder.id, enabled: $0) }))
                             .labelsHidden().fixedSize().tint(.green)
                         Button(role: .destructive) { model.deleteReminder(reminder.id) } label: {
@@ -545,10 +569,21 @@ private struct CreditPaymentConfirmation: View {
 private struct CreditReminderEditor: View {
     @Environment(\.dismiss) private var dismiss
     let cards: [CreditCard]
+    let reminder: CreditReminder?
     let onSave: (CreditReminder) -> Void
-    @State private var daysBefore = 0
-    @State private var time = Calendar.current.date(from: DateComponents(hour: 9, minute: 0)) ?? Date()
-    @State private var scope = "all"
+    @State private var daysBefore: Int
+    @State private var time: Date
+    @State private var scope: String
+
+    init(cards: [CreditCard], reminder: CreditReminder? = nil, onSave: @escaping (CreditReminder) -> Void) {
+        self.cards = cards
+        self.reminder = reminder
+        self.onSave = onSave
+        _daysBefore = State(initialValue: reminder?.daysBefore ?? 0)
+        _time = State(initialValue: reminder?.time ?? Calendar.current.date(from: DateComponents(hour: 9, minute: 0)) ?? Date())
+        _scope = State(initialValue: reminder?.appliesToAll == false ? reminder?.specificCardId ?? "all" : "all")
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -559,24 +594,33 @@ private struct CreditReminderEditor: View {
                         Text("2 days before").tag(2)
                         Text("3 days before").tag(3)
                         Text("1 week before").tag(7)
+                        if ![0, 1, 2, 3, 7].contains(daysBefore) {
+                            Text("\(daysBefore) days before").tag(daysBefore)
+                        }
                     }
                     DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
                 }
                 Section("Apply to?") {
                     Picker("Cards", selection: $scope) {
                         Text("All cards").tag("all")
-                        ForEach(cards) { Text($0.name + " only").tag($0.id) }
+                        ForEach(cards) { Text($0.name + ($0.isActive ? " only" : " only (paid off)")).tag($0.id) }
                     }
                 }
             }
-            .navigationTitle("Add Reminder").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(reminder == nil ? "Add Reminder" : "Edit Reminder").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
-                        onSave(CreditReminder(daysBefore: daysBefore, timeHour: parts.hour ?? 9, timeMinute: parts.minute ?? 0,
-                            appliesToAll: scope == "all", specificCardId: scope == "all" ? nil : scope))
+                        var updated = reminder ?? CreditReminder(daysBefore: daysBefore, timeHour: parts.hour ?? 9, timeMinute: parts.minute ?? 0,
+                            appliesToAll: scope == "all", specificCardId: scope == "all" ? nil : scope)
+                        updated.daysBefore = daysBefore
+                        updated.timeHour = parts.hour ?? 9
+                        updated.timeMinute = parts.minute ?? 0
+                        updated.appliesToAll = scope == "all"
+                        updated.specificCardId = scope == "all" ? nil : scope
+                        onSave(updated)
                         dismiss()
                     }
                 }

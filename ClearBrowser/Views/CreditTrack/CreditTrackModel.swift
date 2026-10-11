@@ -131,6 +131,7 @@ final class CreditTrackModel: ObservableObject {
     @Published var error: String?
     @Published var notificationStatus: UNAuthorizationStatus = .notDetermined
     @Published var notificationNote: String?
+    @Published private(set) var nextReminderDates: [String: Date] = [:]
     @Published private(set) var syncStatus = "Saved on this device. Sign in to ClearBrowser to enable cloud backup."
     @Published private(set) var isRestoringCloud = false
     private let storageKey = "credittrack.native.v1"
@@ -212,7 +213,7 @@ final class CreditTrackModel: ObservableObject {
         guard let uid = userID, !cloudReadInFlight else { return }
         cloudReadInFlight = true; isRestoringCloud = true
         let token = generation, readRevision = revision
-        syncStatus = "Checking cloud backup…"
+        syncStatus = "Checking cloud backupâ€¦"
         Firestore.firestore().collection("users").document(uid).getDocument(source: .server) { [weak self] snapshot, readError in
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token, self.userID == uid else { return }
@@ -259,7 +260,7 @@ final class CreditTrackModel: ObservableObject {
             }
             guard let json = String(data: data, encoding: .utf8) else { return }
             let token = generation, writeRevision = revision, pendingKey = dirtyKey
-            syncStatus = "Saved on this device. Uploading cloud backup…"
+            syncStatus = "Saved on this device. Uploading cloud backupâ€¦"
             Firestore.firestore().collection("users").document(uid).setData([
                 "creditTrack": json,
                 "creditTrackUpdatedAt": FieldValue.serverTimestamp()
@@ -302,7 +303,14 @@ final class CreditTrackModel: ObservableObject {
         save()
         return card.isActive ? nil : card
     }
-    func addReminder(_ reminder: CreditReminder) { reminders.append(reminder); save() }
+    func upsertReminder(_ reminder: CreditReminder) {
+        if let index = reminders.firstIndex(where: { $0.id == reminder.id }) {
+            reminders[index] = reminder
+        } else {
+            reminders.append(reminder)
+        }
+        save()
+    }
     func toggleReminder(_ id: String, enabled: Bool) {
         guard let i = reminders.firstIndex(where: { $0.id == id }) else { return }
         reminders[i].isEnabled = enabled; save()
@@ -347,6 +355,7 @@ final class CreditTrackModel: ObservableObject {
     // iOS local notifications work even when the app is closed. Own only our requests.
     func scheduleNotifications() {
         schedulingTask?.cancel()
+        nextReminderDates = [:]
         let cardSnapshot = active, reminderSnapshot = reminders.filter(\.isEnabled)
         schedulingTask = Task {
             let center = UNUserNotificationCenter.current()
@@ -369,6 +378,7 @@ final class CreditTrackModel: ObservableObject {
                 notificationNote = "No future alerts to schedule. Check that a reminder is enabled, applies to an active card, and its date and time have not passed."
             }
             var scheduledCount = 0
+            var scheduledDates: [String: Date] = [:]
             var nextScheduled: (Date, CreditCard)?
             for (fire, reminder, card) in upcoming.sorted(by: { $0.0 < $1.0 }).prefix(capacity) {
                 guard !Task.isCancelled else { return }
@@ -379,12 +389,15 @@ final class CreditTrackModel: ObservableObject {
                 let trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire), repeats: false)
                 do {
                     try await center.add(UNNotificationRequest(identifier: "credittrack.\(reminder.id).\(card.id)", content: content, trigger: trigger))
+                    guard !Task.isCancelled else { return }
                     scheduledCount += 1
+                    if scheduledDates[reminder.id] == nil { scheduledDates[reminder.id] = fire }
                     if nextScheduled == nil { nextScheduled = (fire, card) }
                 }
                 catch { self.error = "Unable to schedule reminder: \(error.localizedDescription)" }
             }
             guard !Task.isCancelled else { return }
+            nextReminderDates = scheduledDates
             if let (fire, card) = nextScheduled {
                 notificationNote = "\(scheduledCount) alert(s) scheduled. Next: \(card.name), \(fire.formatted(date: .abbreviated, time: .shortened))."
             } else if !upcoming.isEmpty {
