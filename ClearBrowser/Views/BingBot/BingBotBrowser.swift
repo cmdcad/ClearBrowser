@@ -94,8 +94,15 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
     }
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        // Sites use empty frames during sign-in and popup setup.
+        if action.request.url?.absoluteString == "about:blank" {
+            decisionHandler(.allow); return
+        }
         guard let url = action.request.url, ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
-            message = "This browser supports HTTP and HTTPS pages only."
+            // Background frames and automatic app-link attempts should stay quiet.
+            if action.navigationType == .linkActivated && action.targetFrame?.isMainFrame != false {
+                message = "This link cannot open inside BingBot. Use an HTTP or HTTPS website link."
+            }
             decisionHandler(.cancel); return
         }
         if action.targetFrame?.isMainFrame == true {
@@ -121,13 +128,15 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
             onSearchCompleted?(query)
         }
     }
-    private func failed(_ navigation: WKNavigation?) {
+    private func failed(_ navigation: WKNavigation?, error: Error) {
         guard currentNavigation === navigation, currentNavigation != nil else { return }
         currentNavigation = nil; isLoading = false
+        let failure = error as NSError
+        guard !(failure.domain == NSURLErrorDomain && failure.code == NSURLErrorCancelled) else { return }
         message = "The page could not load. Check your connection and retry. No search was counted."
     }
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { failed(navigation) }
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { failed(navigation) }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { failed(navigation, error: error) }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { failed(navigation, error: error) }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         currentNavigation = nil; isLoading = false; message = "The browser stopped unexpectedly. Reload the page. No search was counted."
     }

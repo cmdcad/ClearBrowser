@@ -35,6 +35,7 @@ struct BingBotView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var destination: BingDestination = .dashboard
+    @State private var showAddressRow = false
     @State private var startup = true
     @State private var startupRemaining = 3
     @State private var startupDuration = 3
@@ -299,19 +300,29 @@ struct BingBotView: View {
                     Button("Reset Today’s Progress") { resetToday = true }.font(.caption)
                 }
             }.padding(.horizontal, 12).padding(.top, 8)
-            HStack(spacing: 8) {
+            if showAddressRow {
+              HStack(spacing: 8) {
                 Button { browser.goBack() } label: { Image(systemName: "chevron.left").frame(minWidth: 36, minHeight: 44) }
                     .disabled(!browser.canGoBack).accessibilityLabel("Back")
                 TextField("HTTP or HTTPS address", text: $browser.address).font(.system(.caption, design: .monospaced))
                     .textFieldStyle(.roundedBorder).onSubmit { browser.go(browser.address) }
                 Button("Go") { browser.go(browser.address) }.frame(minHeight: 44)
                 Button { browser.reload() } label: { Image(systemName: "arrow.clockwise").frame(minWidth: 36, minHeight: 44) }.accessibilityLabel("Refresh")
-            }.padding(.horizontal, 12)
+              }.padding(.horizontal, 12)
+            }
             HStack {
                 Button("Bing") { browser.go("https://www.bing.com") }
                 Button("Rewards") { browser.go("https://rewards.bing.com") }
                 Button("Redeem") { browser.go("https://rewards.bing.com/redeem") }
                 Spacer()
+                Button {
+                    withAnimation { showAddressRow.toggle() }
+                } label: {
+                    Image(systemName: showAddressRow ? "chevron.up" : "link")
+                        .frame(minWidth: 36, minHeight: 44)
+                }
+                .accessibilityLabel(showAddressRow ? "Hide address bar" : "Show address bar")
+                .accessibilityValue(showAddressRow ? "Expanded" : "Collapsed")
                 Button { clearSession = true } label: { Image(systemName: "trash").frame(minWidth: 36, minHeight: 44) }.accessibilityLabel("Clear browser session")
             }.font(.caption).padding(.horizontal, 12)
             if browser.isLoading { ProgressView(value: browser.progress).progressViewStyle(.linear) }
