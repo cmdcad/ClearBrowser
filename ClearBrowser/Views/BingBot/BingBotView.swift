@@ -294,8 +294,8 @@ struct BingBotView: View {
                 if let copied = model.state.activeQuery {
                     Text(copied).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                 }
-                Text("Paste into Bing’s search box. Progress updates only after a new search finishes loading.")
-                    .font(.caption).foregroundStyle(.secondary)
+                // Text("Paste into Bing’s search box. Progress updates only after a new search finishes loading.")
+                //     .font(.caption).foregroundStyle(.secondary)
                 if model.state.completedToday >= model.settings.dailyTarget {
                     Button("Reset Today’s Progress") { resetToday = true }.font(.caption)
                 }

@@ -1,0 +1,1 @@
+let the app target increment by 5. On copy, if not in bing home page, auto switch to / load the bing home page. On delete an item from the saved library, the Copy Next Query shoul not be able to use it again even if its on clipboard already.

@@ -1,0 +1,64 @@
+{
+  "identifier": "F89BB138-4D2B-4C5C-A64E-51CE2F35B204",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "100000",
+      "localizations": [
+        {
+          "description": "Unlock ReloCalc in AppHub with a one-time purchase.",
+          "displayName": "ReloCalc Unlock",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mikeso.ClearBrowser.apphub.reloCalc",
+      "referenceName": "ReloCalc Unlock",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "100001",
+      "localizations": [
+        {
+          "description": "Unlock CreditTrack in AppHub with a one-time purchase.",
+          "displayName": "CreditTrack Unlock",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mikeso.ClearBrowser.apphub.creditTrack",
+      "referenceName": "CreditTrack Unlock",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "100002",
+      "localizations": [
+        {
+          "description": "Unlock BingBot in AppHub with a one-time purchase.",
+          "displayName": "BingBot Unlock",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.mikeso.ClearBrowser.apphub.bingBot",
+      "referenceName": "BingBot Unlock",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

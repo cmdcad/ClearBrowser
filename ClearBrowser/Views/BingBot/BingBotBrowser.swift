@@ -32,6 +32,7 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
     @Published private(set) var isClearingSession = false
     @Published var message: String?
     private var observation: NSKeyValueObservation?
+    private var urlObservation: NSKeyValueObservation?
     private var currentNavigation: WKNavigation?
     private var skipNextNavigation = false
     private var skipCurrentNavigation = false
@@ -60,6 +61,18 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
             let progress = view.estimatedProgress
             Task { @MainActor [weak self] in self?.progress = progress }
         }
+        urlObservation = webView.observe(\.url, options: [.new]) { [weak self] view, _ in
+            let url = view.url
+            Task { @MainActor [weak self] in
+                guard let self, let url, self.webView.url == url,
+                      !self.isClearingSession else { return }
+                self.address = url.absoluteString
+                // Bing can change its search URL through page history without
+                // starting a WKNavigation. Full loads are handled by didFinish.
+                guard !self.webView.isLoading, self.currentNavigation == nil else { return }
+                self.recordSearch(url: url, historyOrReload: false)
+            }
+        }
         webView.load(URLRequest(url: URL(string: "https://www.bing.com")!))
     }
     static func validatedURL(_ text: String) -> URL? {
@@ -82,7 +95,7 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
     func stopLoading() { currentNavigation = nil; webView.stopLoading(); isLoading = false; skipNextNavigation = false }
     func resetSession() {
         guard !isClearingSession else { return }
-        isClearingSession = true; stopLoading(); observation = nil
+        isClearingSession = true; stopLoading(); observation = nil; urlObservation = nil
         let store = webView.configuration.websiteDataStore
         webView.navigationDelegate = nil; webView.uiDelegate = nil
         Task {
@@ -124,7 +137,10 @@ final class BingBotBrowser: NSObject, ObservableObject, WKNavigationDelegate, WK
         currentNavigation = nil; isLoading = false; progress = 1; canGoBack = webView.canGoBack
         address = webView.url?.absoluteString ?? ""
         guard let url = webView.url else { return }
-        if let query = searchTracker.finished(url: url, succeeded: !responseFailed, historyOrReload: skipCurrentNavigation) {
+        recordSearch(url: url, historyOrReload: skipCurrentNavigation)
+    }
+    private func recordSearch(url: URL, historyOrReload: Bool) {
+        if let query = searchTracker.finished(url: url, succeeded: !responseFailed, historyOrReload: historyOrReload) {
             onSearchCompleted?(query)
         }
     }

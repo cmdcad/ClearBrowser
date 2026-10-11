@@ -8,9 +8,46 @@ struct MirrorAudioResponse: Decodable {
 
 final class MirrorTTSService {
 
-    private let endpoint = URL(
+    private let localBaseURL = URL(string: "http://10.0.0.41:4000")!
+    private let cloudEndpoint = URL(
         string: "https://mirror-api-991075429415.us-central1.run.app/api/audio"
     )!
+
+    private struct ProbeResponse: Decodable {
+        let error: String?
+        let detail: String?
+    }
+
+    /// A bounded HTTP check verifies the service, rather than just the host.
+    private func preferredEndpoint() async throws -> URL {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 5
+        configuration.timeoutIntervalForResource = 5
+        configuration.waitsForConnectivity = false
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        // The local AudioVIX server has no /health route. Empty input safely
+        // checks the real audio route without generating or storing audio.
+        var request = URLRequest(url: localBaseURL.appendingPathComponent("api/audio"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data("{\"text\":\"\"}".utf8)
+        request.timeoutInterval = 5
+        do {
+            let (data, response) = try await session.data(for: request)
+            try Task.checkCancellation()
+            if let http = response as? HTTPURLResponse,
+               http.statusCode == 400,
+               let probe = try? JSONDecoder().decode(ProbeResponse.self, from: data),
+               ["text or verses is required", "text is required"].contains(probe.error ?? probe.detail ?? "") {
+                return localBaseURL.appendingPathComponent("api/audio")
+            }
+        } catch {
+            try Task.checkCancellation()
+        }
+        return cloudEndpoint
+    }
 
     func getAudio(
         from text: String,
@@ -23,6 +60,7 @@ final class MirrorTTSService {
             "variant": "original"
         ]
 
+        let endpoint = try await preferredEndpoint()
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue(
@@ -43,9 +81,11 @@ final class MirrorTTSService {
         guard let http = response as? HTTPURLResponse,
               (200...299).contains(http.statusCode) else {
 
-            let message =
-                String(data: data, encoding: .utf8)
-                ?? "Mirror server request failed."
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let server = endpoint.host == localBaseURL.host ? "Local" : "Cloud"
+            let message = status == 404
+                ? "\(server) audio service was not found (404). Check its server address and /api/audio route."
+                : "\(server) audio service could not generate audio (HTTP \(status)). Please try again."
 
             throw NSError(
                 domain: "MirrorTTSService",

@@ -22,6 +22,8 @@
 	</dict>
 	<key>AudioServerBaseURL</key>
 	<string>http://10.0.0.41:4000</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ClearBrowser checks your local audio server to generate read-aloud audio, and uses the cloud when it is unavailable.</string>
 	<key>AudioServerFallbackURLs</key>
 	<array>
 		<string>http://10.0.0.41:4000</string>
