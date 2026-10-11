@@ -284,7 +284,7 @@ struct BingBotView: View {
                         #endif
                         model.showToast("Query copied. Paste it into Bing and submit.")
                     } label: {
-                        Label("Copy Next Query", systemImage: "doc.on.doc").frame(minHeight: 32)
+                        Label("Copy Next Query", systemImage: "doc.on.doc").font(.caption).frame(minHeight: 20)
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(browser.isLoading || browser.isClearingSession || model.state.completedToday >= model.settings.dailyTarget)
@@ -328,7 +328,7 @@ struct BingBotView: View {
             if browser.isLoading { ProgressView(value: browser.progress).progressViewStyle(.linear) }
             BingBotWebView(webView: browser.webView).id(ObjectIdentifier(browser.webView))
                 .allowsHitTesting(!browser.isClearingSession)
-            Text("Login sessions are saved. Today’s count updates after a new Bing search finishes loading.")
+            Text("Today’s count updates after a new Bing search finishes loading.")
                 .font(.caption2).foregroundStyle(.secondary).padding(8)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
