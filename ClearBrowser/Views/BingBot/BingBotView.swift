@@ -103,11 +103,7 @@ struct BingBotView: View {
         }
         .overlay { if startup { startupOverlay } }
         .task {
-            model.navigate = { [weak browser] url, token in browser?.navigate(to: url, token: token) }
-            model.stopBrowser = { [weak browser] in browser?.stopLoading() }
-            browser.onSuccess = { [weak model] token in model?.navigationSucceeded(token: token) }
-            browser.onFailure = { [weak model] token in model?.navigationFailed(token: token) }
-            browser.onManualNavigation = { [weak model] in model?.pause() }
+            browser.onSearchCompleted = { [weak model] query in model?.searchCompleted(query: query) }
             startupDuration = model.settings.startupCountdownSeconds; startupRemaining = startupDuration
             while startup && startupRemaining > 0 {
                 try? await Task.sleep(for: .seconds(1))
@@ -119,13 +115,13 @@ struct BingBotView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             #if os(iOS)
-            if phase != .active { model.backgrounded() } else { model.refreshDay() }
+            if phase == .active { model.refreshDay() }
             #else
             if phase == .active { model.refreshDay() }
             #endif
         }
         .onDisappear {
-            model.stop(); browser.stopLoading()
+            browser.stopLoading()
             #if os(macOS)
             closeTask?.cancel()
             #endif
@@ -137,19 +133,19 @@ struct BingBotView: View {
         }
         .alert("Run again?", isPresented: $showRunAgain) {
             Button("Dismiss", role: .cancel) {}
-            Button("Run Again") { model.start(runAgain: true) }
-        } message: { Text("Today’s search target is already complete. Running again resets today’s app progress; it does not confirm external rewards.") }
+            Button("Reset Today") { model.resetProgress(); browser.resetSearchTracking(); destination = .browser }
+        } message: { Text("Today’s search target is already complete. Resetting starts a new daily tally; it does not confirm external rewards.") }
         .alert("Clear Browser Session?", isPresented: $clearSession) {
             Button("Cancel", role: .cancel) {}
-            Button("Clear Session", role: .destructive) { model.stop(); browser.resetSession(); model.showToast("Browser session cleared.") }
-        } message: { Text("Stop searching and create a fresh temporary browser. Your queries and preferences are kept.") }
+            Button("Clear Session", role: .destructive) { browser.resetSession(); model.showToast("Browser session cleared.") }
+        } message: { Text("Sign out of websites and clear BingBot’s saved website data. Your queries and preferences are kept.") }
         .alert("Clear Saved Queries?", isPresented: $clearLibrary) {
             Button("Cancel", role: .cancel) {}
             Button("Clear", role: .destructive) { model.deleteQueries(Set(model.queries)); selectedQueries = [] }
         }
         .alert("Reset Today’s Progress?", isPresented: $resetToday) {
             Button("Cancel", role: .cancel) {}
-            Button("Reset", role: .destructive) { model.resetProgress() }
+            Button("Reset", role: .destructive) { model.resetProgress(); browser.resetSearchTracking() }
         }
         .alert("Reset BingBot Data?", isPresented: $resetApp) {
             Button("Cancel", role: .cancel) {}
@@ -189,7 +185,7 @@ struct BingBotView: View {
             Button(action: onClose) { Label("Apps", systemImage: "chevron.left").frame(minHeight: 44) }
             #endif
             Image(systemName: "magnifyingglass").font(.title2)
-            VStack(alignment: .leading, spacing: 2) { Text("BingBot").font(.headline); Text("Search Automation").font(.caption) }
+            VStack(alignment: .leading, spacing: 2) { Text("BingBot").font(.headline); Text("Manual Search Helper").font(.caption) }
             Spacer()
         }.foregroundStyle(.white).padding(.horizontal, 20).padding(.vertical, 12)
             .background(LinearGradient(colors: [Color(red: 0.10, green: 0.45, blue: 0.91), Color(red: 0.05, green: 0.28, blue: 0.63)], startPoint: .leading, endPoint: .trailing))
@@ -214,7 +210,7 @@ struct BingBotView: View {
         case .running: return .blue
         case .completed: return .green
         case .error: return .red
-        case .paused, .exhausted: return .orange
+        case .exhausted: return .orange
         case .idle: return .secondary
         }
     }
@@ -224,15 +220,11 @@ struct BingBotView: View {
                 HStack {
                     Label(model.state.status.rawValue, systemImage: model.state.status == .error ? "exclamationmark.triangle.fill" : "circle.fill").foregroundStyle(statusColor)
                     Spacer()
-                    Text(model.state.mode.rawValue).font(.caption.bold()).padding(7)
-                        .background((model.state.mode == .manual ? Color.orange : .blue).opacity(0.12), in: Capsule())
+                    Text("Manual").font(.caption.bold()).padding(7).background(Color.orange.opacity(0.12), in: Capsule())
                 }
                 Text("Last completed: \(model.settings.lastCompletedDate ?? "Never")").font(.caption).foregroundStyle(.secondary)
                 if let query = model.state.activeQuery { Text(query).font(.system(.subheadline, design: .monospaced)).textSelection(.enabled) }
                 if let error = model.state.lastError { Text(error).font(.caption).foregroundStyle(.red) }
-                Picker("Mode", selection: Binding(get: { model.state.mode }, set: { model.setMode($0) })) {
-                    ForEach(BingRunMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }.pickerStyle(.segmented)
             }
             BingPanel(title: "Today’s app progress") {
                 HStack(spacing: 24) {
@@ -251,36 +243,17 @@ struct BingBotView: View {
                     .accessibilityLabel("Searches completed today").accessibilityValue("\(model.state.completedToday) of \(model.settings.dailyTarget)")
                 Text("App progress counts successful search navigations, not confirmed rewards or points.").font(.caption).foregroundStyle(.secondary)
             }
-            if model.state.mode == .auto && model.state.status == .running {
-                BingPanel(title: "Next search") {
-                    Text(model.state.isNavigating ? "Waiting for search navigation…" : "Next search in: \(String(format: "%02d:%02d", model.state.countdownSeconds / 60, model.state.countdownSeconds % 60))")
-                        .font(.system(.headline, design: .monospaced))
-                    ProgressView(value: Double(model.state.countdownSeconds), total: Double(max(1, model.state.initialDelay)))
-                }
-            }
-            BingPanel(title: "Controls") {
-                if model.state.status == .running {
-                    HStack {
-                        Button("Pause") { model.pause() }.buttonStyle(.bordered)
-                        Button("Stop") { model.stop() }.buttonStyle(.bordered)
-                    }
-                } else if model.state.status == .completed {
-                    Button("Run Again") { showRunAgain = true }.buttonStyle(.borderedProminent)
-                } else {
-                    Button(model.state.status == .error ? "Retry" : model.state.status == .paused ? "Resume" : "Start Automation") { model.start() }
-                        .buttonStyle(.borderedProminent).disabled(model.loadingLibraryFailed && model.settings.querySource == "custom")
-                }
-                if model.state.mode == .manual && model.state.status != .completed {
-                    Button("Next Search") { model.nextSearch() }.buttonStyle(.borderedProminent).disabled(model.state.isNavigating)
-                }
+            BingPanel(title: "Search in Browser") {
+                Text("Copy the next query in the Browser screen, paste it into Bing, and submit. Copying alone never changes the daily count.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Button("Open Browser") { destination = .browser }.buttonStyle(.borderedProminent)
                 if model.state.status == .exhausted {
-                    Text("Completed \(model.state.completedToday) of \(model.settings.dailyTarget) searches. Add more unique queries to continue.").font(.caption)
                     Button("Add More Queries") { destination = .queries }.buttonStyle(.bordered)
                 }
             }
             HStack {
                 stat("Loaded", value: "\(model.settings.querySource == "custom" ? model.queries.count : max(30, model.settings.dailyTarget))")
-                stat("Delay", value: "\(model.settings.delayMin)–\(model.settings.delayMax)s")
+                stat("Today", value: "\(model.state.completedToday)")
                 stat("Remaining", value: "\(model.queriesRemaining)")
             }
             #if os(macOS)
@@ -298,6 +271,34 @@ struct BingBotView: View {
     }
     private var browserScreen: some View {
         VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Button {
+                        guard let query = model.nextQueryToCopy() else { return }
+                        #if os(macOS)
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(query, forType: .string)
+                        #else
+                        UIPasteboard.general.string = query
+                        #endif
+                        model.showToast("Query copied. Paste it into Bing and submit.")
+                    } label: {
+                        Label("Copy Next Query", systemImage: "doc.on.doc").frame(minHeight: 32)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(browser.isLoading || browser.isClearingSession || model.state.completedToday >= model.settings.dailyTarget)
+                    Spacer()
+                    Text("\(model.state.completedToday) / \(model.settings.dailyTarget)").monospacedDigit().font(.headline)
+                }
+                if let copied = model.state.activeQuery {
+                    Text(copied).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                }
+                Text("Paste into Bing’s search box. Progress updates only after a new search finishes loading.")
+                    .font(.caption).foregroundStyle(.secondary)
+                if model.state.completedToday >= model.settings.dailyTarget {
+                    Button("Reset Today’s Progress") { resetToday = true }.font(.caption)
+                }
+            }.padding(.horizontal, 12).padding(.top, 8)
             HStack(spacing: 8) {
                 Button { browser.goBack() } label: { Image(systemName: "chevron.left").frame(minWidth: 36, minHeight: 44) }
                     .disabled(!browser.canGoBack).accessibilityLabel("Back")
@@ -315,7 +316,8 @@ struct BingBotView: View {
             }.font(.caption).padding(.horizontal, 12)
             if browser.isLoading { ProgressView(value: browser.progress).progressViewStyle(.linear) }
             BingBotWebView(webView: browser.webView).id(ObjectIdentifier(browser.webView))
-            Text("Temporary session. Manual browsing pauses automation and does not count toward progress.")
+                .allowsHitTesting(!browser.isClearingSession)
+            Text("Login sessions are saved. Today’s count updates after a new Bing search finishes loading.")
                 .font(.caption2).foregroundStyle(.secondary).padding(8)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -412,17 +414,14 @@ struct BingBotView: View {
     }
     private var settingsScreen: some View {
         Group {
-            BingPanel(title: "Delays & target") {
-                Stepper("Minimum: \(model.settings.delayMin)s", value: setting(\.delayMin), in: 3...30)
-                Stepper("Maximum: \(model.settings.delayMax)s", value: setting(\.delayMax), in: max(5, model.settings.delayMin)...60)
-                Text("Wait a randomly selected interval between searches within this range.").font(.caption).foregroundStyle(.secondary)
+            BingPanel(title: "Daily target") {
                 Stepper("Daily app target: \(model.settings.dailyTarget)", value: setting(\.dailyTarget), in: 1...100)
                 Text("This is the app’s search target, not a guaranteed external rewards allocation.").font(.caption).foregroundStyle(.secondary)
                 Stepper("Startup countdown: \(model.settings.startupCountdownSeconds)s", value: setting(\.startupCountdownSeconds), in: 3...5)
             }
             BingPanel(title: "Completion") {
-                Toggle("Show completion and status notifications", isOn: setting(\.showNotifications)).tint(.blue)
-                Text("Allow notifications to receive completion or error alerts. BingBot works without permission.").font(.caption).foregroundStyle(.secondary)
+                Toggle("Show completion notifications", isOn: setting(\.showNotifications)).tint(.blue)
+                Text("Allow notifications to receive a daily target completion alert. BingBot works without permission.").font(.caption).foregroundStyle(.secondary)
                 Button("Enable Notifications") { model.requestNotifications() }.buttonStyle(.bordered)
                 #if os(macOS)
                 Toggle("Close on completion (5-second countdown)", isOn: setting(\.autoCloseOnComplete))
@@ -442,13 +441,13 @@ struct BingBotView: View {
                 }.buttonStyle(.bordered)
                 Button("Import App Data") { importing = true }.buttonStyle(.bordered)
                 Button("Reset App Data", role: .destructive) { resetApp = true }
-                Text("Backups contain saved queries, approved preferences, and progress only. Raw paste drafts and temporary browser data are excluded.")
+                Text("Backups contain saved queries, preferences, and progress only. Website login data and raw paste drafts are excluded.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             BingPanel(title: "About") {
                 Text("BingBot · Version 1.0.0").font(.headline)
                 Text("Part of the ReloCalc Suite").font(.caption).foregroundStyle(.secondary)
-                Text("Query editing works offline. Searches need internet. Browser sessions are temporary and start fresh after relaunch.").font(.caption).foregroundStyle(.secondary)
+                Text("Query editing works offline. Searches need internet. Website login sessions are saved until you clear them or the website expires them.").font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -523,7 +522,7 @@ struct BingBotView: View {
                             .animation(reduceMotion ? nil : .linear(duration: 1), value: startupRemaining)
                         Image(systemName: "magnifyingglass").font(.largeTitle).foregroundStyle(.blue)
                     }.frame(width: 80, height: 80)
-                    Text("Preparing query library and a fresh browser…").font(.caption).multilineTextAlignment(.center)
+                    Text("Preparing query library and saved browser session…").font(.caption).multilineTextAlignment(.center)
                     Text("\(startupRemaining)").font(.system(.title, design: .monospaced))
                     Button("Skip") { startup = false }.buttonStyle(.borderedProminent)
                 }.frame(maxWidth: .infinity)

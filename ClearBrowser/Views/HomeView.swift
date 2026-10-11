@@ -369,6 +369,15 @@ struct HomeView: View {
 
   private var statusOverlay: some View {
     VStack {
+      if viewModel.isLoading {
+        ProgressView()
+          .progressViewStyle(CircularProgressViewStyle())
+          .padding(10)
+          .background(.regularMaterial)
+          .cornerRadius(16)
+          .padding(.top, 12)
+      }
+      Spacer()
       if viewModel.isPrivateMode {
           HStack(spacing: 4) {
               Image(systemName: "eye.slash.fill")
@@ -380,18 +389,9 @@ struct HomeView: View {
           .background(Color.black.opacity(0.7))
           .foregroundColor(.white)
           .clipShape(Capsule())
-          .padding(.top, 8)
+          .padding(.bottom, 8)
+          .allowsHitTesting(false)
       }
-
-      if viewModel.isLoading {
-        ProgressView()
-          .progressViewStyle(CircularProgressViewStyle())
-          .padding(10)
-          .background(.regularMaterial)
-          .cornerRadius(16)
-          .padding(.top, 12)
-      }
-      Spacer()
     }
   }
 

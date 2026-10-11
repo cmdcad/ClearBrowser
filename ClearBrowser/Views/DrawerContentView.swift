@@ -173,7 +173,8 @@ struct DrawerContentView: View {
         }
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
+        .listRowSeparator(.visible, edges: .bottom)
+        .listRowSeparatorTint(Color.secondary.opacity(0.3))
     }
 
     // MARK: - Settings Content

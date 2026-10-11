@@ -58,105 +58,94 @@ final class BingBotTests: XCTestCase {
         return (BingBotModel(storage: storage), storage, folder, suite)
     }
     @MainActor
-    func testOnlyMatchingSuccessCountsAndFrozenQueueSurvivesEditing() async throws {
+    func testCopyDoesNotCountOrAdvanceUntilMatchingCompletedSearch() async throws {
         let (model, storage, folder, suite) = try fixture()
-        defer { model.stop(); try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
-        var token: UUID?
-        var urls: [URL] = []
-        model.navigate = { url, id in urls.append(url); token = id }
-        model.setMode(.manual); model.nextSearch()
-        let first = try XCTUnwrap(token)
-        model.navigationSucceeded(token: UUID())
+        defer { try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(model.nextQueryToCopy(), "Swift")
+        XCTAssertEqual(model.nextQueryToCopy(), "Swift")
         XCTAssertEqual(model.state.completedToday, 0)
-        try model.editQuery("Python", replacement: "New Python query")
-        model.navigationSucceeded(token: first); model.navigationSucceeded(token: first)
+        XCTAssertEqual(model.state.currentIndex, 0)
+        model.searchCompleted(query: "Unrelated typed query")
         XCTAssertEqual(model.state.completedToday, 1)
-        model.nextSearch()
-        XCTAssertEqual(URLComponents(url: try XCTUnwrap(urls.last), resolvingAgainstBaseURL: false)?.queryItems?.first?.value, "Python")
-        model.navigationSucceeded(token: try XCTUnwrap(token))
+        XCTAssertEqual(model.nextQueryToCopy(), "Swift")
+        model.searchCompleted(query: "swift")
+        XCTAssertEqual(model.state.currentIndex, 1)
+        XCTAssertNil(model.state.activeQuery)
+        XCTAssertEqual(model.state.completedToday, 2)
         XCTAssertEqual(model.state.status, .completed)
-        XCTAssertEqual(try storage.loadSettings().completedToday, 2)
-        XCTAssertEqual(try storage.loadSettings().lastCompletedDate, BingQueries.localDate())
     }
     @MainActor
-    func testStopIgnoresStaleCallbacksAndRelaunchRestoresPartialProgress() async throws {
+    func testDuplicateCompletionAndRelaunchPreserveDailyCount() async throws {
         let (model, storage, folder, suite) = try fixture()
-        defer { model.stop(); try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
-        var token: UUID?
-        model.navigate = { _, id in token = id }; model.setMode(.manual); model.nextSearch()
-        let stale = try XCTUnwrap(token); model.stop(); model.navigationSucceeded(token: stale)
-        XCTAssertEqual(model.state.completedToday, 0)
-        model.nextSearch(); model.navigationSucceeded(token: try XCTUnwrap(token))
-        model.stop()
+        defer { try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
+        _ = model.nextQueryToCopy()
+        model.searchCompleted(query: "Swift")
+        model.searchCompleted(query: "SWIFT")
+        XCTAssertEqual(model.state.completedToday, 1)
         let restored = BingBotModel(storage: storage)
+        restored.searchCompleted(query: "Swift")
         XCTAssertEqual(restored.state.completedToday, 1)
-        XCTAssertEqual(restored.state.currentIndex, 1)
-        XCTAssertEqual(restored.state.status, .paused)
-    }
-    @MainActor
-    func testFailureDoesNotCountAndExhaustionIsNotCompletion() async throws {
-        let (model, storage, folder, suite) = try fixture()
-        defer { model.stop(); try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
-        model.deleteQueries(["Python", "Machine learning"])
-        var token: UUID?
-        model.navigate = { _, id in token = id }; model.setMode(.manual); model.nextSearch()
-        model.navigationFailed(token: try XCTUnwrap(token))
-        XCTAssertEqual(model.state.status, .error); XCTAssertEqual(model.state.completedToday, 0)
-        model.nextSearch(); model.navigationSucceeded(token: try XCTUnwrap(token))
-        XCTAssertEqual(model.state.status, .exhausted)
-        XCTAssertNil(model.settings.lastCompletedDate)
+        XCTAssertEqual(restored.nextQueryToCopy(), "Python")
+        restored.searchCompleted(query: "Python")
+        XCTAssertEqual(restored.state.completedToday, 2)
+        XCTAssertEqual(try storage.loadSettings().lastCompletedDate, BingQueries.localDate())
     }
     @MainActor
     func testDailyRolloverAndDuplicateEdit() async throws {
         let (_, storage, folder, suite) = try fixture()
         defer { try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
         var settings = try storage.loadSettings(); settings.progressDate = "2020-01-01"
-        settings.completedToday = 1; settings.frozenQueue = ["Swift"]; settings.currentIndex = 1
+        settings.completedToday = 1; settings.usedQueryKeys = ["swift"]; settings.frozenQueue = ["Swift"]; settings.currentIndex = 1
         try storage.saveSettings(settings)
         let model = BingBotModel(storage: storage)
         XCTAssertEqual(model.state.completedToday, 0)
-        XCTAssertEqual(model.state.totalQueries, 0)
+        XCTAssertEqual(model.nextQueryToCopy(), "Swift")
         XCTAssertThrowsError(try model.editQuery("Swift", replacement: "PYTHON"))
-        XCTAssertEqual(model.queries.first, "Swift")
+    }
+    func testURLChangesOnlyCountSuccessfulDistinctBingSearches() throws {
+        var tracker = BingSearchURLTracker()
+        let swift = try XCTUnwrap(URL(string: "https://www.bing.com/search?q=Swift"))
+        let python = try XCTUnwrap(URL(string: "https://www.bing.com/search?q=Python"))
+        XCTAssertNil(tracker.finished(url: swift, succeeded: false, historyOrReload: false))
+        XCTAssertEqual(tracker.finished(url: swift, succeeded: true, historyOrReload: false), "Swift")
+        XCTAssertNil(tracker.finished(url: swift, succeeded: true, historyOrReload: false))
+        XCTAssertNil(tracker.finished(url: try XCTUnwrap(URL(string: "https://www.bing.com/search?q=Swift&first=11")), succeeded: true, historyOrReload: false))
+        XCTAssertEqual(tracker.finished(url: python, succeeded: true, historyOrReload: false), "Python")
+        XCTAssertNil(tracker.finished(url: swift, succeeded: true, historyOrReload: true))
+        XCTAssertNil(tracker.finished(url: try XCTUnwrap(URL(string: "https://example.com/search?q=new")), succeeded: true, historyOrReload: false))
+        XCTAssertNil(tracker.finished(url: try XCTUnwrap(URL(string: "https://www.bing.com/search?q=")), succeeded: true, historyOrReload: false))
+        XCTAssertEqual(tracker.finished(url: swift, succeeded: true, historyOrReload: false, on: "2030-01-01"), "Swift")
     }
     @MainActor
-    func testAutoCountdownPauseAndBackgroundIgnoreLateCallbacks() async throws {
+    func testFrozenQueryQueueAndExhaustionWithoutCountingCopies() async throws {
         let (model, storage, folder, suite) = try fixture()
-        defer { model.stop(); try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
-        model.updateSettings { $0.delayMin = 3; $0.delayMax = 5 }
-        var tokens: [UUID] = []
-        model.navigate = { _, token in tokens.append(token) }
-        model.start()
-        model.navigationSucceeded(token: try XCTUnwrap(tokens.last))
-        let delay = model.state.countdownSeconds
-        XCTAssertTrue((3...5).contains(delay))
-        model.pause()
-        try await Task.sleep(for: .milliseconds(1_100))
-        XCTAssertEqual(model.state.countdownSeconds, delay)
-        XCTAssertEqual(tokens.count, 1)
-        model.start()
-        XCTAssertEqual(model.state.status, .running)
-        model.backgrounded()
-        XCTAssertEqual(model.state.status, .paused)
-        XCTAssertEqual(model.state.countdownSeconds, delay)
-        XCTAssertEqual(try storage.loadSettings().remainingDelay, delay)
-        model.navigationSucceeded(token: try XCTUnwrap(tokens.last))
-        XCTAssertEqual(model.state.completedToday, 1)
+        defer { try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
+        model.updateSettings { $0.dailyTarget = 5 }
+        XCTAssertEqual(model.nextQueryToCopy(), "Swift")
+        try model.editQuery("Python", replacement: "New Python query")
+        model.searchCompleted(query: "Swift")
+        XCTAssertEqual(model.nextQueryToCopy(), "Python")
+        model.searchCompleted(query: "Python")
+        _ = model.nextQueryToCopy(); model.searchCompleted(query: "Machine learning")
+        // Edits take effect when the old queue is consumed; the new query is unused today.
+        XCTAssertEqual(model.nextQueryToCopy(), "New Python query")
+        model.searchCompleted(query: "New Python query")
+        XCTAssertNil(model.nextQueryToCopy())
+        XCTAssertEqual(model.state.status, .exhausted)
+        XCTAssertEqual(model.state.completedToday, 4)
+        XCTAssertNil(model.settings.lastCompletedDate)
     }
     @MainActor
     func testGeneratedPrefixesPreserveDraftAndImportMergesNormalizedQueries() async throws {
         let (model, storage, folder, suite) = try fixture()
-        defer { model.stop(); try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
+        defer { try? FileManager.default.removeItem(at: folder); storage.defaults.removePersistentDomain(forName: suite) }
         model.updateInput(text: "Unsaved paragraph", mode: .words)
         XCTAssertTrue(model.addGeneratedQueries(["what is machine learning", "WHAT  IS machine learning"]))
         XCTAssertEqual(model.input.draftText, "Unsaved paragraph")
-        XCTAssertEqual(model.queries.count, 4)
         var preferences = BingSettings(); preferences.showNotifications = false
-        let backup = BingBackup(settings: preferences, queries: ["swift", "New query"])
-        model.importData(backup, replace: false)
+        model.importData(BingBackup(settings: preferences, queries: ["swift", "New query"]), replace: false)
         XCTAssertEqual(model.queries.count, 5)
         XCTAssertEqual(model.queries.first, "Swift")
-        XCTAssertEqual(try storage.loadLibrary().queries.last, "New query")
     }
     @MainActor
     func testFailedStorageWriteKeepsDraftAndLibraryIntact() async throws {
