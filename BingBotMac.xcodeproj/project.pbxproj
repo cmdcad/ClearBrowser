@@ -1,0 +1,33 @@
+// !$*UTF8*$!
+{
+archiveVersion = 1;
+classes = {};
+objectVersion = 56;
+objects = {
+B10000000000000000000064 = {isa = PBXBuildFile; fileRef = B100000000000000000000C8; };
+B10000000000000000000065 = {isa = PBXBuildFile; fileRef = B100000000000000000000C9; };
+B10000000000000000000066 = {isa = PBXBuildFile; fileRef = B100000000000000000000CA; };
+B10000000000000000000067 = {isa = PBXBuildFile; fileRef = B100000000000000000000CB; };
+B10000000000000000000068 = {isa = PBXBuildFile; fileRef = B100000000000000000000CC; };
+B100000000000000000000C8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearBrowser/Views/BingBot/BingBotData.swift; sourceTree = SOURCE_ROOT; };
+B100000000000000000000C9 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearBrowser/Views/BingBot/BingBotModel.swift; sourceTree = SOURCE_ROOT; };
+B100000000000000000000CA = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearBrowser/Views/BingBot/BingBotBrowser.swift; sourceTree = SOURCE_ROOT; };
+B100000000000000000000CB = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearBrowser/Views/BingBot/BingBotView.swift; sourceTree = SOURCE_ROOT; };
+B100000000000000000000CC = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearBrowser/Views/BingBot/BingBotMacApp.swift; sourceTree = SOURCE_ROOT; };
+B10000000000000000000001 = {isa = PBXFileReference; explicitFileType = wrapper.application; path = BingBot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+B10000000000000000000002 = {isa = PBXGroup; children = (B100000000000000000000C8, B100000000000000000000C9, B100000000000000000000CA, B100000000000000000000CB, B100000000000000000000CC, B10000000000000000000003); sourceTree = "<group>"; };
+B10000000000000000000003 = {isa = PBXGroup; children = (B10000000000000000000001); name = Products; sourceTree = "<group>"; };
+B10000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000064, B10000000000000000000065, B10000000000000000000066, B10000000000000000000067, B10000000000000000000068); runOnlyForDeploymentPostprocessing = 0; };
+B10000000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+B10000000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+B10000000000000000000007 = {isa = PBXNativeTarget; buildConfigurationList = B10000000000000000000008; buildPhases = (B10000000000000000000004, B10000000000000000000005, B10000000000000000000006); buildRules = (); dependencies = (); name = BingBot; productName = BingBot; productReference = B10000000000000000000001; productType = "com.apple.product-type.application"; };
+B10000000000000000000008 = {isa = XCConfigurationList; buildConfigurations = (B10000000000000000000009, B1000000000000000000000A); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+B10000000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CODE_SIGN_IDENTITY = "-"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = BingBot; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity"; MARKETING_VERSION = 1.0.0; CURRENT_PROJECT_VERSION = 1; PRODUCT_BUNDLE_IDENTIFIER = com.clearbrowser.BingBot; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+B1000000000000000000000A = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CODE_SIGN_IDENTITY = "-"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = BingBot; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity"; MARKETING_VERSION = 1.0.0; CURRENT_PROJECT_VERSION = 1; PRODUCT_BUNDLE_IDENTIFIER = com.clearbrowser.BingBot; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
+B1000000000000000000000B = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 1540; }; buildConfigurationList = B1000000000000000000000C; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = B10000000000000000000002; productRefGroup = B10000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (B10000000000000000000007); };
+B1000000000000000000000C = {isa = XCConfigurationList; buildConfigurations = (B1000000000000000000000D, B1000000000000000000000E); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+B1000000000000000000000D = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = macosx; MACOSX_DEPLOYMENT_TARGET = 14.0; CLANG_ENABLE_MODULES = YES; }; name = Debug; };
+B1000000000000000000000E = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = macosx; MACOSX_DEPLOYMENT_TARGET = 14.0; CLANG_ENABLE_MODULES = YES; }; name = Release; };
+};
+rootObject = B1000000000000000000000B;
+}

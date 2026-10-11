@@ -332,21 +332,21 @@ struct HomeView: View {
                             .offset(x: 10, y: -10)
                     )
 
+                    ActionButton(label: "Share", symbol: "square.and.arrow.up", tint: .blue) {
+                        viewModel.shareCurrentPage()
+                    }
+
                     ActionButton(label: "Settings", symbol: "gearshape", tint: .gray) {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             viewModel.selectedDrawer = .settings
                         }
                     }
 
-                    ActionButton(label: "Apps", symbol: "square.grid.2x2", tint: .blue) {
-                        isShowingApps = true
-                    }
-
                     Menu {
                         Button {
-                            viewModel.shareCurrentPage()
+                            isShowingApps = true
                         } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
+                            Label("Apps", systemImage: "square.grid.2x2")
                         }
 
                         Button {

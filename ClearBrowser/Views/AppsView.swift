@@ -5,6 +5,7 @@ struct AppsView: View {
     @ObservedObject var model: ReloCalcModel
     @State private var isShowingReloCalc = false
     @State private var isShowingCreditTrack = false
+    @State private var isShowingBingBot = false
 
     init(onClose: @escaping () -> Void, model: ReloCalcModel) {
         self.onClose = onClose
@@ -21,7 +22,9 @@ struct AppsView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            if isShowingCreditTrack {
+            if isShowingBingBot {
+                BingBotView { isShowingBingBot = false }
+            } else if isShowingCreditTrack {
                 CreditTrackView { isShowingCreditTrack = false }
             } else if isShowingReloCalc {
                 // VStack(spacing: 0) {
@@ -93,6 +96,29 @@ struct AppsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open CreditTrack")
+
+                        Button {
+                            isShowingBingBot = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 28, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 56, height: 56)
+                                    .background(Color.blue.gradient, in: RoundedRectangle(cornerRadius: 16))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("BingBot").font(.headline).foregroundStyle(.primary)
+                                    Text("Build queries and automate searches")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
+                            .padding(16)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open BingBot")
                     }
 
                     Spacer(minLength: 0)
