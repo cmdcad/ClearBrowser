@@ -11,6 +11,7 @@ struct ReloCalcBackup: Codable {
     let expenses: Expenses
     let firstDay: FirstDay
     let setup: Setup
+    let obligations: [RecurringObligation]?
     let weekly: Weekly
 
     struct Profile: Codable {
@@ -86,7 +87,7 @@ struct ReloCalcBackup: Codable {
     }
 
     init(model: ReloCalcModel) {
-        version = "1.0"
+        version = "2.0"
         exported = ISO8601DateFormatter().string(from: Date())
         started = true
         profile = Profile(
@@ -126,16 +127,27 @@ struct ReloCalcBackup: Codable {
             equipment: model.equipment,
             visa: model.visa
         )
+        obligations = model.obligations
         weekly = Weekly(startDay: model.startDay)
     }
 
     func validate() throws {
-        guard version == "1.0",
+        guard ["1.0", "2.0"].contains(version),
               let currency = Currency(rawValue: profile.currency),
               Currency.allCases.contains(currency) else {
             throw ReloCalcBackupError.unsupported
         }
 
+        let bills = obligations ?? []
+        guard version != "2.0" || obligations != nil else {
+            throw ReloCalcBackupError.invalidNumber("missing recurring bills")
+        }
+        guard bills.count <= 1000, Set(bills.map(\.id)).count == bills.count else {
+            throw ReloCalcBackupError.invalidNumber("recurring bills")
+        }
+        for bill in bills {
+            if let message = bill.validationMessage { throw ReloCalcBackupError.invalidNumber(message) }
+        }
         try requireNonnegative([
             ("savings", profile.savings),
             ("wage", income.wage),
@@ -200,6 +212,7 @@ struct ReloCalcBackup: Codable {
         model.groceries = setup.groceries
         model.equipment = setup.equipment
         model.visa = setup.visa
+        model.obligations = obligations ?? []
         model.startDay = weekly.startDay
     }
 
@@ -226,7 +239,7 @@ enum ReloCalcBackupError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupported:
-            return "This file is not a supported ReloCalc version 1.0 backup."
+            return "This file is not a supported ReloCalc version 1.0 or 2.0 backup."
         case .invalidSchedule:
             return "The backup contains an invalid workweek, housing type, or start day."
         case .invalidNumber(let field):
@@ -331,9 +344,10 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Workday Total", number(model.dailyExpense)],
             ["Rest Day Total", number(model.reducedDailyExpense)],
             ["Expense Work Days / Week", String(model.expenseDays)],
-            ["Weekly", number(model.weeklyExpense)],
-            ["Monthly", number(model.monthlyExpense)],
-            ["Yearly", number(model.yearlyExpense)],
+            ["Weekly Living Expenses", number(model.weeklyExpense)],
+            ["Monthly Living Expenses", number(model.monthlyLivingExpense)],
+            ["Total Monthly Burn (including bills)", number(model.monthlyExpense)],
+            ["Total Annual Burn (including bills)", number(model.yearlyExpense)],
             [],
             ["=== FIRST DAY ==="],
             ["Transport (3 legs)", number(model.firstDayTransport)],
@@ -364,6 +378,20 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Day", "Income", "Expense", "Net"]
         ]
 
+        rows += [[], ["=== RECURRING OBLIGATIONS ==="],
+                 ["Name", "Category", "Payment", "Frequency", "Monthly Equivalent", "Remaining Balance", "APR", "Auto-Pay", "Notes", "Payoff Months", "Estimated Interest", "Payoff Date"]]
+        for bill in model.obligations {
+            rows.append([bill.name, bill.category.rawValue, number(bill.amount), bill.frequency.rawValue,
+                         number(bill.monthlyAmount), bill.remainingBalance.map { number($0) } ?? "",
+                         bill.apr.map { number($0) } ?? "", bill.autoPay ? "Yes" : "No", bill.notes,
+                         bill.payoff.map { String($0.months) } ?? "",
+                         bill.payoff.map { number($0.interest) } ?? "",
+                         bill.payoff?.date()?.formatted(date: .numeric, time: .omitted) ?? ""])
+        }
+        rows += [["Total Monthly Obligations", number(model.monthlyObligations)],
+                 ["Total Annual Obligations", number(model.annualObligations)],
+                 ["Obligation Burden (%)", model.obligationBurden.map { number($0) } ?? "N/A"],
+                 [], ["=== FIRST WEEK DETAIL ==="], ["Day", "Income", "Expense", "Net"]]
         for row in model.weekRows {
             rows.append([
                 row.name + (row.isFirst ? " *" : ""),
@@ -408,7 +436,7 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Workday total: \(model.money(model.dailyExpense))",
             "Rest day total: \(model.money(model.reducedDailyExpense))",
             "Weekly: \(model.money(model.weeklyExpense))",
-            "Monthly: \(model.money(model.monthlyExpense))",
+            "Monthly living expenses: \(model.money(model.monthlyLivingExpense))",
             "",
             "FIRST DAY",
             "Total: \(model.money(model.firstDayTotal)) (vs normal workday \(model.signed(model.firstDayDiff)))",
@@ -432,6 +460,21 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Day | Income | Expense | Net"
         ]
 
+        lines += ["", "RECURRING OBLIGATIONS (\(model.obligations.count) items)"]
+        for bill in model.obligations {
+            lines.append("\(bill.name) [\(bill.category.rawValue)]: \(model.money(bill.amount)) / \(bill.frequency.rawValue) = \(model.money(bill.monthlyAmount))/month")
+            if bill.autoPay { lines.append("  Auto-Pay") }
+            if !bill.notes.isEmpty { lines.append("  \(bill.notes)") }
+            if let payoff = bill.payoff {
+                lines.append("  Payoff estimate: \(payoff.months) months; interest \(model.money(payoff.interest))")
+            }
+        }
+        lines += ["Total monthly obligations: \(model.money(model.monthlyObligations))",
+                  "Total annual obligations: \(model.money(model.annualObligations))",
+                  "Monthly living costs: \(model.money(model.monthlyLivingExpense))",
+                  "Total monthly burn: \(model.money(model.monthlyExpense))",
+                  "Obligation burden: " + (model.obligationBurden.map { String(format: "%.1f%%", $0) } ?? "N/A (no net income)"),
+                  "", "FIRST WEEK DETAIL", "Day | Income | Expense | Net"]
         for (index, row) in model.weekRows.enumerated() {
             let name = dayNames[index] + (row.isFirst ? " *" : "")
             lines.append("\(name) | \(model.money(row.income)) | \(model.money(row.expense)) | \(model.signed(row.net))")
@@ -506,7 +549,7 @@ struct ReloCalcExportStep: View {
             }
 
             Card(title: "Restore your plan") {
-                Text("Import a version 1.0 ReloCalc JSON backup. This replaces the current plan.")
+                Text("Import a version 1.0 or 2.0 ReloCalc JSON backup. This replaces the current plan.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Button {

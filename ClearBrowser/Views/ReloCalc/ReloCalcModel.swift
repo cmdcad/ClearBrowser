@@ -56,6 +56,7 @@ final class ReloCalcModel: ObservableObject {
     @Published private(set) var autosaveError: String?
 
     private let autosaveKey = "relocalc.inputs.v1"
+    private let defaults: UserDefaults
     private var autosaveCancellable: AnyCancellable?
 
     // Profile
@@ -71,6 +72,8 @@ final class ReloCalcModel: ObservableObject {
     @Published var taxRate = 15.0
     @Published var overtimeRate = 0.0
     @Published var overtimeHours = 0.0
+
+    @Published var obligations: [RecurringObligation] = []
 
     // Normal-day expenses
     @Published var expenseDays = 5
@@ -98,9 +101,10 @@ final class ReloCalcModel: ObservableObject {
     // Weekly detail: 0 = Mon … 6 = Sun
     @Published var startDay = 2
 
-    init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         var shouldSaveInitialValues = true
-        if let data = UserDefaults.standard.data(forKey: autosaveKey) {
+        if let data = defaults.data(forKey: autosaveKey) {
             do {
                 let backup = try JSONDecoder().decode(ReloCalcBackup.self, from: data)
                 try backup.validate()
@@ -147,8 +151,12 @@ final class ReloCalcModel: ObservableObject {
         dailyExpense * Double(expenseDays)
             + reducedDailyExpense * Double(7 - expenseDays)
     }
-    var monthlyExpense: Double { weeklyExpense * 4.33 }
-    var yearlyExpense: Double { weeklyExpense * 52 }
+    var monthlyLivingExpense: Double { weeklyExpense * 4.33 }
+    var monthlyObligations: Double { obligations.reduce(0) { $0 + $1.monthlyAmount } }
+    var annualObligations: Double { monthlyObligations * 12 }
+    var obligationBurden: Double? { netMonthly > 0 ? monthlyObligations / netMonthly * 100 : nil }
+    var monthlyExpense: Double { monthlyLivingExpense + monthlyObligations }
+    var yearlyExpense: Double { weeklyExpense * 52 + annualObligations }
 
     var firstDayTransport: Double { toAirport + airportToSite + siteToHotel }
     var firstDayTotal: Double { firstDayTransport + firstHotel + firstFood + firstOther }
@@ -157,8 +165,8 @@ final class ReloCalcModel: ObservableObject {
     var setupTotal: Double { deposit + sim + groceries + equipment + visa }
 
     // MARK: Dashboard
-    var dailyNet: Double { netDaily - dailyExpense }
-    var weeklyNet: Double { netWeekly - weeklyExpense }
+    var dailyNet: Double { netDaily - dailyExpense - annualObligations / 365 }
+    var weeklyNet: Double { netWeekly - weeklyExpense - annualObligations / 52 }
     var monthlyNet: Double { netMonthly - monthlyExpense }
     var yearlyNet: Double { netYearly - yearlyExpense }
 
@@ -168,7 +176,7 @@ final class ReloCalcModel: ObservableObject {
     var firstWeekNormalCost: Double { Double(firstWeekNormalDays) * dailyExpense }
     var firstWeekReducedDays: Int { 6 - firstWeekNormalDays }
     var firstWeekReducedCost: Double { Double(firstWeekReducedDays) * reducedDailyExpense }
-    var firstWeekExpense: Double { firstDayTotal + firstWeekNormalCost + firstWeekReducedCost }
+    var firstWeekExpense: Double { firstDayTotal + firstWeekNormalCost + firstWeekReducedCost + annualObligations / 52 }
     var firstWeekNet: Double { netWeekly - firstWeekExpense }
 
     /// Months savings last if income stops. nil = no expenses (infinite).
@@ -187,7 +195,11 @@ final class ReloCalcModel: ObservableObject {
         let s4: Double = savings > monthlyExpense * 3 ? 15 : (savings > monthlyExpense ? 10 : 5)
         return Int((s1 + s2 + s3 + s4).rounded())
     }
-    var verdict: Verdict { score >= 70 ? .thriving : (score >= 40 ? .manageable : .atRisk) }
+    var verdict: Verdict {
+        guard netMonthly > 0, monthlyNet > 0,
+              (obligationBurden ?? 100) <= 50 else { return .atRisk }
+        return savings >= relocationCost && score >= 70 && (obligationBurden ?? 100) <= 30 ? .thriving : .manageable
+    }
 
     // MARK: Weekly detail
     private let dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -202,7 +214,7 @@ final class ReloCalcModel: ObservableObject {
             if !weekend && worked < incomeDays { income = netDaily; worked += 1 }
             let isExpenseWorkday = !weekend && expenseWorked < expenseDays
             if isExpenseWorkday { expenseWorked += 1 }
-            let expense = i == 0 ? firstDayTotal : (isExpenseWorkday ? dailyExpense : reducedDailyExpense)
+            let expense = (i == 0 ? firstDayTotal : (isExpenseWorkday ? dailyExpense : reducedDailyExpense)) + annualObligations / 52 / 7
             return WeekDayRow(id: i, name: dayNames[idx], income: income, expense: expense,
                               isFirst: i == 0, isWeekend: weekend, isExpenseWorkday: isExpenseWorkday)
         }
@@ -210,12 +222,12 @@ final class ReloCalcModel: ObservableObject {
     var weekIncome: Double { weekRows.reduce(0) { $0 + $1.income } }
     var weekExpense: Double { weekRows.reduce(0) { $0 + $1.expense } }
     var weekExpensePct: Int { weekIncome > 0 ? Int(weekExpense / weekIncome * 100) : 0 }
-    var normalWeekExpensePct: Int { netWeekly > 0 ? Int(weeklyExpense / netWeekly * 100) : 0 }
+    var normalWeekExpensePct: Int { netWeekly > 0 ? Int((weeklyExpense + annualObligations / 52) / netWeekly * 100) : 0 }
 
     private func saveInputs() {
         do {
             let data = try ReloCalcExportFormat.json.data(for: self)
-            UserDefaults.standard.set(data, forKey: autosaveKey)
+            defaults.set(data, forKey: autosaveKey)
             if autosaveError != nil {
                 autosaveError = nil
             }
@@ -225,5 +237,82 @@ final class ReloCalcModel: ObservableObject {
                 autosaveError = message
             }
         }
+    }
+}
+
+
+enum ObligationCategory: String, Codable, CaseIterable, Identifiable {
+    case phone = "Phone", creditCard = "Credit Card", loan = "Loan", insurance = "Insurance"
+    case subscription = "Subscription", childSupport = "Child Support", other = "Other"
+    var id: String { rawValue }
+    var icon: String {
+        switch self {
+        case .phone: return "iphone"; case .creditCard: return "creditcard.fill"
+        case .loan: return "building.columns.fill"; case .insurance: return "shield.fill"
+        case .subscription: return "tv.fill"; case .childSupport: return "figure.child"
+        case .other: return "list.clipboard.fill"
+        }
+    }
+    var color: Color {
+        switch self {
+        case .phone: return .blue; case .creditCard: return .red; case .loan: return .yellow
+        case .insurance: return .green; case .subscription: return .purple
+        case .childSupport: return .orange; case .other: return .gray
+        }
+    }
+}
+
+enum ObligationFrequency: String, Codable, CaseIterable, Identifiable {
+    case weekly = "Weekly", biweekly = "Bi-weekly", monthly = "Monthly", quarterly = "Quarterly", annual = "Annual"
+    var id: String { rawValue }
+    var monthlyFactor: Double {
+        switch self {
+        case .weekly: return 4.333; case .biweekly: return 2.167
+        case .monthly: return 1; case .quarterly: return 1.0 / 3; case .annual: return 1.0 / 12
+        }
+    }
+}
+
+struct ObligationPayoff {
+    let months: Int
+    let interest: Double
+    func date(from start: Date = .now) -> Date? { Calendar.current.date(byAdding: .month, value: months, to: start) }
+}
+
+struct RecurringObligation: Codable, Identifiable {
+    var id = UUID()
+    var name = ""
+    var category: ObligationCategory = .other
+    var amount = 0.0
+    var frequency: ObligationFrequency = .monthly
+    var remainingBalance: Double?
+    var apr: Double?
+    var autoPay = false
+    var notes = ""
+    var monthlyAmount: Double { amount * frequency.monthlyFactor }
+    var validationMessage: String? {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Enter a bill name." }
+        if name.count > 200 || notes.count > 5000 { return "Shorten the bill name or notes." }
+        if !amount.isFinite || amount <= 0 || amount > 1_000_000_000 { return "Enter a payment greater than zero and at most 1 billion." }
+        if let balance = remainingBalance, !balance.isFinite || balance < 0 || balance > 1_000_000_000 { return "Enter a valid nonnegative remaining balance." }
+        if let rate = apr, !rate.isFinite || !(0...100).contains(rate) { return "APR must be between 0 and 100%." }
+        return nil
+    }
+    /// Monthly-equivalent estimate, including a smaller final payment.
+    /// nil means the payment does not cover interest or exceeds the 100-year estimate limit.
+    var payoff: ObligationPayoff? {
+        guard let initial = remainingBalance, initial.isFinite, initial >= 0,
+              monthlyAmount.isFinite, monthlyAmount > 0 else { return nil }
+        if initial == 0 { return ObligationPayoff(months: 0, interest: 0) }
+        let rate = (apr ?? 0) / 100 / 12
+        guard monthlyAmount > initial * rate else { return nil }
+        var balance = initial, interest = 0.0
+        for month in 1...1200 {
+            let charge = balance * rate
+            interest += charge
+            balance = max(0, balance + charge - monthlyAmount)
+            if balance < 0.000001 { return ObligationPayoff(months: month, interest: interest) }
+        }
+        return nil
     }
 }

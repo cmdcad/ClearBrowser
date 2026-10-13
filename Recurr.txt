@@ -1,0 +1,1243 @@
+ReloCalc — Complete Build Specification Prompt (v2)
+
+Relocation Financial Feasibility Calculator with Recurring Bills & Obligations
+
+1. APP IDENTITY
+
+- Name: ReloCalc
+
+- Tagline: "Know Before You Go"
+
+- Purpose: Single-page HTML app that calculates whether a user can financially survive a relocation — factoring in income, one-time relocation costs, recurring monthly obligations (bills, loans, credit cards, subscriptions), living expenses at destination, and savings runway
+
+- Theme: Google Material-inspired — #1A73E8 primary blue, #1A1A2E dark text, #F0F2F5 card backgrounds, white cards with subtle shadows, monospaced numbers, pill badges, capsule buttons
+
+2. INCOME ENGINE
+
+Inputs
+
+FieldTypeDefaultNotesHourly Wagecurrency$0.00Primary input — everything derives from thisHours/Daynumber8Range: 1–24Days/Weeknumber5Range: 1–7Tax Ratepercentage25%Range: 0–50%Pay FrequencyselectBi-weeklyWeekly / Bi-weekly / Semi-monthly / Monthly
+
+FieldTypeDefaultNotes
+
+Field
+
+Type
+
+Default
+
+Notes
+
+Hourly Wagecurrency$0.00Primary input — everything derives from this
+
+Hourly Wage
+
+currency
+
+$0.00
+
+Primary input — everything derives from this
+
+Hours/Daynumber8Range: 1–24
+
+Hours/Day
+
+number
+
+8
+
+Range: 1–24
+
+Days/Weeknumber5Range: 1–7
+
+Days/Week
+
+number
+
+5
+
+Range: 1–7
+
+Tax Ratepercentage25%Range: 0–50%
+
+Tax Rate
+
+percentage
+
+25%
+
+Range: 0–50%
+
+Pay FrequencyselectBi-weeklyWeekly / Bi-weekly / Semi-monthly / Monthly
+
+Pay Frequency
+
+select
+
+Bi-weekly
+
+Weekly / Bi-weekly / Semi-monthly / Monthly
+
+Auto-Calculated Outputs (update on every input change)
+
+OutputFormulaGross DailyhourlyWage × hoursPerDayGross WeeklygrossDaily × daysPerWeekGross Bi-weeklygrossWeekly × 2Gross MonthlygrossWeekly × 4.333Gross AnnualgrossWeekly × 52Net DailygrossDaily × (1 − taxRate)Net WeeklygrossWeekly × (1 − taxRate)Net Bi-weeklygrossBiWeekly × (1 − taxRate)Net MonthlygrossMonthly × (1 − taxRate)Net AnnualgrossAnnual × (1 − taxRate)Per-Paycheckbased on selected Pay Frequency, net
+
+OutputFormula
+
+Output
+
+Formula
+
+Gross DailyhourlyWage × hoursPerDay
+
+Gross Daily
+
+hourlyWage × hoursPerDay
+
+Gross WeeklygrossDaily × daysPerWeek
+
+Gross Weekly
+
+grossDaily × daysPerWeek
+
+Gross Bi-weeklygrossWeekly × 2
+
+Gross Bi-weekly
+
+grossWeekly × 2
+
+Gross MonthlygrossWeekly × 4.333
+
+Gross Monthly
+
+grossWeekly × 4.333
+
+Gross AnnualgrossWeekly × 52
+
+Gross Annual
+
+grossWeekly × 52
+
+Net DailygrossDaily × (1 − taxRate)
+
+Net Daily
+
+grossDaily × (1 − taxRate)
+
+Net WeeklygrossWeekly × (1 − taxRate)
+
+Net Weekly
+
+grossWeekly × (1 − taxRate)
+
+Net Bi-weeklygrossBiWeekly × (1 − taxRate)
+
+Net Bi-weekly
+
+grossBiWeekly × (1 − taxRate)
+
+Net MonthlygrossMonthly × (1 − taxRate)
+
+Net Monthly
+
+grossMonthly × (1 − taxRate)
+
+Net AnnualgrossAnnual × (1 − taxRate)
+
+Net Annual
+
+grossAnnual × (1 − taxRate)
+
+Per-Paycheckbased on selected Pay Frequency, net
+
+Per-Paycheck
+
+based on selected Pay Frequency, net
+
+Display
+
+- Two-column card: Gross left, Net right
+
+- Each row: Daily / Weekly / Bi-weekly / Monthly / Annual
+
+- Per-Paycheck amount highlighted in a blue pill badge at the bottom
+
+- All values formatted as currency with commas
+
+3. RECURRING BILLS & OBLIGATIONS MODULE ← NEW
+
+Purpose
+
+Track all recurring financial commitments that follow the user regardless of location — phone bills, credit card payments, loan payments, subscriptions, insurance, child support, etc.
+
+Data Model per Obligation
+
+FieldTypeRequiredNotesNametext✅e.g., "Verizon Phone", "Chase Visa", "Car Loan"Categoryselect✅Phone / Credit Card / Loan / Insurance / Subscription / Child Support / OtherAmountcurrency✅Fixed payment amount per periodFrequencyselect✅Weekly / Bi-weekly / Monthly / Quarterly / AnnualRemaining Balancecurrency❌Optional — for loans/credit cards to show payoff timelineInterest Rate (APR)percentage❌Optional — for loans/credit cardsAuto-Paytoggle❌Visual indicator onlyNotestext❌Free-form
+
+FieldTypeRequiredNotes
+
+Field
+
+Type
+
+Required
+
+Notes
+
+Nametext✅e.g., "Verizon Phone", "Chase Visa", "Car Loan"
+
+Name
+
+text
+
+✅
+
+e.g., "Verizon Phone", "Chase Visa", "Car Loan"
+
+Categoryselect✅Phone / Credit Card / Loan / Insurance / Subscription / Child Support / Other
+
+Category
+
+select
+
+✅
+
+Phone / Credit Card / Loan / Insurance / Subscription / Child Support / Other
+
+Amountcurrency✅Fixed payment amount per period
+
+Amount
+
+currency
+
+✅
+
+Fixed payment amount per period
+
+Frequencyselect✅Weekly / Bi-weekly / Monthly / Quarterly / Annual
+
+Frequency
+
+select
+
+✅
+
+Weekly / Bi-weekly / Monthly / Quarterly / Annual
+
+Remaining Balancecurrency❌Optional — for loans/credit cards to show payoff timeline
+
+Remaining Balance
+
+currency
+
+❌
+
+Optional — for loans/credit cards to show payoff timeline
+
+Interest Rate (APR)percentage❌Optional — for loans/credit cards
+
+Interest Rate (APR)
+
+percentage
+
+❌
+
+Optional — for loans/credit cards
+
+Auto-Paytoggle❌Visual indicator only
+
+Auto-Pay
+
+toggle
+
+❌
+
+Visual indicator only
+
+Notestext❌Free-form
+
+Notes
+
+text
+
+❌
+
+Free-form
+
+Category Icons
+
+CategoryIconColorPhone📱#4285F4Credit Card💳#EA4335Loan🏦#FBBC04Insurance🛡️#34A853Subscription📺#9334E6Child Support👶#FF6D01Other📋#5F6368
+
+CategoryIconColor
+
+Category
+
+Icon
+
+Color
+
+Phone📱#4285F4
+
+Phone
+
+📱
+
+#4285F4
+
+Credit Card💳#EA4335
+
+Credit Card
+
+💳
+
+#EA4335
+
+Loan🏦#FBBC04
+
+Loan
+
+🏦
+
+#FBBC04
+
+Insurance🛡️#34A853
+
+Insurance
+
+🛡️
+
+#34A853
+
+Subscription📺#9334E6
+
+Subscription
+
+📺
+
+#9334E6
+
+Child Support👶#FF6D01
+
+Child Support
+
+👶
+
+#FF6D01
+
+Other📋#5F6368
+
+Other
+
+📋
+
+#5F6368
+
+UI Layout
+
+- Add Button: "+ Add Bill" capsule button at top of section
+
+- Add Form: Inline expandable form (not modal) with fields above
+
+- List: Each obligation displayed as a card row:[Icon] Name                    $Amount / frequency
+       Category pill    [Auto-Pay badge]    [⋮ menu]
+
+- Three-dot menu (⋮): Edit / Delete / Duplicate
+
+- Swipe left to delete (with confirmation)
+
+- Sort: By category (grouped) or by amount (descending)
+
+Normalization Engine
+
+All obligations are normalized to monthly for the financial engine:
+
+FrequencyMonthly EquivalentWeeklyamount × 4.333Bi-weeklyamount × 2.167Monthlyamount × 1Quarterlyamount / 3Annualamount / 12
+
+FrequencyMonthly Equivalent
+
+Frequency
+
+Monthly Equivalent
+
+Weeklyamount × 4.333
+
+Weekly
+
+amount × 4.333
+
+Bi-weeklyamount × 2.167
+
+Bi-weekly
+
+amount × 2.167
+
+Monthlyamount × 1
+
+Monthly
+
+amount × 1
+
+Quarterlyamount / 3
+
+Quarterly
+
+amount / 3
+
+Annualamount / 12
+
+Annual
+
+amount / 12
+
+Summary Card (always visible at bottom of section)
+
+LineValueTotal Monthly ObligationsSum of all normalized monthly amountsTotal Annual ObligationsMonthly × 12% of Net Income(totalMonthlyObligations / netMonthly) × 100 — color-coded: green ≤30%, yellow 31–50%, red >50%Obligation CountNumber of active items
+
+LineValue
+
+Line
+
+Value
+
+Total Monthly ObligationsSum of all normalized monthly amounts
+
+Total Monthly Obligations
+
+Sum of all normalized monthly amounts
+
+Total Annual ObligationsMonthly × 12
+
+Total Annual Obligations
+
+Monthly × 12
+
+% of Net Income(totalMonthlyObligations / netMonthly) × 100 — color-coded: green ≤30%, yellow 31–50%, red >50%
+
+% of Net Income
+
+(totalMonthlyObligations / netMonthly) × 100 — color-coded: green ≤30%, yellow 31–50%, red >50%
+
+Obligation CountNumber of active items
+
+Obligation Count
+
+Number of active items
+
+Payoff Projections (for items with Remaining Balance)
+
+- Months to Payoff: remainingBalance / monthlyPayment (simple) or amortized if APR provided
+
+- Total Interest Paid: (monthlyPayment × monthsToPayoff) − remainingBalance
+
+- Payoff Date: current date + months to payoff
+
+- Display as a mini progress bar inside the card row
+
+4. RELOCATION COSTS (One-Time)
+
+Inputs — Editable list with add/remove
+
+Default ItemDefault AmountSecurity Deposit$0First Month Rent$0Moving Truck / Shipping$0Flight / Travel$0Storage Unit$0Application Fees$0Utility Deposits$0
+
+Default ItemDefault Amount
+
+Default Item
+
+Default Amount
+
+Security Deposit$0
+
+Security Deposit
+
+$0
+
+First Month Rent$0
+
+First Month Rent
+
+$0
+
+Moving Truck / Shipping$0
+
+Moving Truck / Shipping
+
+$0
+
+Flight / Travel$0
+
+Flight / Travel
+
+$0
+
+Storage Unit$0
+
+Storage Unit
+
+$0
+
+Application Fees$0
+
+Application Fees
+
+$0
+
+Utility Deposits$0
+
+Utility Deposits
+
+$0
+
+Behavior
+
+- User can add custom line items (name + amount)
+
+- User can delete any item (including defaults)
+
+- Running total at bottom of section
+
+- Each item is a single row: [Name field] [$Amount field] [🗑️]
+
+5. MONTHLY LIVING EXPENSES AT DESTINATION
+
+Inputs — Editable list with add/remove
+
+Default ItemDefault AmountRent / Mortgage$0Utilities (Electric/Gas/Water)$0Internet / Cable$0Groceries$0Transportation / Gas$0Laundry$0Personal / Misc$0
+
+Default ItemDefault Amount
+
+Default Item
+
+Default Amount
+
+Rent / Mortgage$0
+
+Rent / Mortgage
+
+$0
+
+Utilities (Electric/Gas/Water)$0
+
+Utilities (Electric/Gas/Water)
+
+$0
+
+Internet / Cable$0
+
+Internet / Cable
+
+$0
+
+Groceries$0
+
+Groceries
+
+$0
+
+Transportation / Gas$0
+
+Transportation / Gas
+
+$0
+
+Laundry$0
+
+Laundry
+
+$0
+
+Personal / Misc$0
+
+Personal / Misc
+
+$0
+
+Behavior
+
+- Same add/remove UX as Relocation Costs
+
+- Running total at bottom
+
+- NOTE: These are NEW location-specific costs, separate from Recurring Obligations which follow the user everywhere
+
+6. SAVINGS & RUNWAY
+
+Inputs
+
+FieldTypeDefaultCurrent Savingscurrency$0Monthly Savings Goalcurrency$0
+
+FieldTypeDefault
+
+Field
+
+Type
+
+Default
+
+Current Savingscurrency$0
+
+Current Savings
+
+currency
+
+$0
+
+Monthly Savings Goalcurrency$0
+
+Monthly Savings Goal
+
+currency
+
+$0
+
+Auto-Calculated
+
+OutputFormulaTotal Monthly BurnmonthlyLivingExpenses + totalMonthlyObligationsMonthly Surplus/DeficitnetMonthly − totalMonthlyBurnSavings Runway (no job)currentSavings / totalMonthlyBurn (in months)Savings Runway (with job)If deficit: currentSavings / abs(deficit). If surplus: "∞ Sustainable"Months to Savings GoalIf surplus > 0: savingsGoal / surplus. Else: "Not achievable"Relocation Break-EventotalRelocationCosts / monthlySurplus (months to recover one-time costs)
+
+OutputFormula
+
+Output
+
+Formula
+
+Total Monthly BurnmonthlyLivingExpenses + totalMonthlyObligations
+
+Total Monthly Burn
+
+monthlyLivingExpenses + totalMonthlyObligations
+
+Monthly Surplus/DeficitnetMonthly − totalMonthlyBurn
+
+Monthly Surplus/Deficit
+
+netMonthly − totalMonthlyBurn
+
+Savings Runway (no job)currentSavings / totalMonthlyBurn (in months)
+
+Savings Runway (no job)
+
+currentSavings / totalMonthlyBurn (in months)
+
+Savings Runway (with job)If deficit: currentSavings / abs(deficit). If surplus: "∞ Sustainable"
+
+Savings Runway (with job)
+
+If deficit: currentSavings / abs(deficit). If surplus: "∞ Sustainable"
+
+Months to Savings GoalIf surplus > 0: savingsGoal / surplus. Else: "Not achievable"
+
+Months to Savings Goal
+
+If surplus > 0: savingsGoal / surplus. Else: "Not achievable"
+
+Relocation Break-EventotalRelocationCosts / monthlySurplus (months to recover one-time costs)
+
+Relocation Break-Even
+
+totalRelocationCosts / monthlySurplus (months to recover one-time costs)
+
+7. FEASIBILITY VERDICT
+
+Calculation
+
+totalMonthlyBurn = monthlyLivingExpenses + totalMonthlyObligations
+monthlySurplus = netMonthly − totalMonthlyBurn
+relocationCostsCoveredBySavings = currentSavings >= totalRelocationCosts
+surplusRatio = monthlySurplus / netMonthly
+obligationRatio = totalMonthlyObligations / netMonthly
+
+Verdict Logic
+
+ConditionVerdictColorEmojisurplus > 0 AND savings cover relo AND obligationRatio ≤ 0.50✅ GO — Feasible#34A853 green✅surplus > 0 AND (savings < relo OR obligationRatio 0.31–0.50)⚠️ STRETCH — Tight but possible#FBBC04 yellow⚠️surplus ≤ 0 OR obligationRatio > 0.50🛑 STOP — Not yet feasible#EA4335 red🛑
+
+ConditionVerdictColorEmoji
+
+Condition
+
+Verdict
+
+Color
+
+Emoji
+
+surplus > 0 AND savings cover relo AND obligationRatio ≤ 0.50✅ GO — Feasible#34A853 green✅
+
+surplus > 0 AND savings cover relo AND obligationRatio ≤ 0.50
+
+✅ GO — Feasible
+
+#34A853 green
+
+✅
+
+surplus > 0 AND (savings < relo OR obligationRatio 0.31–0.50)⚠️ STRETCH — Tight but possible#FBBC04 yellow⚠️
+
+surplus > 0 AND (savings < relo OR obligationRatio 0.31–0.50)
+
+⚠️ STRETCH — Tight but possible
+
+#FBBC04 yellow
+
+⚠️
+
+surplus ≤ 0 OR obligationRatio > 0.50🛑 STOP — Not yet feasible#EA4335 red🛑
+
+surplus ≤ 0 OR obligationRatio > 0.50
+
+🛑 STOP — Not yet feasible
+
+#EA4335 red
+
+🛑
+
+Verdict Card Display
+
+- Large emoji + verdict text
+
+- Monthly surplus/deficit amount
+
+- Savings runway in months
+
+- Obligation burden percentage
+
+- One-line recommendation text:GO: "You can afford this move. Build your emergency fund."STRETCH: "Possible, but reduce obligations or increase income first."STOP: "Your recurring obligations exceed safe thresholds. Pay down debt before relocating."
+
+8. FINANCIAL HEALTH DASHBOARD
+
+Visual Summary (top of results area)
+
+MetricDisplayNet Monthly IncomeLarge number− Monthly ObligationsRed number with breakdown link− Monthly Living ExpensesRed number= Monthly Surplus/DeficitGreen or red, boldObligation BurdenProgress bar (green/yellow/red)Savings Runway"X.X months" with icon
+
+MetricDisplay
+
+Metric
+
+Display
+
+Net Monthly IncomeLarge number
+
+Net Monthly Income
+
+Large number
+
+− Monthly ObligationsRed number with breakdown link
+
+− Monthly Obligations
+
+Red number with breakdown link
+
+− Monthly Living ExpensesRed number
+
+− Monthly Living Expenses
+
+Red number
+
+= Monthly Surplus/DeficitGreen or red, bold
+
+= Monthly Surplus/Deficit
+
+Green or red, bold
+
+Obligation BurdenProgress bar (green/yellow/red)
+
+Obligation Burden
+
+Progress bar (green/yellow/red)
+
+Savings Runway"X.X months" with icon
+
+Savings Runway
+
+"X.X months" with icon
+
+Income Allocation Donut Chart (CSS-only)
+
+- Segment 1: Living Expenses (blue)
+
+- Segment 2: Recurring Obligations (orange)
+
+- Segment 3: Surplus/Savings (green) or Deficit (red)
+
+- Center text: Net Monthly amount
+
+9. MULTI-CURRENCY SUPPORT
+
+Inputs
+
+FieldTypeDefaultCurrencyselectUSDExchange Ratenumber1.0
+
+FieldTypeDefault
+
+Field
+
+Type
+
+Default
+
+CurrencyselectUSD
+
+Currency
+
+select
+
+USD
+
+Exchange Ratenumber1.0
+
+Exchange Rate
+
+number
+
+1.0
+
+Supported Currencies
+
+USD ($), EUR (€), GBP (£), CAD (C$), NGN (₦), GHS (₵), KES (KSh), ZAR (R), JPY (¥), AUD (A$)
+
+Behavior
+
+- All displayed values use selected currency symbol
+
+- Exchange rate multiplies all outputs (income stays in base, expenses can be in destination currency)
+
+- Toggle: "Show in base currency" / "Show in destination currency"
+
+10. EXPORT FUNCTIONALITY
+
+Export Formats
+
+- CSV Export — All data in tabular format, including obligations breakdown
+
+- Text Summary — Formatted plain text report
+
+- JSON Backup — Full state for re-import
+
+- Print-Ready — Clean layout via @media print
+
+Text Summary Template
+
+═══════════════════════════════════════
+       RELOCALC FINANCIAL REPORT
+       Generated: [date]
+═══════════════════════════════════════
+
+INCOME
+  Hourly Wage:        $XX.XX
+  Net Monthly:        $X,XXX.XX
+  Pay Frequency:      Bi-weekly
+  Per Paycheck:       $X,XXX.XX
+
+RECURRING OBLIGATIONS ([count] items)
+  📱 Phone:           $XXX.XX/mo
+  💳 Credit Cards:    $XXX.XX/mo
+  🏦 Loans:           $XXX.XX/mo
+  🛡️ Insurance:       $XXX.XX/mo
+  📺 Subscriptions:   $XXX.XX/mo
+  ─────────────────────────────
+  TOTAL OBLIGATIONS:  $X,XXX.XX/mo
+  % of Net Income:    XX.X%
+
+RELOCATION COSTS (One-Time)
+  [itemized list]
+  TOTAL:              $X,XXX.XX
+
+MONTHLY LIVING EXPENSES
+  [itemized list]
+  TOTAL:              $X,XXX.XX
+
+FINANCIAL SUMMARY
+  Net Monthly Income:     $X,XXX.XX
+  − Obligations:          $X,XXX.XX
+  − Living Expenses:      $X,XXX.XX
+  ═ Monthly Surplus:      $X,XXX.XX
+  Savings Runway:         X.X months
+  Break-Even:             X months
+
+VERDICT: [✅ GO / ⚠️ STRETCH / 🛑 STOP]
+[recommendation text]
+═══════════════════════════════════════
+
+11. LOCAL STORAGE
+
+Behavior
+
+- Auto-save all inputs to localStorage on every change
+
+- Key: relocalc_state_v2
+
+- Load on page open — restore all fields including obligations list
+
+- "Reset All" button with confirmation modal
+
+- Obligations array stored as JSON within the state object
+
+12. TECHNICAL REQUIREMENTS
+
+Stack
+
+- Single HTML file, zero dependencies
+
+- Vanilla CSS + JavaScript only
+
+- No frameworks, no CDN, no build tools
+
+- Works offline after first load
+
+Responsive
+
+- Mobile-first (375px minimum)
+
+- Tablet (768px) — two-column layout
+
+- Desktop (1024px+) — three-column layout
+
+Accessibility
+
+- All inputs labeled with <label> elements
+
+- ARIA roles on dynamic content
+
+- Keyboard navigable (tab order logical)
+
+- Color is never the only indicator (always paired with text/emoji)
+
+Performance
+
+- All calculations run synchronously on input change
+
+- No debounce needed — instant feedback
+
+- Obligations list uses event delegation for efficiency
+
+13. CALCULATION TRIGGER RULES
+
+Every calculation must fire on ANY of these events:
+
+- Any income field changes (wage, hours, days, tax, frequency)
+
+- Any relocation cost item added, removed, or amount changed
+
+- Any living expense item added, removed, or amount changed
+
+- Any obligation added, removed, edited, or frequency changed
+
+- Savings or savings goal changed
+
+- Currency or exchange rate changed
+
+Trigger Method
+
+- Single recalcAll() function called by every input's oninput / onchange event
+
+- Obligations section calls recalcAll() after any add/edit/delete operation
+
+- recalcAll() reads all DOM values, computes everything, updates all output displays
+
+14. SECTION ORDER (Top to Bottom)
+
+- Header — App name, tagline, currency selector
+
+- Income Calculator — Wage inputs → gross/net breakdown
+
+- Recurring Bills & Obligations — Add/manage/summarize ← NEW
+
+- Relocation Costs — One-time itemized list
+
+- Monthly Living Expenses — Destination cost itemized list
+
+- Savings & Runway — Current savings + goal
+
+- Financial Health Dashboard — Visual summary + donut chart
+
+- Feasibility Verdict — GO / STRETCH / STOP
+
+- Export Bar — CSV / Text / JSON / Print buttons
+
+- Footer — Reset button, version, localStorage status
+
+15. VERIFICATION CHECKLIST
+
+#CheckExpected1Page loads with no errors✅ Console clean2Entering hourly wage populates all gross/net fields✅ Instant3Changing hours/days/tax updates all derived values✅ Instant4Pay frequency changes per-paycheck display✅ Correct5Adding an obligation updates monthly total✅ Instant6Changing obligation frequency re-normalizes to monthly✅ Correct7Deleting an obligation updates totals and verdict✅ Instant8Obligation % of income shows correct color coding✅ Green/Yellow/Red9Payoff projection shows for items with remaining balance✅ Months + date10Adding relocation cost updates total and verdict✅ Instant11Adding living expense updates total and verdict✅ Instant12Verdict changes dynamically as inputs change✅ GO/STRETCH/STOP13Savings runway calculates correctly✅ Months14Break-even months calculates correctly✅ Months15Donut chart reflects obligations + expenses + surplus✅ Visual16CSV export includes obligations breakdown✅ All data17Text summary includes obligations section✅ Formatted18JSON export includes full obligations array✅ Re-importable19localStorage saves and restores obligations✅ Persists20Reset clears all fields including obligations✅ Clean slate21Currency switch updates all displayed values✅ Correct symbol22Mobile layout stacks correctly at 375px✅ Readable23All obligation categories show correct icon/color✅ Matches spec24Obligation burden progress bar animates on change✅ Smooth25Print layout hides interactive elements✅ Clean report
+
+#CheckExpected
+
+#
+
+Check
+
+Expected
+
+1Page loads with no errors✅ Console clean
+
+1
+
+Page loads with no errors
+
+✅ Console clean
+
+2Entering hourly wage populates all gross/net fields✅ Instant
+
+2
+
+Entering hourly wage populates all gross/net fields
+
+✅ Instant
+
+3Changing hours/days/tax updates all derived values✅ Instant
+
+3
+
+Changing hours/days/tax updates all derived values
+
+✅ Instant
+
+4Pay frequency changes per-paycheck display✅ Correct
+
+4
+
+Pay frequency changes per-paycheck display
+
+✅ Correct
+
+5Adding an obligation updates monthly total✅ Instant
+
+5
+
+Adding an obligation updates monthly total
+
+✅ Instant
+
+6Changing obligation frequency re-normalizes to monthly✅ Correct
+
+6
+
+Changing obligation frequency re-normalizes to monthly
+
+✅ Correct
+
+7Deleting an obligation updates totals and verdict✅ Instant
+
+7
+
+Deleting an obligation updates totals and verdict
+
+✅ Instant
+
+8Obligation % of income shows correct color coding✅ Green/Yellow/Red
+
+8
+
+Obligation % of income shows correct color coding
+
+✅ Green/Yellow/Red
+
+9Payoff projection shows for items with remaining balance✅ Months + date
+
+9
+
+Payoff projection shows for items with remaining balance
+
+✅ Months + date
+
+10Adding relocation cost updates total and verdict✅ Instant
+
+10
+
+Adding relocation cost updates total and verdict
+
+✅ Instant
+
+11Adding living expense updates total and verdict✅ Instant
+
+11
+
+Adding living expense updates total and verdict
+
+✅ Instant
+
+12Verdict changes dynamically as inputs change✅ GO/STRETCH/STOP
+
+12
+
+Verdict changes dynamically as inputs change
+
+✅ GO/STRETCH/STOP
+
+13Savings runway calculates correctly✅ Months
+
+13
+
+Savings runway calculates correctly
+
+✅ Months
+
+14Break-even months calculates correctly✅ Months
+
+14
+
+Break-even months calculates correctly
+
+✅ Months
+
+15Donut chart reflects obligations + expenses + surplus✅ Visual
+
+15
+
+Donut chart reflects obligations + expenses + surplus
+
+✅ Visual
+
+16CSV export includes obligations breakdown✅ All data
+
+16
+
+CSV export includes obligations breakdown
+
+✅ All data
+
+17Text summary includes obligations section✅ Formatted
+
+17
+
+Text summary includes obligations section
+
+✅ Formatted
+
+18JSON export includes full obligations array✅ Re-importable
+
+18
+
+JSON export includes full obligations array
+
+✅ Re-importable
+
+19localStorage saves and restores obligations✅ Persists
+
+19
+
+localStorage saves and restores obligations
+
+✅ Persists
+
+20Reset clears all fields including obligations✅ Clean slate
+
+20
+
+Reset clears all fields including obligations
+
+✅ Clean slate
+
+21Currency switch updates all displayed values✅ Correct symbol
+
+21
+
+Currency switch updates all displayed values
+
+✅ Correct symbol
+
+22Mobile layout stacks correctly at 375px✅ Readable
+
+22
+
+Mobile layout stacks correctly at 375px
+
+✅ Readable
+
+23All obligation categories show correct icon/color✅ Matches spec
+
+23
+
+All obligation categories show correct icon/color
+
+✅ Matches spec
+
+24Obligation burden progress bar animates on change✅ Smooth
+
+24
+
+Obligation burden progress bar animates on change
+
+✅ Smooth
+
+25Print layout hides interactive elements✅ Clean report
+
+25
+
+Print layout hides interactive elements
+
+✅ Clean report
+
+16. WHAT'S NEW IN V2
+
+FeatureV1V2Recurring Bills Module❌✅ Full CRUD with categoriesObligation Normalization❌✅ Any frequency → monthlyPayoff Projections❌✅ Balance + APR → timelineObligation Burden %❌✅ Color-coded thresholdIncome Allocation DonutBasic✅ 3-segment with obligationsVerdict Logic2-factor✅ 3-factor (includes obligation ratio)Export DetailBasic✅ Full obligations breakdownlocalStorage Schemav1✅ v2 with obligations array
+
+FeatureV1V2
+
+Feature
+
+V1
+
+V2
+
+Recurring Bills Module❌✅ Full CRUD with categories
+
+Recurring Bills Module
+
+❌
+
+✅ Full CRUD with categories
+
+Obligation Normalization❌✅ Any frequency → monthly
+
+Obligation Normalization
+
+❌
+
+✅ Any frequency → monthly
+
+Payoff Projections❌✅ Balance + APR → timeline
+
+Payoff Projections
+
+❌
+
+✅ Balance + APR → timeline
+
+Obligation Burden %❌✅ Color-coded threshold
+
+Obligation Burden %
+
+❌
+
+✅ Color-coded threshold
+
+Income Allocation DonutBasic✅ 3-segment with obligations
+
+Income Allocation Donut
+
+Basic
+
+✅ 3-segment with obligations
+
+Verdict Logic2-factor✅ 3-factor (includes obligation ratio)
+
+Verdict Logic
+
+2-factor
+
+✅ 3-factor (includes obligation ratio)
+
+Export DetailBasic✅ Full obligations breakdown
+
+Export Detail
+
+Basic
+
+✅ Full obligations breakdown
+
+localStorage Schemav1✅ v2 with obligations array
+
+localStorage Schema
+
+v1
+
+✅ v2 with obligations array

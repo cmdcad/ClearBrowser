@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - Start
 
@@ -151,6 +152,7 @@ struct ExpensesStep: View {
                 SummaryRow(label: "Workday Total", value: m.money(m.dailyExpense), bold: true)
                 SummaryRow(label: "Rest Day Total", value: m.money(m.reducedDailyExpense))
                 SummaryRow(label: "Weekly", value: m.money(m.weeklyExpense))
+                SummaryRow(label: "Recurring Bills / month", value: m.money(m.monthlyObligations))
                 SummaryRow(label: "Monthly", value: m.money(m.monthlyExpense))
                 SummaryRow(label: "Yearly", value: m.money(m.yearlyExpense))
             }
@@ -210,6 +212,7 @@ struct DashboardStep: View {
     var body: some View {
         VStack(spacing: 12) {
             gauge
+            allocation
             netSummary
             firstWeek
             runway
@@ -218,6 +221,44 @@ struct DashboardStep: View {
     }
 
     private func netColor(_ n: Double) -> Color { n >= 0 ? .green : .red }
+
+    private var allocation: some View {
+        Card(title: "Monthly Financial Health") {
+            SummaryRow(label: "Net Income", value: m.money(m.netMonthly), color: .green)
+            SummaryRow(label: "Living Expenses", value: m.money(m.monthlyLivingExpense))
+            SummaryRow(label: "Recurring Bills", value: m.money(m.monthlyObligations))
+            Divider()
+            SummaryRow(label: "Surplus / Deficit", value: m.signed(m.monthlyNet), color: netColor(m.monthlyNet), bold: true)
+            SummaryRow(label: "Obligation Burden", value: m.obligationBurden.map { String(format: "%.1f%%", $0) } ?? "N/A — no net income")
+            Chart {
+                SectorMark(angle: .value("Amount", m.monthlyLivingExpense), innerRadius: .ratio(0.65))
+                    .foregroundStyle(by: .value("Category", "Living Expenses"))
+                SectorMark(angle: .value("Amount", m.monthlyObligations), innerRadius: .ratio(0.65))
+                    .foregroundStyle(by: .value("Category", "Recurring Bills"))
+                SectorMark(angle: .value("Amount", max(m.monthlyNet, 0)), innerRadius: .ratio(0.65))
+                    .foregroundStyle(by: .value("Category", "Surplus"))
+            }
+            .chartForegroundStyleScale(["Living Expenses": Color.blue, "Recurring Bills": Color.orange, "Surplus": Color.green])
+            .chartBackground { proxy in
+                GeometryReader { geometry in
+                    if let frame = proxy.plotFrame {
+                        let plot = geometry[frame]
+                        VStack(spacing: 3) {
+                            Text("Net Monthly").font(.caption2).foregroundStyle(.secondary)
+                            Text(m.money(m.netMonthly)).font(.system(.caption, design: .monospaced).bold())
+                        }
+                        .position(x: plot.midX, y: plot.midY)
+                    }
+                }
+            }
+            .frame(height: 200)
+            .accessibilityLabel("Monthly income allocation")
+            if m.monthlyNet < 0 {
+                Text("Expenses exceed income by \(m.money(abs(m.monthlyNet))) per month.")
+                    .font(.footnote).foregroundStyle(.red)
+            }
+        }
+    }
 
     private var gauge: some View {
         Card {
@@ -248,8 +289,8 @@ struct DashboardStep: View {
                     Text("Net").frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                row("Daily", m.netDaily, m.dailyExpense, m.dailyNet)
-                row("Weekly", m.netWeekly, m.weeklyExpense, m.weeklyNet)
+                row("Daily", m.netDaily, m.dailyExpense + m.annualObligations / 365, m.dailyNet)
+                row("Weekly", m.netWeekly, m.weeklyExpense + m.annualObligations / 52, m.weeklyNet)
                 row("Monthly", m.netMonthly, m.monthlyExpense, m.monthlyNet)
                 row("Yearly", m.netYearly, m.yearlyExpense, m.yearlyNet)
             }
@@ -276,6 +317,7 @@ struct DashboardStep: View {
                 value: "\(m.money(m.firstWeekNormalCost)) + \(m.money(m.firstWeekReducedCost))"
             )
             Divider()
+            SummaryRow(label: "Recurring Bills (weekly estimate)", value: m.money(m.annualObligations / 52))
             SummaryRow(label: "Total Week 1 Expense", value: m.money(m.firstWeekExpense), bold: true)
             SummaryRow(label: "Income Week 1", value: m.money(m.netWeekly), color: .green)
             SummaryRow(label: "Net Week 1", value: m.signed(m.firstWeekNet), color: netColor(m.firstWeekNet))
@@ -285,6 +327,9 @@ struct DashboardStep: View {
     private var runway: some View {
         Card(title: "Runway") {
             SummaryRow(label: "Starting Savings", value: m.money(m.savings))
+            SummaryRow(label: "Monthly Living Costs", value: m.money(m.monthlyLivingExpense))
+            SummaryRow(label: "Monthly Recurring Bills", value: m.money(m.monthlyObligations))
+            SummaryRow(label: "Total Monthly Burn", value: m.money(m.monthlyExpense), bold: true)
             SummaryRow(label: "Monthly Net", value: m.signed(m.monthlyNet), color: netColor(m.monthlyNet))
             SummaryRow(label: "If income stops",
                        value: m.runwayNoIncome.map { String(format: "%.1f months", $0) } ?? "∞")
@@ -373,11 +418,200 @@ struct WeeklyStep: View {
                     .minimumScaleFactor(0.7).lineLimit(1)
                 }
             }
+            Text("Weekly recurring bills are averaged across the days, not scheduled by due date.").font(.caption).foregroundStyle(.secondary)
             Text("💡 You'll spend **\(m.weekExpensePct)%** of your first week's income on expenses. By week 2, this drops to **\(m.normalWeekExpensePct)%** as the special first-day costs are gone.")
                 .font(.subheadline)
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+}
+
+
+// MARK: - Recurring bills
+
+struct RecurringBillsStep: View {
+    @ObservedObject var m: ReloCalcModel
+    @State private var draft = RecurringObligation()
+    @State private var editingID: UUID?
+    @State private var showForm = false
+    @State private var showBalance = false
+    @State private var showAPR = false
+    @State private var sortByAmount = false
+    @State private var deleteID: UUID?
+    @State private var resetBills = false
+    @State private var validationError: String?
+
+    private var sortedBills: [RecurringObligation] {
+        m.obligations.sorted {
+            if sortByAmount && $0.monthlyAmount != $1.monthlyAmount { return $0.monthlyAmount > $1.monthlyAmount }
+            if !sortByAmount && $0.category != $1.category {
+                return (ObligationCategory.allCases.firstIndex(of: $0.category) ?? 0) < (ObligationCategory.allCases.firstIndex(of: $1.category) ?? 0)
+            }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+    private var burdenColor: Color {
+        guard let percent = m.obligationBurden else { return m.monthlyObligations > 0 ? .red : .secondary }
+        return percent <= 30 ? .green : (percent <= 50 ? .orange : .red)
+    }
+    var body: some View {
+        VStack(spacing: 12) {
+            Card(title: "Recurring Bills & Obligations") {
+                Text("Bills that follow you wherever you live. Keep destination living expenses separate to avoid counting a bill twice.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                Button {
+                    editingID = nil; draft = RecurringObligation()
+                    showBalance = false; showAPR = false; validationError = nil
+                    withAnimation { showForm = true }
+                } label: { Label("Add Bill", systemImage: "plus") }
+                    .buttonStyle(.borderedProminent).clipShape(Capsule())
+                Picker("Sort bills", selection: $sortByAmount) {
+                    Text("Category").tag(false)
+                    Text("Monthly amount").tag(true)
+                }.pickerStyle(.segmented)
+            }
+            if showForm { editor }
+            if m.obligations.isEmpty {
+                Card {
+                    Text("No recurring bills yet.").font(.headline)
+                    Text("Add phone plans, loan payments, insurance, or subscriptions.").font(.footnote).foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(sortedBills) { bill in
+                    if !sortByAmount && sortedBills.first(where: { $0.category == bill.category })?.id == bill.id {
+                        Text(bill.category.rawValue).font(.subheadline.bold())
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
+                    }
+                    billCard(bill)
+                        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
+                            if value.translation.width < -80 && abs(value.translation.height) < 40 { deleteID = bill.id }
+                        })
+                }
+            }
+            Card(title: "Obligations Summary") {
+                SummaryRow(label: "Total Monthly", value: m.money(m.monthlyObligations), bold: true)
+                SummaryRow(label: "Total Annual", value: m.money(m.annualObligations))
+                SummaryRow(label: "Bills", value: String(m.obligations.count))
+                SummaryRow(label: "% of Net Income", value: m.obligationBurden.map { String(format: "%.1f%%", $0) } ?? "N/A — no net income", color: burdenColor)
+                ProgressView(value: min(max((m.obligationBurden ?? 0) / 100, 0), 1)).tint(burdenColor)
+                    .animation(.easeInOut, value: m.monthlyObligations)
+                Text("Low: ≤30% · Moderate: >30–50% · High: >50%")
+                    .font(.caption).foregroundStyle(.secondary)
+                if !m.obligations.isEmpty {
+                    Button("Reset All Bills", role: .destructive) { resetBills = true }.font(.footnote)
+                }
+            }
+        }
+        .alert("Delete bill?", isPresented: Binding(get: { deleteID != nil }, set: { if !$0 { deleteID = nil } })) {
+            Button("Cancel", role: .cancel) { deleteID = nil }
+            Button("Delete", role: .destructive) {
+                if let id = deleteID {
+                    m.obligations.removeAll { $0.id == id }
+                    if editingID == id { showForm = false; editingID = nil }
+                }
+                deleteID = nil
+            }
+        } message: { Text("This removes the bill from your plan and updates your totals.") }
+        .alert("Reset all recurring bills?", isPresented: $resetBills) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset Bills", role: .destructive) { m.obligations = []; showForm = false; editingID = nil }
+        } message: { Text("Your income, living expenses, and relocation costs will be kept.") }
+    }
+    private var editor: some View {
+        Card(title: editingID == nil ? "Add Bill" : "Edit Bill") {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("Bill name", text: $draft.name).textFieldStyle(.roundedBorder).accessibilityLabel("Bill name")
+                Picker("Category", selection: $draft.category) {
+                    ForEach(ObligationCategory.allCases) { Text($0.rawValue).tag($0) }
+                }
+                NumberField(title: "Payment Amount", value: $draft.amount, prefix: m.currency.rawValue)
+                Picker("Payment Frequency", selection: $draft.frequency) {
+                    ForEach(ObligationFrequency.allCases) { Text($0.rawValue).tag($0) }
+                }
+                Toggle("Include remaining balance", isOn: $showBalance)
+                if showBalance {
+                    NumberField(title: "Remaining Balance", value: Binding(get: { draft.remainingBalance ?? 0 }, set: { draft.remainingBalance = $0 }), prefix: m.currency.rawValue)
+                    Toggle("Include APR", isOn: $showAPR)
+                    if showAPR {
+                        NumberField(title: "Interest Rate (APR)", value: Binding(get: { draft.apr ?? 0 }, set: { draft.apr = $0 }), suffix: "%")
+                    }
+                }
+                Toggle("Auto-Pay", isOn: $draft.autoPay)
+                Text("Auto-Pay is a label only; this app does not make payments.").font(.caption).foregroundStyle(.secondary)
+                TextField("Notes (optional)", text: $draft.notes, axis: .vertical).textFieldStyle(.roundedBorder).accessibilityLabel("Bill notes")
+                if let validationError { Text(validationError).font(.footnote).foregroundStyle(.red) }
+                HStack {
+                    Button("Save Bill") { save() }.buttonStyle(.borderedProminent)
+                    Button("Cancel") { withAnimation { showForm = false }; validationError = nil }
+                }
+            }
+        }
+    }
+    private func save() {
+        var bill = draft
+        bill.name = bill.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        bill.remainingBalance = showBalance ? (bill.remainingBalance ?? 0) : nil
+        bill.apr = showBalance && showAPR ? (bill.apr ?? 0) : nil
+        if let error = bill.validationMessage { validationError = error; return }
+        if let id = editingID, let index = m.obligations.firstIndex(where: { $0.id == id }) {
+            m.obligations[index] = bill
+        } else {
+            guard m.obligations.count < 1000 else { validationError = "Your plan can contain up to 1,000 bills."; return }
+            m.obligations.append(bill)
+        }
+        withAnimation { showForm = false }
+        editingID = nil; validationError = nil
+    }
+    private func billCard(_ bill: RecurringObligation) -> some View {
+        Card {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: bill.category.icon).font(.title2).foregroundStyle(bill.category.color)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(bill.name).font(.headline)
+                    Text(bill.category.rawValue).font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(bill.category.color.opacity(0.12), in: Capsule())
+                    if bill.autoPay { Label("Auto-Pay", systemImage: "arrow.triangle.2.circlepath").font(.caption) }
+                }
+                Spacer(minLength: 4)
+                Menu {
+                    Button("Edit", systemImage: "pencil") {
+                        draft = bill; editingID = bill.id
+                        showBalance = bill.remainingBalance != nil; showAPR = bill.apr != nil
+                        validationError = nil; withAnimation { showForm = true }
+                    }
+                    Button("Duplicate", systemImage: "doc.on.doc") {
+                        draft = bill; draft.id = UUID(); draft.name += " (copy)"; editingID = nil
+                        showBalance = bill.remainingBalance != nil; showAPR = bill.apr != nil
+                        validationError = nil; withAnimation { showForm = true }
+                    }
+                    Button("Delete", systemImage: "trash", role: .destructive) { deleteID = bill.id }
+                } label: { Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44) }
+                    .accessibilityLabel("Actions for \(bill.name)")
+            }
+            Text("\(m.money(bill.amount)) / \(bill.frequency.rawValue.lowercased())")
+                .font(.system(.subheadline, design: .monospaced).bold())
+            Text("\(m.money(bill.monthlyAmount)) monthly equivalent").font(.caption).foregroundStyle(.secondary)
+            if !bill.notes.isEmpty { Text(bill.notes).font(.footnote).foregroundStyle(.secondary) }
+            if let balance = bill.remainingBalance {
+                Divider()
+                SummaryRow(label: "Remaining Balance", value: m.money(balance))
+                if let payoff = bill.payoff {
+                    Text(payoff.months == 0 ? "Paid off" : "Estimated payoff: \(payoff.months) months")
+                        .font(.footnote.bold())
+                    if let date = payoff.date(), payoff.months > 0 {
+                        Text(date.formatted(date: .abbreviated, time: .omitted)).font(.caption)
+                    }
+                    SummaryRow(label: "Estimated Interest", value: m.money(payoff.interest))
+                    ProgressView(value: balance > 0 ? min(max((bill.monthlyAmount - balance * (bill.apr ?? 0) / 1200) / balance, 0), 1) : 1)
+                    Text("Projected share of remaining principal covered in one month. Assumes unchanged payments and APR.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text("No payoff within 100 years at this payment; it may not cover monthly interest.")
+                        .font(.footnote).foregroundStyle(.red)
+                }
+            }
         }
     }
 }

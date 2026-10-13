@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum ReloStep: Int, CaseIterable {
-    case start, income, expenses, dashboard, weekly, export
+    case start, income, bills, expenses, dashboard, weekly, export
     var title: String {
         switch self {
         case .start: return "Start"
         case .income: return "Income"
+        case .bills: return "Bills"
         case .expenses: return "Expenses"
         case .dashboard: return "Dashboard"
         case .weekly: return "Weekly"
@@ -38,6 +39,7 @@ struct ReloCalcView: View {
                     switch step {
                     case .start: StartStep(m: model)
                     case .income: IncomeStep(m: model)
+                    case .bills: RecurringBillsStep(m: model)
                     case .expenses: ExpensesStep(m: model)
                     case .dashboard: DashboardStep(m: model)
                     case .weekly: WeeklyStep(m: model)
