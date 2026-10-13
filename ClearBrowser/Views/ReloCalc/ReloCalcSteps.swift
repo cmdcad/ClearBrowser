@@ -98,7 +98,7 @@ struct IncomeStep: View {
 // MARK: - Expenses
 
 private enum ExpenseSection: String, CaseIterable, Identifiable {
-    case normal = "Normal Day", first = "First Day", setup = "Setup"
+    case normal = "Normal Day", first = "First Day", setup = "Setup", recurring = "Recurring"
     var id: String { rawValue }
 }
 
@@ -117,6 +117,7 @@ struct ExpensesStep: View {
             case .normal: normal
             case .first: first
             case .setup: setup
+            case .recurring: recurring
             }
         }
     }
@@ -141,6 +142,7 @@ struct ExpensesStep: View {
                     NumberField(title: "Housing / day", value: $m.housing, prefix: cur, suffix: "/day")
                 }
                 NumberField(title: "Miscellaneous / day", value: $m.misc, prefix: cur, suffix: "/day")
+                CustomExpenseEditor(items: $m.dailyExtras, currency: cur, frequency: .daily)
             }
             Card(title: "Expense Summary") {
                 SummaryRow(label: "Transport", value: m.money(m.transport))
@@ -168,6 +170,7 @@ struct ExpensesStep: View {
                 NumberField(title: "Hotel (First Night)", value: $m.firstHotel, prefix: cur)
                 NumberField(title: "Food (First Day)", value: $m.firstFood, prefix: cur)
                 NumberField(title: "Other First-Day Costs", value: $m.firstOther, prefix: cur)
+                CustomExpenseEditor(items: $m.arrivalExtras, currency: cur, frequency: .yearly, recurring: false)
             }
             Card(title: "First Day Total") {
                 SummaryRow(label: "Transport (3 legs)", value: m.money(m.firstDayTransport))
@@ -192,11 +195,72 @@ struct ExpensesStep: View {
                 NumberField(title: "Groceries / Supplies", value: $m.groceries, prefix: cur)
                 NumberField(title: "Work Equipment", value: $m.equipment, prefix: cur)
                 NumberField(title: "Visa / Permit Fees", value: $m.visa, prefix: cur)
+                CustomExpenseEditor(items: $m.setupExtras, currency: cur, frequency: .yearly, recurring: false)
             }
             Card(title: "Setup Cost Total") {
                 Text(m.money(m.setupTotal))
                     .font(.system(size: 32, weight: .heavy, design: .monospaced))
                     .frame(maxWidth: .infinity)
+            }
+        }
+    }
+    private var recurring: some View {
+        VStack(spacing: 12) {
+            Card {
+                Text("Include bills, subscriptions, credit cards and loan payments not already counted elsewhere.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                CustomExpenseEditor(items: $m.recurringExtras, currency: cur, frequency: .monthly)
+            }
+            Card(title: "Recurring Summary") {
+                SummaryRow(label: "Monthly", value: m.money(m.recurringMonthly), bold: true)
+                SummaryRow(label: "Yearly", value: m.money(m.recurringYearly))
+                Text("Weekly figures allocate recurring costs evenly; actual due dates may differ.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+struct CustomExpenseEditor: View {
+    @Binding var items: [CustomExpense]
+    let currency: String
+    let frequency: ExpenseFrequency
+    var recurring = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach($items) { $item in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        TextField("Expense name", text: $item.name).textFieldStyle(.roundedBorder)
+                        Button(role: .destructive) { items.removeAll { $0.id == item.id } } label: {
+                            Image(systemName: "trash")
+                        }
+                    }
+                    NumberField(title: "Amount", value: $item.amount, prefix: currency)
+                    if recurring {
+                        Picker("Frequency", selection: $item.frequency) {
+                            ForEach(ExpenseFrequency.allCases) { f in Text(f.rawValue.capitalized).tag(f) }
+                        }
+                        TextField("Category", text: $item.category).textFieldStyle(.roundedBorder)
+                        Toggle("Autopay", isOn: $item.isAutopay)
+                        Toggle("Set due date", isOn: Binding(
+                            get: { item.dueDate != nil },
+                            set: { item.dueDate = $0 ? Date() : nil }
+                        ))
+                        if item.dueDate != nil {
+                            DatePicker("Due date", selection: Binding(
+                                get: { item.dueDate ?? Date() },
+                                set: { item.dueDate = $0 }
+                            ), displayedComponents: .date)
+                        }
+                    }
+                }
+                .padding(10)
+                .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+            }
+            Button { items.append(CustomExpense(frequency: frequency)) } label: {
+                Label("Add Another", systemImage: "plus.circle")
             }
         }
     }
@@ -248,8 +312,8 @@ struct DashboardStep: View {
                     Text("Net").frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                row("Daily", m.netDaily, m.dailyExpense, m.dailyNet)
-                row("Weekly", m.netWeekly, m.weeklyExpense, m.weeklyNet)
+                row("Daily", m.netDaily, m.dailyExpense + m.recurringYearly / 365, m.dailyNet)
+                row("Weekly", m.netWeekly, m.weeklyExpense + m.recurringWeekly, m.weeklyNet)
                 row("Monthly", m.netMonthly, m.monthlyExpense, m.monthlyNet)
                 row("Yearly", m.netYearly, m.yearlyExpense, m.yearlyNet)
             }
