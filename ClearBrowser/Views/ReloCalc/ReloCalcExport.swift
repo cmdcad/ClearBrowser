@@ -13,6 +13,10 @@ struct ReloCalcBackup: Codable {
     let setup: Setup
     let obligations: [RecurringObligation]?
     let weekly: Weekly
+    let dailyExtras: [CustomExpense]?
+    let arrivalExtras: [CustomExpense]?
+    let setupExtras: [CustomExpense]?
+    let recurringExtras: [CustomExpense]?
 
     struct Profile: Codable {
         let name: String
@@ -131,6 +135,10 @@ struct ReloCalcBackup: Codable {
         )
         obligations = model.obligations
         weekly = Weekly(startDay: model.startDay)
+        dailyExtras = model.dailyExtras
+        arrivalExtras = model.arrivalExtras
+        setupExtras = model.setupExtras
+        recurringExtras = model.recurringExtras
     }
 
     func validate() throws {
@@ -172,6 +180,7 @@ struct ReloCalcBackup: Codable {
             ("work equipment", setup.equipment),
             ("visa / permit fees", setup.visa)
         ])
+        for entry in (dailyExtras ?? []) + (arrivalExtras ?? []) + (setupExtras ?? []) + (recurringExtras ?? []) { try requireNonnegative([("custom expense", entry.amount)]) }
         try requireRange("hours per day", income.hours, 1...24)
         try requireRange("tax rate", income.tax, 0...100)
         try requireRange("overtime hours", income.overtimeHours, 0...80)
@@ -218,6 +227,10 @@ struct ReloCalcBackup: Codable {
         model.visa = setup.visa
         model.obligations = obligations ?? []
         model.startDay = weekly.startDay
+        model.dailyExtras = dailyExtras ?? []
+        model.arrivalExtras = arrivalExtras ?? []
+        model.setupExtras = setupExtras ?? []
+        model.recurringExtras = recurringExtras ?? []
     }
 
     private func requireNonnegative(_ values: [(String, Double)]) throws {
@@ -355,6 +368,11 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Total Monthly Burn (including bills)", number(model.monthlyExpense)],
             ["Total Annual Burn (including bills)", number(model.yearlyExpense)],
             [],
+            ["=== CUSTOM DAILY ==="],
+            ...model.dailyExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] },
+            ["=== RECURRING ==="],
+            ...model.recurringExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] },
+            ["Monthly Equivalent", number(model.recurringMonthly)],
             ["=== FIRST DAY ==="],
             ["Transport (3 legs)", number(model.firstDayTransport)],
             ["Hotel", number(model.firstHotel)],
@@ -362,6 +380,8 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Other", number(model.firstOther)],
             ["Total", number(model.firstDayTotal)],
             [],
+            ["=== CUSTOM ARRIVAL ==="],
+            ...model.arrivalExtras.map { [$0.name, number($0.amount)] },
             ["=== SETUP COSTS ==="],
             ["Security Deposit", number(model.deposit)],
             ["SIM / Phone Plan", number(model.sim)],
@@ -370,6 +390,8 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Visa / Permit Fees", number(model.visa)],
             ["Total One-Time", number(model.setupTotal)],
             [],
+            ["=== CUSTOM SETUP ==="],
+            ...model.setupExtras.map { [$0.name, number($0.amount)] },
             ["=== DASHBOARD ==="],
             ["Feasibility Score", "\(model.score)%"],
             ["Status", model.verdict.title],
@@ -446,12 +468,17 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Weekly: \(model.money(model.weeklyExpense))",
             "Monthly living expenses: \(model.money(model.monthlyLivingExpense))",
             "",
+            "Custom daily: " + model.dailyExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
+            "Recurring: " + model.recurringExtras.map { $0.name + ": " + model.money($0.amount) + "/" + $0.frequency.rawValue }.joined(separator: "; "),
+            "Recurring monthly: " + model.money(model.recurringMonthly),
             "FIRST DAY",
             "Total: \(model.money(model.firstDayTotal)) (vs normal workday \(model.signed(model.firstDayDiff)))",
             "",
+            "Custom arrival: " + model.arrivalExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
             "SETUP COSTS",
             "One-time: \(model.money(model.setupTotal))",
             "",
+            "Custom setup: " + model.setupExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
             "NET INCOME",
             "Daily: \(model.signed(model.dailyNet))",
             "Weekly: \(model.signed(model.weeklyNet))",

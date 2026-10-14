@@ -52,6 +52,30 @@ struct WeekDayRow: Identifiable {
     var net: Double { income - expense }
 }
 
+enum ExpenseFrequency: String, Codable, CaseIterable, Identifiable {
+ case daily, weekly, biweekly, monthly, quarterly, yearly
+ var id: String { rawValue }
+ var annualFactor: Double {
+  switch self {
+  case .daily: return 365
+  case .weekly: return 52
+  case .biweekly: return 26
+  case .monthly: return 12
+  case .quarterly: return 4
+  case .yearly: return 1
+  }
+ }
+}
+struct CustomExpense: Codable, Identifiable {
+ var id = UUID()
+ var name = ""
+ var amount = 0.0
+ var frequency: ExpenseFrequency = .monthly
+ var category = "Other"
+ var dueDate: Date? = nil
+ var isAutopay = false
+ var annualCost: Double { amount * frequency.annualFactor }
+}
 final class ReloCalcModel: ObservableObject {
     @Published private(set) var autosaveError: String?
 
@@ -103,6 +127,17 @@ final class ReloCalcModel: ObservableObject {
     @Published var equipment = 300.0
     @Published var visa = 0.0
 
+    @Published var dailyExtras: [CustomExpense] = []
+    @Published var arrivalExtras: [CustomExpense] = []
+    @Published var setupExtras: [CustomExpense] = []
+    @Published var recurringExtras: [CustomExpense] = []
+    var dailyExtraCost: Double { dailyExtras.reduce(0) { $0 + $1.annualCost / 365 } }
+    var arrivalExtraCost: Double { arrivalExtras.reduce(0) { $0 + $1.amount } }
+    var setupExtraCost: Double { setupExtras.reduce(0) { $0 + $1.amount } }
+    var recurringYearly: Double { recurringExtras.reduce(0) { $0 + $1.annualCost } }
+    var recurringWeekly: Double { recurringYearly / 52 }
+    var recurringMonthly: Double { recurringYearly / 12 }
+
     // Weekly detail: 0 = Mon … 6 = Sun
     @Published var startDay = 2
 
@@ -150,8 +185,8 @@ final class ReloCalcModel: ObservableObject {
     var netYearly: Double { grossYearly * netFactor }
 
     // MARK: Expenses
-    var dailyExpense: Double { transport + food + housing + misc }
-    var reducedDailyExpense: Double { food + housing }
+    var dailyExpense: Double { transport + food + housing + misc + dailyExtraCost }
+    var reducedDailyExpense: Double { food + housing + dailyExtraCost }
     var weeklyExpense: Double {
         dailyExpense * Double(expenseDays)
             + reducedDailyExpense * Double(7 - expenseDays)
@@ -164,10 +199,10 @@ final class ReloCalcModel: ObservableObject {
     var yearlyExpense: Double { weeklyExpense * 52 + annualObligations }
 
     var firstDayTransport: Double { toAirport + airportToSite + siteToHotel }
-    var firstDayTotal: Double { firstDayTransport + firstHotel + firstFood + firstOther }
+    var firstDayTotal: Double { firstDayTransport + firstHotel + firstFood + firstOther + arrivalExtraCost }
     var firstDayDiff: Double { firstDayTotal - dailyExpense }
 
-    var setupTotal: Double { deposit + sim + groceries + equipment + visa }
+    var setupTotal: Double { deposit + sim + groceries + equipment + visa + setupExtraCost }
 
     // MARK: Dashboard
     var dailyNet: Double { netDaily - dailyExpense - annualObligations / 365 }
