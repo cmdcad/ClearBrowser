@@ -63,6 +63,11 @@ final class ReloCalcModel: ObservableObject {
     @Published var userName = ""
     @Published var city = ""
     @Published var savings = 10000.0
+    @Published var expectedBonus: Double?
+    var availableFunds: Double {
+        guard let bonus = expectedBonus, bonus.isFinite, bonus >= 0 else { return savings }
+        return savings + bonus
+    }
     @Published var currency: Currency = .usd
 
     // Income
@@ -180,9 +185,9 @@ final class ReloCalcModel: ObservableObject {
     var firstWeekNet: Double { netWeekly - firstWeekExpense }
 
     /// Months savings last if income stops. nil = no expenses (infinite).
-    var runwayNoIncome: Double? { monthlyExpense > 0 ? savings / monthlyExpense : nil }
+    var runwayNoIncome: Double? { monthlyExpense > 0 ? availableFunds / monthlyExpense : nil }
     /// Months until savings run out at current net. nil = net positive.
-    var monthsUntilDepleted: Double? { monthlyNet < 0 ? savings / abs(monthlyNet) : nil }
+    var monthsUntilDepleted: Double? { monthlyNet < 0 ? availableFunds / abs(monthlyNet) : nil }
 
     var relocationCost: Double { setupTotal + max(firstDayDiff, 0) }
     var breakEvenDays: Int? { dailyNet > 0 ? Int(ceil(relocationCost / dailyNet)) : nil }
@@ -192,13 +197,37 @@ final class ReloCalcModel: ObservableObject {
         let s1 = min(max(savRate, 0) / 25 * 40, 40)
         let s2 = min((runwayNoIncome ?? .infinity) / 6 * 25, 25)
         let s3 = dailyNet > 0 ? 20.0 : 0
-        let s4: Double = savings > monthlyExpense * 3 ? 15 : (savings > monthlyExpense ? 10 : 5)
+        let s4: Double = availableFunds > monthlyExpense * 3 ? 15 : (availableFunds > monthlyExpense ? 10 : 5)
         return Int((s1 + s2 + s3 + s4).rounded())
     }
     var verdict: Verdict {
         guard netMonthly > 0, monthlyNet > 0,
               (obligationBurden ?? 100) <= 50 else { return .atRisk }
-        return savings >= relocationCost && score >= 70 && (obligationBurden ?? 100) <= 30 ? .thriving : .manageable
+        return availableFunds >= relocationCost && score >= 70 && (obligationBurden ?? 100) <= 30 ? .thriving : .manageable
+    }
+
+    /// Scenario values are previews only and never mutate saved inputs.
+    func whatIf(hourlyIncrease: Double, monthlyRentReduction: Double) -> ReloScenario {
+        let increase = hourlyIncrease.isFinite ? max(0, hourlyIncrease) : 0
+        let requestedReduction = monthlyRentReduction.isFinite ? max(0, monthlyRentReduction) : 0
+        let reduction = min(requestedReduction, max(housing * 7 * 4.33, 0))
+        let income = netMonthly + increase * hoursPerDay * Double(incomeDays) * 4.33 * netFactor
+        let burn = monthlyExpense - reduction
+        let surplus = income - burn
+        let ratio = income > 0 ? monthlyObligations / income * 100 : 100
+        let dailySurplus = dailyNet + increase * hoursPerDay * netFactor + reduction / (7 * 4.33)
+        let runway = burn > 0 ? availableFunds / burn : nil
+        let savingsRate = income > 0 ? surplus / income * 100 : 0
+        let score = Int((min(max(savingsRate, 0) / 25 * 40, 40)
+            + min((runway ?? .infinity) / 6 * 25, 25)
+            + (dailySurplus > 0 ? 20.0 : 0)
+            + (availableFunds > burn * 3 ? 15.0 : (availableFunds > burn ? 10.0 : 5.0))).rounded())
+        let result: Verdict
+        if income <= 0 || surplus <= 0 || ratio > 50 { result = .atRisk }
+        else if availableFunds >= relocationCost && score >= 70 && ratio <= 30 { result = .thriving }
+        else { result = .manageable }
+        return ReloScenario(netMonthly: income, monthlyExpense: burn, monthlySurplus: surplus,
+                            rentReduction: reduction, score: score, verdict: result, runway: runway)
     }
 
     // MARK: Weekly detail
@@ -315,4 +344,15 @@ struct RecurringObligation: Codable, Identifiable {
         }
         return nil
     }
+}
+
+
+struct ReloScenario {
+    let netMonthly: Double
+    let monthlyExpense: Double
+    let monthlySurplus: Double
+    let rentReduction: Double
+    let score: Int
+    let verdict: Verdict
+    let runway: Double?
 }

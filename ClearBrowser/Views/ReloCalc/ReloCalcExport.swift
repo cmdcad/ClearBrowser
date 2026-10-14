@@ -18,6 +18,7 @@ struct ReloCalcBackup: Codable {
         let name: String
         let city: String
         let savings: Double
+        let expectedBonus: Double?
         let currency: String
     }
 
@@ -94,6 +95,7 @@ struct ReloCalcBackup: Codable {
             name: model.userName,
             city: model.city,
             savings: model.savings,
+            expectedBonus: model.expectedBonus,
             currency: model.currency.rawValue
         )
         income = Income(
@@ -150,6 +152,7 @@ struct ReloCalcBackup: Codable {
         }
         try requireNonnegative([
             ("savings", profile.savings),
+            ("expected bonus", profile.expectedBonus ?? 0),
             ("wage", income.wage),
             ("overtime rate", income.overtimeRate),
             ("overtime hours", income.overtimeHours),
@@ -188,6 +191,7 @@ struct ReloCalcBackup: Codable {
         model.userName = profile.name
         model.city = profile.city
         model.savings = profile.savings
+        model.expectedBonus = profile.expectedBonus
         model.currency = currency
         model.wage = income.wage
         model.hoursPerDay = income.hours
@@ -324,6 +328,8 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["City", model.city.isEmpty ? "N/A" : model.city],
             ["Currency", model.currency.rawValue],
             ["Starting Savings", number(model.savings)],
+            ["Expected Bonus (one-time take-home)", model.expectedBonus.map { number($0) } ?? "Not entered"],
+            ["Available Funds", number(model.availableFunds)],
             [],
             ["=== INCOME ==="],
             ["Hourly Wage", number(model.wage)],
@@ -417,6 +423,8 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Name: \(model.userName.isEmpty ? "N/A" : model.userName) | City: \(model.city.isEmpty ? "N/A" : model.city)",
             "Generated: \(Date.now.formatted(date: .numeric, time: .omitted))",
             "Starting Savings: \(model.money(model.savings))",
+            "Expected Bonus (one-time take-home): " + (model.expectedBonus.map { model.money($0) } ?? "Not entered"),
+            "Available Funds: \(model.money(model.availableFunds))",
             "",
             "FEASIBILITY SCORE",
             "\(model.score)% — \(model.verdict.title)",

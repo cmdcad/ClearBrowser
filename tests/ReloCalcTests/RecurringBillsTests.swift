@@ -57,4 +57,44 @@ final class RecurringBillsTests: XCTestCase {
         let damagedBackup = try JSONDecoder().decode(ReloCalcBackup.self, from: JSONSerialization.data(withJSONObject: legacy))
         XCTAssertThrowsError(try damagedBackup.validate())
     }
+    @MainActor
+    func testOptionalBonusAndWhatIfLeaveInputsUnchanged() throws {
+        let suite = "ReloScenarioTests-" + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let model = ReloCalcModel(defaults: defaults)
+        XCTAssertNil(model.expectedBonus)
+        let income = model.netMonthly
+        let baselineRunway = try XCTUnwrap(model.runwayNoIncome)
+        model.expectedBonus = 2000
+        XCTAssertEqual(model.availableFunds, model.savings + 2000)
+        XCTAssertEqual(model.netMonthly, income)
+        XCTAssertGreaterThan(try XCTUnwrap(model.runwayNoIncome), baselineRunway)
+        let before = try ReloCalcExportFormat.json.data(for: model)
+        let baseline = model.whatIf(hourlyIncrease: 0, monthlyRentReduction: 0)
+        XCTAssertEqual(baseline.monthlySurplus, model.monthlyNet, accuracy: 0.000001)
+        XCTAssertEqual(baseline.score, model.score)
+        XCTAssertEqual(baseline.verdict.title, model.verdict.title)
+        let scenario = model.whatIf(hourlyIncrease: 5, monthlyRentReduction: 200)
+        let increase = 5 * model.hoursPerDay * Double(model.incomeDays) * 4.33 * (1 - model.taxRate / 100)
+        XCTAssertEqual(scenario.monthlySurplus - model.monthlyNet, increase + 200, accuracy: 0.000001)
+        XCTAssertEqual(model.wage, 40)
+        XCTAssertEqual(model.housing, 50)
+        XCTAssertEqual(model.expectedBonus, 2000)
+        XCTAssertEqual(model.savings, 10000)
+        let capped = model.whatIf(hourlyIncrease: 0, monthlyRentReduction: 1_000_000)
+        XCTAssertEqual(capped.rentReduction, model.housing * 7 * 4.33, accuracy: 0.000001)
+        XCTAssertGreaterThanOrEqual(capped.monthlyExpense, 0)
+        let backup = try JSONDecoder().decode(ReloCalcBackup.self, from: before)
+        XCTAssertEqual(backup.profile.expectedBonus, 2000)
+        model.expectedBonus = nil
+        XCTAssertEqual(model.availableFunds, model.savings)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: before) as? [String: Any])
+        var profile = try XCTUnwrap(json["profile"] as? [String: Any])
+        profile.removeValue(forKey: "expectedBonus"); json["profile"] = profile
+        let old = try JSONDecoder().decode(ReloCalcBackup.self, from: JSONSerialization.data(withJSONObject: json))
+        try old.validate(); try old.apply(to: model)
+        XCTAssertNil(model.expectedBonus)
+    }
+
 }

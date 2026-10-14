@@ -23,6 +23,27 @@ struct StartStep: View {
             Card(title: "Starting Finances") {
                 NumberField(title: "Starting Savings", value: $m.savings, prefix: m.currency.rawValue)
                 VStack(alignment: .leading, spacing: 4) {
+                    Text("Expected Bonus (optional)").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                    HStack {
+                        Text(m.currency.rawValue).foregroundStyle(.secondary)
+                        TextField("Leave blank if none", value: $m.expectedBonus, format: .number)
+                            .keyboardType(.decimalPad)
+                            .font(.system(.body, design: .monospaced))
+                            .accessibilityLabel("Expected Bonus, optional")
+                        if m.expectedBonus != nil {
+                            Button { m.expectedBonus = nil } label: { Image(systemName: "xmark.circle.fill") }
+                                .accessibilityLabel("Clear expected bonus")
+                        }
+                    }
+                    .padding(10)
+                    .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+                    Text("One-time take-home amount available for the move. Included in available funds, not monthly income.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if let bonus = m.expectedBonus, bonus < 0 || !bonus.isFinite {
+                        Text("Enter a nonnegative bonus or leave it blank.").font(.caption).foregroundStyle(.red)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Currency").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                     Picker("Currency", selection: $m.currency) {
                         ForEach(Currency.allCases) { Text($0.label).tag($0) }
@@ -208,10 +229,13 @@ struct ExpensesStep: View {
 
 struct DashboardStep: View {
     @ObservedObject var m: ReloCalcModel
+    @State private var hourlyIncrease = 0.0
+    @State private var rentReduction = 0.0
 
     var body: some View {
         VStack(spacing: 12) {
             gauge
+            whatIfControls
             allocation
             netSummary
             firstWeek
@@ -221,6 +245,53 @@ struct DashboardStep: View {
     }
 
     private func netColor(_ n: Double) -> Color { n >= 0 ? .green : .red }
+
+    private var whatIfControls: some View {
+        let scenario = m.whatIf(hourlyIncrease: hourlyIncrease, monthlyRentReduction: rentReduction)
+        return Card(title: "What If") {
+            Text("Try a scenario without changing your saved inputs. The dashboard below remains your current plan.")
+                .font(.footnote).foregroundStyle(.secondary)
+            Toggle("Earn \(m.money(5))/hr more", isOn: Binding(
+                get: { hourlyIncrease > 0 }, set: { hourlyIncrease = $0 ? 5 : 0 }))
+            HStack {
+                Text("Hourly increase")
+                Spacer()
+                Text("+\(m.money(hourlyIncrease))/hr").monospacedDigit()
+            }.font(.caption)
+            Slider(value: $hourlyIncrease, in: 0...20, step: 1)
+                .accessibilityLabel("What if hourly wage increase")
+            Toggle("Rent \(m.money(200))/month less", isOn: Binding(
+                get: { rentReduction > 0 }, set: { rentReduction = $0 ? 200 : 0 }))
+            HStack {
+                Text("Monthly rent reduction")
+                Spacer()
+                Text(m.money(scenario.rentReduction)).monospacedDigit()
+            }.font(.caption)
+            Slider(value: $rentReduction, in: 0...1000, step: 25)
+                .accessibilityLabel("What if monthly rent reduction")
+            Text("Rent reduction is capped at your current monthly housing cost.")
+                .font(.caption2).foregroundStyle(.secondary)
+            Divider()
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Current plan").font(.caption).foregroundStyle(.secondary)
+                    Text(m.verdict.title).font(.caption.bold()).foregroundStyle(m.verdict.color)
+                }
+                Spacer()
+                Image(systemName: "arrow.right")
+                Spacer()
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("What If · \(scenario.score)%").font(.caption).foregroundStyle(.secondary)
+                    Text(scenario.verdict.title).font(.caption.bold()).foregroundStyle(scenario.verdict.color)
+                }
+            }
+            SummaryRow(label: "Scenario Monthly Surplus", value: m.signed(scenario.monthlySurplus), color: netColor(scenario.monthlySurplus), bold: true)
+            SummaryRow(label: "Change / Month", value: m.signed(scenario.monthlySurplus - m.monthlyNet), color: .green)
+            SummaryRow(label: "Runway Without Income", value: scenario.runway.map { String(format: "%.1f months", $0) } ?? "∞")
+            Button("Reset Scenario") { hourlyIncrease = 0; rentReduction = 0 }
+                .disabled(hourlyIncrease == 0 && rentReduction == 0)
+        }
+    }
 
     private var allocation: some View {
         Card(title: "Monthly Financial Health") {
@@ -327,6 +398,10 @@ struct DashboardStep: View {
     private var runway: some View {
         Card(title: "Runway") {
             SummaryRow(label: "Starting Savings", value: m.money(m.savings))
+            if let bonus = m.expectedBonus {
+                SummaryRow(label: "Expected Bonus", value: m.money(bonus))
+            }
+            SummaryRow(label: "Available Funds", value: m.money(m.availableFunds), bold: true)
             SummaryRow(label: "Monthly Living Costs", value: m.money(m.monthlyLivingExpense))
             SummaryRow(label: "Monthly Recurring Bills", value: m.money(m.monthlyObligations))
             SummaryRow(label: "Total Monthly Burn", value: m.money(m.monthlyExpense), bold: true)
