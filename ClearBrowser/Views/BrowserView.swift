@@ -121,6 +121,7 @@ struct BrowserView: UIViewRepresentable {
                                             canGoForward: webView.canGoForward,
                                             title: webView.title,
                                             url: webView.url)
+            viewModel.captureTabPreview()
             autoScrollManager.scrollView = webView.scrollView
             print("[AutoScroll] webView didFinish: assigned scrollView -> \(webView.scrollView)")
         }

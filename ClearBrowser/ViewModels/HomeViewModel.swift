@@ -45,10 +45,72 @@ enum ToolbarPosition: String, CaseIterable, Identifiable {
 final class HomeViewModel: NSObject, ObservableObject {
     // MARK: - Tab Management
     @Published var tabs: [BrowserTab] = [BrowserTab(url: URL(string: "https://www.bing.com")!)]
+    @Published private(set) var tabPreviews: [UUID: UIImage] = [:]
+    private var previewRequests: [UUID: UUID] = [:]
+    private var privatePreviewIDs = Set<UUID>()
+    private var previewPrivacyRevision = 0
     @Published var activeTabID: UUID
     
     var activeTab: BrowserTab? {
         tabs.first { $0.id == activeTabID }
+    }
+
+    private struct SavedTabPreview: Codable {
+        let url: URL
+        let image: Data
+    }
+    private var previewDirectory: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("TabPreviews", isDirectory: true)
+    }
+    private func previewFile(_ id: UUID) -> URL? {
+        previewDirectory?.appendingPathComponent(id.uuidString + ".json")
+    }
+    private func restoreTabPreviews() {
+        guard let directory = previewDirectory else { return }
+        let validNames = Set(tabs.map { $0.id.uuidString + ".json" })
+        if let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+            for file in files where !validNames.contains(file.lastPathComponent) { try? FileManager.default.removeItem(at: file) }
+        }
+        for tab in tabs {
+            guard let file = previewFile(tab.id), let data = try? Data(contentsOf: file),
+                  let preview = try? JSONDecoder().decode(SavedTabPreview.self, from: data),
+                  preview.url == tab.url, let image = UIImage(data: preview.image) else { continue }
+            tabPreviews[tab.id] = image
+        }
+    }
+    func captureTabPreview() {
+        guard let view = currentWebView, !view.isLoading, view.bounds.width > 0, view.bounds.height > 0,
+              let tab = activeTab, view.url == tab.url else { return }
+        let requestID = UUID()
+        previewRequests[tab.id] = requestID
+        let privacyRevision = previewPrivacyRevision
+        let privateCapture = isPrivateMode
+        let configuration = WKSnapshotConfiguration()
+        configuration.rect = view.bounds
+        configuration.snapshotWidth = 320
+        configuration.afterScreenUpdates = true
+        view.takeSnapshot(with: configuration) { [weak self, weak view] image, _ in
+            guard let self, let image, self.previewRequests[tab.id] == requestID,
+                  self.previewPrivacyRevision == privacyRevision,
+                  self.tabs.contains(where: { $0.id == tab.id && $0.url == tab.url }),
+                  view?.url == tab.url else { return }
+            self.tabPreviews[tab.id] = image
+            if privateCapture {
+                self.privatePreviewIDs.insert(tab.id)
+                return
+            }
+            self.privatePreviewIDs.remove(tab.id)
+            guard let directory = self.previewDirectory, let file = self.previewFile(tab.id),
+                  let jpeg = image.jpegData(compressionQuality: 0.65),
+                  let data = try? JSONEncoder().encode(SavedTabPreview(url: tab.url, image: jpeg)) else { return }
+            do {
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try data.write(to: file, options: [.atomic, .completeFileProtection])
+            } catch {
+                // A failed image write leaves the live preview and saved tab metadata intact.
+            }
+        }
     }
 
     // Update these to be computed or updated based on the active tab
@@ -65,7 +127,14 @@ final class HomeViewModel: NSObject, ObservableObject {
 
     private var authListenerHandle: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
-    @Published var isPrivateMode = false
+    @Published var isPrivateMode = false {
+        didSet {
+            guard oldValue != isPrivateMode else { return }
+            previewPrivacyRevision += 1
+            for id in privatePreviewIDs { tabPreviews.removeValue(forKey: id) }
+            privatePreviewIDs.removeAll()
+        }
+    }
     @Published var toolbarPosition: ToolbarPosition = .top {
         didSet { saveSettings() }
     }
@@ -183,6 +252,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         
         // 2. Load saved data. This will attempt to overwrite activeTabID from settings.
         loadPersistentData()
+        restoreTabPreviews()
 
         // 3. Listen for Auth changes to handle auto-sync on launch/re-install
         setupAuthListener()
@@ -238,6 +308,7 @@ final class HomeViewModel: NSObject, ObservableObject {
         
         // Update the tab model
         if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
+            if tabs[index].url != targetURL { tabPreviews.removeValue(forKey: activeTabID) }
             tabs[index].url = targetURL
             saveSettings()
         }
@@ -253,6 +324,10 @@ final class HomeViewModel: NSObject, ObservableObject {
     func closeTab(id: UUID) {
         guard tabs.count > 1 else { return }
         tabs.removeAll { $0.id == id }
+        tabPreviews.removeValue(forKey: id)
+        previewRequests.removeValue(forKey: id)
+        privatePreviewIDs.remove(id)
+        if let file = previewFile(id) { try? FileManager.default.removeItem(at: file) }
         if activeTabID == id {
             activeTabID = tabs.last?.id ?? tabs[0].id
             if let active = activeTab {
@@ -264,6 +339,7 @@ final class HomeViewModel: NSObject, ObservableObject {
     }
 
     func switchTab(to id: UUID) {
+        captureTabPreview()
         activeTabID = id
         if let active = activeTab {
             addressBarText = active.url.absoluteString
@@ -333,6 +409,7 @@ final class HomeViewModel: NSObject, ObservableObject {
             
             // Update the active tab's URL for persistence
             if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
+                if tabs[index].url != url { tabPreviews.removeValue(forKey: activeTabID) }
                 tabs[index].url = url
                 tabs[index].title = title ?? url.host ?? "New Tab"
             }

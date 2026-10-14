@@ -13,7 +13,8 @@ struct TabManagerView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(viewModel.tabs) { tab in
-                        TabCard(tab: tab, 
+                        TabCard(tab: tab,
+                                preview: viewModel.tabPreviews[tab.id],
                                 isActive: viewModel.activeTabID == tab.id,
                                 onSelect: {
                                     viewModel.switchTab(to: tab.id)
@@ -27,6 +28,7 @@ struct TabManagerView: View {
                 .padding()
             }
             .background(Color(uiColor: .systemGroupedBackground))
+            .onAppear { viewModel.captureTabPreview() }
             .navigationTitle("Tabs")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,6 +54,7 @@ struct TabManagerView: View {
 
 struct TabCard: View {
     let tab: BrowserTab
+    let preview: UIImage?
     let isActive: Bool
     let onSelect: () -> Void
     let onClose: () -> Void
@@ -69,15 +72,29 @@ struct TabCard: View {
                 }
             }
             
-            Spacer()
-            
+            Group {
+                if let preview {
+                    Image(uiImage: preview).resizable().scaledToFill()
+                } else {
+                    ZStack {
+                        Color(uiColor: .tertiarySystemBackground)
+                        Image(systemName: "globe").font(.largeTitle).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(height: 140)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityLabel(preview == nil ? "Preview unavailable" : "Last viewed page preview")
+
             Text(tab.url.host ?? tab.url.absoluteString)
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .lineLimit(2)
         }
         .padding(12)
-        .frame(height: 120)
+        .frame(height: 205)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(uiColor: .secondarySystemBackground))
