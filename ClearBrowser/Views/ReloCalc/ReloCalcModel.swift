@@ -253,10 +253,15 @@ final class ReloCalcModel: ObservableObject {
         let dailySurplus = dailyNet + increase * hoursPerDay * netFactor + reduction / (7 * 4.33)
         let runway = burn > 0 ? availableFunds / burn : nil
         let savingsRate = income > 0 ? surplus / income * 100 : 0
-        let score = Int((min(max(savingsRate, 0) / 25 * 40, 40)
-            + min((runway ?? .infinity) / 6 * 25, 25)
-            + (dailySurplus > 0 ? 20.0 : 0)
-            + (availableFunds > burn * 3 ? 15.0 : (availableFunds > burn ? 10.0 : 5.0))).rounded())
+        let savingsScore: Double = min(max(savingsRate, 0) / 25 * 40, 40)
+        let runwayScore: Double = min((runway ?? .infinity) / 6 * 25, 25)
+        let surplusScore: Double = dailySurplus > 0 ? 20 : 0
+        let reservesScore: Double
+        if availableFunds > burn * 3 { reservesScore = 15 }
+        else if availableFunds > burn { reservesScore = 10 }
+        else { reservesScore = 5 }
+        let totalScore = savingsScore + runwayScore + surplusScore + reservesScore
+        let score = Int(totalScore.rounded())
         let result: Verdict
         if income <= 0 || surplus <= 0 || ratio > 50 { result = .atRisk }
         else if availableFunds >= relocationCost && score >= 70 && ratio <= 30 { result = .thriving }

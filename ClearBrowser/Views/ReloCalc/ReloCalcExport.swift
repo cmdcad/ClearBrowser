@@ -369,9 +369,13 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Total Annual Burn (including bills)", number(model.yearlyExpense)],
             [],
             ["=== CUSTOM DAILY ==="],
-            ...model.dailyExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] },
+        ]
+        rows.append(contentsOf: model.dailyExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] })
+        rows += [
             ["=== RECURRING ==="],
-            ...model.recurringExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] },
+        ]
+        rows.append(contentsOf: model.recurringExtras.map { [$0.name, number($0.amount), $0.frequency.rawValue] })
+        rows += [
             ["Monthly Equivalent", number(model.recurringMonthly)],
             ["=== FIRST DAY ==="],
             ["Transport (3 legs)", number(model.firstDayTransport)],
@@ -381,7 +385,9 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Total", number(model.firstDayTotal)],
             [],
             ["=== CUSTOM ARRIVAL ==="],
-            ...model.arrivalExtras.map { [$0.name, number($0.amount)] },
+        ]
+        rows.append(contentsOf: model.arrivalExtras.map { [$0.name, number($0.amount)] })
+        rows += [
             ["=== SETUP COSTS ==="],
             ["Security Deposit", number(model.deposit)],
             ["SIM / Phone Plan", number(model.sim)],
@@ -391,7 +397,9 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             ["Total One-Time", number(model.setupTotal)],
             [],
             ["=== CUSTOM SETUP ==="],
-            ...model.setupExtras.map { [$0.name, number($0.amount)] },
+        ]
+        rows.append(contentsOf: model.setupExtras.map { [$0.name, number($0.amount)] })
+        rows += [
             ["=== DASHBOARD ==="],
             ["Feasibility Score", "\(model.score)%"],
             ["Status", model.verdict.title],
@@ -438,18 +446,40 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
     }
 
     private func textReport(for model: ReloCalcModel) -> String {
+        let dailyExtrasSummary = model.dailyExtras.map { item -> String in
+            let amount = model.money(item.amount)
+            return "\(item.name): \(amount)"
+        }.joined(separator: "; ")
+        let recurringExtrasSummary = model.recurringExtras.map { item -> String in
+            let amount = model.money(item.amount)
+            return "\(item.name): \(amount)/\(item.frequency.rawValue)"
+        }.joined(separator: "; ")
+        let arrivalExtrasSummary = model.arrivalExtras.map { item -> String in
+            let amount = model.money(item.amount)
+            return "\(item.name): \(amount)"
+        }.joined(separator: "; ")
+        let setupExtrasSummary = model.setupExtras.map { item -> String in
+            let amount = model.money(item.amount)
+            return "\(item.name): \(amount)"
+        }.joined(separator: "; ")
         let dayNames = model.weekRows.map { $0.name }
-        var lines = [
+        var lines: [String] = [
             "RELOCALC FINANCIAL REPORT",
+        ]
+        lines += [
             "",
             "Name: \(model.userName.isEmpty ? "N/A" : model.userName) | City: \(model.city.isEmpty ? "N/A" : model.city)",
             "Generated: \(Date.now.formatted(date: .numeric, time: .omitted))",
             "Starting Savings: \(model.money(model.savings))",
             "Expected Bonus (one-time take-home): " + (model.expectedBonus.map { model.money($0) } ?? "Not entered"),
             "Available Funds: \(model.money(model.availableFunds))",
+        ]
+        lines += [
             "",
             "FEASIBILITY SCORE",
             "\(model.score)% — \(model.verdict.title)",
+        ]
+        lines += [
             "",
             "INCOME (\(model.incomeDays) workdays/week)",
             "Hourly: \(model.money(model.wage))/hr × \(model.hoursPerDay) hrs",
@@ -457,6 +487,8 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Weekly: \(model.money(model.netWeekly)) net",
             "Monthly: \(model.money(model.netMonthly)) net",
             "Yearly: \(model.money(model.netYearly)) net",
+        ]
+        lines += [
             "",
             "EXPENSES (\(model.expenseDays) full-cost days/week)",
             "Transport: \(model.money(model.transport))/workday",
@@ -467,29 +499,39 @@ enum ReloCalcExportFormat: String, CaseIterable, Identifiable {
             "Rest day total: \(model.money(model.reducedDailyExpense))",
             "Weekly: \(model.money(model.weeklyExpense))",
             "Monthly living expenses: \(model.money(model.monthlyLivingExpense))",
+        ]
+        lines += [
             "",
-            "Custom daily: " + model.dailyExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
-            "Recurring: " + model.recurringExtras.map { $0.name + ": " + model.money($0.amount) + "/" + $0.frequency.rawValue }.joined(separator: "; "),
+            "Custom daily: " + dailyExtrasSummary,
+            "Recurring: " + recurringExtrasSummary,
             "Recurring monthly: " + model.money(model.recurringMonthly),
             "FIRST DAY",
             "Total: \(model.money(model.firstDayTotal)) (vs normal workday \(model.signed(model.firstDayDiff)))",
+        ]
+        lines += [
             "",
-            "Custom arrival: " + model.arrivalExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
+            "Custom arrival: " + arrivalExtrasSummary,
             "SETUP COSTS",
             "One-time: \(model.money(model.setupTotal))",
+        ]
+        lines += [
             "",
-            "Custom setup: " + model.setupExtras.map { $0.name + ": " + model.money($0.amount) }.joined(separator: "; "),
+            "Custom setup: " + setupExtrasSummary,
             "NET INCOME",
             "Daily: \(model.signed(model.dailyNet))",
             "Weekly: \(model.signed(model.weeklyNet))",
             "Monthly: \(model.signed(model.monthlyNet))",
             "Yearly: \(model.signed(model.yearlyNet))",
+        ]
+        lines += [
             "",
             "ANALYSIS",
             "Relocation cost: \(model.money(model.relocationCost))",
             "Break-even: \(model.breakEvenDays.map { "Day \($0)" } ?? "Never")",
             model.monthsUntilDepleted.map { "Funds deplete in \(String(format: "%.1f", $0)) months" }
                 ?? "Net Positive — Savings grow over time",
+        ]
+        lines += [
             "",
             "FIRST WEEK",
             "Day | Income | Expense | Net"
