@@ -13,12 +13,11 @@ final class MirrorTTSService {
         string: "https://mirror-api-991075429415.us-central1.run.app/api/audio"
     )!
 
-    private struct ProbeResponse: Decodable {
-        let error: String?
-        let detail: String?
+    private struct HealthResponse: Decodable {
+        let status: String?
     }
 
-    /// A bounded HTTP check verifies the service, rather than just the host.
+    /// A bounded HTTP check verifies the service health before routing requests.
     private func preferredEndpoint() async throws -> URL {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 5
@@ -27,20 +26,15 @@ final class MirrorTTSService {
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
-        // The local AudioVIX server has no /health route. Empty input safely
-        // checks the real audio route without generating or storing audio.
-        var request = URLRequest(url: localBaseURL.appendingPathComponent("api/audio"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data("{\"text\":\"\"}".utf8)
-        request.timeoutInterval = 5
+
+        let request = URLRequest(url: localBaseURL.appendingPathComponent("health"))
         do {
             let (data, response) = try await session.data(for: request)
             try Task.checkCancellation()
             if let http = response as? HTTPURLResponse,
-               http.statusCode == 400,
-               let probe = try? JSONDecoder().decode(ProbeResponse.self, from: data),
-               ["text or verses is required", "text is required"].contains(probe.error ?? probe.detail ?? "") {
+               http.statusCode == 200,
+               let health = try? JSONDecoder().decode(HealthResponse.self, from: data),
+               health.status?.lowercased() == "ok" {
                 return localBaseURL.appendingPathComponent("api/audio")
             }
         } catch {

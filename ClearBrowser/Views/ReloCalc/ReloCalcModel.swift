@@ -242,32 +242,67 @@ final class ReloCalcModel: ObservableObject {
     }
 
     /// Scenario values are previews only and never mutate saved inputs.
-    func whatIf(hourlyIncrease: Double, monthlyRentReduction: Double) -> ReloScenario {
-        let increase = hourlyIncrease.isFinite ? max(0, hourlyIncrease) : 0
+    func whatIf(hourlyIncrease: Double, monthlyRentReduction: Double, hoursIncrease: Double = 0) -> ReloScenario {
+        let wageInc = hourlyIncrease.isFinite ? max(0, hourlyIncrease) : 0
+        let hoursInc = hoursIncrease.isFinite ? max(0, hoursIncrease) : 0
         let requestedReduction = monthlyRentReduction.isFinite ? max(0, monthlyRentReduction) : 0
         let reduction = min(requestedReduction, max(housing * 7 * 4.33, 0))
-        let income = netMonthly + increase * hoursPerDay * Double(incomeDays) * 4.33 * netFactor
-        let burn = monthlyExpense - reduction
-        let surplus = income - burn
-        let ratio = income > 0 ? monthlyObligations / income * 100 : 100
-        let dailySurplus = dailyNet + increase * hoursPerDay * netFactor + reduction / (7 * 4.33)
-        let runway = burn > 0 ? availableFunds / burn : nil
-        let savingsRate = income > 0 ? surplus / income * 100 : 0
-        let savingsScore: Double = min(max(savingsRate, 0) / 25 * 40, 40)
-        let runwayScore: Double = min((runway ?? .infinity) / 6 * 25, 25)
-        let surplusScore: Double = dailySurplus > 0 ? 20 : 0
-        let reservesScore: Double
-        if availableFunds > burn * 3 { reservesScore = 15 }
-        else if availableFunds > burn { reservesScore = 10 }
-        else { reservesScore = 5 }
-        let totalScore = savingsScore + runwayScore + surplusScore + reservesScore
-        let score = Int(totalScore.rounded())
+
+        // Recompute income with wage and hours increase
+        let sGrossDaily = (wage + wageInc) * (hoursPerDay + hoursInc)
+        let sGrossWeekly = sGrossDaily * Double(incomeDays) + overtimeRate * overtimeHours
+        let sNetDaily = sGrossDaily * netFactor
+        let sNetWeekly = sGrossWeekly * netFactor
+        let sNetMonthly = sGrossWeekly * 4.33 * netFactor
+        let sNetYearly = sGrossWeekly * 52 * netFactor
+
+        // Recompute expenses with rent reduction spread across daily housing
+        let dailyReduction = reduction / (7 * 4.33)
+        let sDailyExpense = max(dailyExpense - dailyReduction, 0)
+        let sReducedDaily = max(reducedDailyExpense - dailyReduction, 0)
+        let sWeeklyExpense = sDailyExpense * Double(expenseDays) + sReducedDaily * Double(7 - expenseDays)
+        let sMonthlyLiving = sWeeklyExpense * 4.33
+        let sMonthlyExpense = sMonthlyLiving + monthlyObligations
+        let sYearlyExpense = sWeeklyExpense * 52 + annualObligations
+
+        // Net values
+        let sDailyNet = sNetDaily - sDailyExpense - annualObligations / 365
+        let sWeeklyNet = sNetWeekly - sWeeklyExpense - annualObligations / 52
+        let sMonthlyNet = sNetMonthly - sMonthlyExpense
+        let sYearlyNet = sNetYearly - sYearlyExpense
+
+        // Runway & depletion
+        let sRunway: Double? = sMonthlyExpense > 0 ? availableFunds / sMonthlyExpense : nil
+        let sDepleted: Double? = sMonthlyNet < 0 ? availableFunds / abs(sMonthlyNet) : nil
+
+        // Break-even
+        let sBreakEven: Int? = sDailyNet > 0 ? Int(ceil(relocationCost / sDailyNet)) : nil
+
+        // Score
+        let ratio = sNetMonthly > 0 ? monthlyObligations / sNetMonthly * 100 : 100
+        let savingsRate = sNetMonthly > 0 ? sMonthlyNet / sNetMonthly * 100 : 0
+        let s1 = min(max(savingsRate, 0) / 25 * 40, 40)
+        let s2 = min((sRunway ?? .infinity) / 6 * 25, 25)
+        let s3: Double = sDailyNet > 0 ? 20 : 0
+        let s4: Double
+        if availableFunds > sMonthlyExpense * 3 { s4 = 15 }
+        else if availableFunds > sMonthlyExpense { s4 = 10 }
+        else { s4 = 5 }
+        let score = Int((s1 + s2 + s3 + s4).rounded())
         let result: Verdict
-        if income <= 0 || surplus <= 0 || ratio > 50 { result = .atRisk }
+        if sNetMonthly <= 0 || sMonthlyNet <= 0 || ratio > 50 { result = .atRisk }
         else if availableFunds >= relocationCost && score >= 70 && ratio <= 30 { result = .thriving }
         else { result = .manageable }
-        return ReloScenario(netMonthly: income, monthlyExpense: burn, monthlySurplus: surplus,
-                            rentReduction: reduction, score: score, verdict: result, runway: runway)
+
+        return ReloScenario(
+            netMonthly: sNetMonthly, monthlyExpense: sMonthlyExpense,
+            monthlySurplus: sMonthlyNet, rentReduction: reduction,
+            score: score, verdict: result, runway: sRunway,
+            netDaily: sNetDaily, netWeekly: sNetWeekly, netYearly: sNetYearly,
+            monthlyLivingExpense: sMonthlyLiving,
+            dailyNet: sDailyNet, weeklyNet: sWeeklyNet, yearlyNet: sYearlyNet,
+            monthsUntilDepleted: sDepleted, breakEvenDays: sBreakEven
+        )
     }
 
     // MARK: Weekly detail
@@ -395,4 +430,14 @@ struct ReloScenario {
     let score: Int
     let verdict: Verdict
     let runway: Double?
+    // Downstream section fields
+    let netDaily: Double
+    let netWeekly: Double
+    let netYearly: Double
+    let monthlyLivingExpense: Double
+    let dailyNet: Double
+    let weeklyNet: Double
+    let yearlyNet: Double
+    let monthsUntilDepleted: Double?
+    let breakEvenDays: Int?
 }
