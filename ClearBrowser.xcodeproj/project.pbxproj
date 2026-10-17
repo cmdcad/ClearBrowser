@@ -56,6 +56,10 @@
 		D30000012F90000100000004 /* BingBotModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000012F90000100000003 /* BingBotModel.swift */; };
 		D30000012F90000100000006 /* BingBotBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000012F90000100000005 /* BingBotBrowser.swift */; };
 		D30000012F90000100000008 /* BingBotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000012F90000100000007 /* BingBotView.swift */; };
+		D40000012F90000100000002 /* ReaderDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000001 /* ReaderDocument.swift */; };
+		D40000012F90000100000004 /* ReaderAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000003 /* ReaderAudioService.swift */; };
+		D40000012F90000100000006 /* TextReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000005 /* TextReaderModel.swift */; };
+		D40000012F90000100000008 /* TextReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000007 /* TextReaderView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -108,6 +112,10 @@
 		D30000012F90000100000003 /* BingBotModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BingBotModel.swift; path = ClearBrowser/Views/BingBot/BingBotModel.swift; sourceTree = SOURCE_ROOT; };
 		D30000012F90000100000005 /* BingBotBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BingBotBrowser.swift; path = ClearBrowser/Views/BingBot/BingBotBrowser.swift; sourceTree = SOURCE_ROOT; };
 		D30000012F90000100000007 /* BingBotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BingBotView.swift; path = ClearBrowser/Views/BingBot/BingBotView.swift; sourceTree = SOURCE_ROOT; };
+		D40000012F90000100000001 /* ReaderDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReaderDocument.swift; path = ClearBrowser/Views/TextReader/ReaderDocument.swift; sourceTree = SOURCE_ROOT; };
+		D40000012F90000100000003 /* ReaderAudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReaderAudioService.swift; path = ClearBrowser/Views/TextReader/ReaderAudioService.swift; sourceTree = SOURCE_ROOT; };
+		D40000012F90000100000005 /* TextReaderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextReaderModel.swift; path = ClearBrowser/Views/TextReader/TextReaderModel.swift; sourceTree = SOURCE_ROOT; };
+		D40000012F90000100000007 /* TextReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextReaderView.swift; path = ClearBrowser/Views/TextReader/TextReaderView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -226,6 +234,10 @@
 				C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
 				D10000012F90000100000001 /* AppsView.swift */,
+				D40000012F90000100000007 /* TextReaderView.swift */,
+				D40000012F90000100000005 /* TextReaderModel.swift */,
+				D40000012F90000100000003 /* ReaderAudioService.swift */,
+				D40000012F90000100000001 /* ReaderDocument.swift */,
 				D30000012F90000100000007 /* BingBotView.swift */,
 				D30000012F90000100000005 /* BingBotBrowser.swift */,
 				D30000012F90000100000003 /* BingBotModel.swift */,
@@ -371,6 +383,10 @@
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 				5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */,
 				D10000012F90000100000002 /* AppsView.swift in Sources */,
+				D40000012F90000100000008 /* TextReaderView.swift in Sources */,
+				D40000012F90000100000006 /* TextReaderModel.swift in Sources */,
+				D40000012F90000100000004 /* ReaderAudioService.swift in Sources */,
+				D40000012F90000100000002 /* ReaderDocument.swift in Sources */,
 				D30000012F90000100000008 /* BingBotView.swift in Sources */,
 				D30000012F90000100000006 /* BingBotBrowser.swift in Sources */,
 				D30000012F90000100000004 /* BingBotModel.swift in Sources */,

@@ -3,21 +3,22 @@ import StoreKit
 import FirebaseAuth
 
 private enum HubApp: String, CaseIterable, Identifiable {
-    case reloCalc, creditTrack, bingBot
+    case reloCalc, creditTrack, bingBot, textReader
     var id: String { rawValue }
     var productID: String { "com.mikeso.ClearBrowser.apphub." + rawValue }
     var title: String {
-        switch self { case .reloCalc: return "ReloCalc"; case .creditTrack: return "CreditTrack"; case .bingBot: return "BingBot" }
+        switch self { case .reloCalc: return "ReloCalc"; case .creditTrack: return "CreditTrack"; case .bingBot: return "BingBot"; case .textReader: return "Text Reader" }
     }
     var subtitle: String {
         switch self {
         case .reloCalc: return "Plan your relocation budget"
         case .creditTrack: return "Track payments and pay off debt"
         case .bingBot: return "Build queries and track Bing searches"
+        case .textReader: return "Turn text and articles into read-along audio"
         }
     }
     var icon: String {
-        switch self { case .reloCalc: return "globe.americas.fill"; case .creditTrack: return "creditcard.fill"; case .bingBot: return "magnifyingglass" }
+        switch self { case .reloCalc: return "globe.americas.fill"; case .creditTrack: return "creditcard.fill"; case .bingBot: return "magnifyingglass"; case .textReader: return "text.book.closed.fill" }
     }
 }
 
@@ -57,6 +58,7 @@ private final class HubPurchases: ObservableObject {
         }
     }
     func owns(_ app: HubApp) -> Bool {
+        if app == .textReader { return true }
         #if DEBUG
         if debugAccess { return true }
         #endif
@@ -92,7 +94,7 @@ private final class HubPurchases: ObservableObject {
         await refreshDeveloperAccess()
         await refreshEntitlements()
         do {
-            let available = try await Product.products(for: HubApp.allCases.map(\.productID))
+            let available = try await Product.products(for: HubApp.allCases.filter { $0 != .textReader }.map(\.productID))
             products = Dictionary(uniqueKeysWithValues: available.filter { $0.type == .nonConsumable }.map { ($0.id, $0) })
         } catch {
             message = "Purchase options could not load. Check your connection and try again."
@@ -146,6 +148,7 @@ struct AppsView: View {
                 case .reloCalc: ReloCalcView(model: model, action: onClose)
                 case .creditTrack: CreditTrackView { selectedApp = nil }
                 case .bingBot: BingBotView { selectedApp = nil }
+                case .textReader: TextReaderView { selectedApp = nil }
                 }
             } else {
                 VStack(alignment: .leading, spacing: 20) {
@@ -156,7 +159,7 @@ struct AppsView: View {
                         Spacer()
                         Color.clear.frame(width: 68)
                     }.font(.subheadline).frame(height: 32)
-                    Text("Each app is a separate one-time purchase.").font(.subheadline).foregroundStyle(.secondary)
+                    Text("Your apps and reading tools. Paid apps are one-time purchases.").font(.subheadline).foregroundStyle(.secondary)
                     #if DEBUG
                     Toggle("Developer access (Debug only)", isOn: $purchases.debugAccess)
                         .font(.subheadline)
@@ -191,7 +194,7 @@ struct AppsView: View {
                                 .frame(maxWidth: .infinity, minHeight: 170, alignment: .leading).padding(16)
                                 .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
                             }
-                            .buttonStyle(.plain).disabled(purchases.checking)
+                            .buttonStyle(.plain).disabled(purchases.checking && app != .textReader)
                             .accessibilityLabel(purchases.owns(app) ? "Open \(app.title)" : "Unlock \(app.title)")
                         }
                     }
