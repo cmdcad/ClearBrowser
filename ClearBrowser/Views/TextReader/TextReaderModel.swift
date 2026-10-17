@@ -66,7 +66,7 @@ final class TextReaderModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
             documents.sort { $0.updated > $1.updated }
         } catch { message = "Could not load the reading library: \(error.localizedDescription)" }
         interruptions = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.pause() }
+            Task { @MainActor [weak self] in self?.pause() }
         }
     }
 
@@ -295,7 +295,7 @@ final class TextReaderModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, let player = self.player else { return }
                 self.time = player.currentTime
                 self.updateHighlight()
