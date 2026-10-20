@@ -3,11 +3,12 @@ import StoreKit
 import FirebaseAuth
 
 private enum HubApp: String, CaseIterable, Identifiable {
-    case reloCalc, creditTrack, bingBot, textReader
+    case reloCalc, creditTrack, bingBot, textReader, pointsTrack
     var id: String { rawValue }
+    var requiresPurchase: Bool { self != .textReader && self != .pointsTrack }
     var productID: String { "com.mikeso.ClearBrowser.apphub." + rawValue }
     var title: String {
-        switch self { case .reloCalc: return "ReloCalc"; case .creditTrack: return "CreditTrack"; case .bingBot: return "BingBot"; case .textReader: return "Text Reader" }
+        switch self { case .reloCalc: return "ReloCalc"; case .creditTrack: return "CreditTrack"; case .bingBot: return "BingBot"; case .textReader: return "Text Reader"; case .pointsTrack: return "PointsTrack" }
     }
     var subtitle: String {
         switch self {
@@ -15,10 +16,11 @@ private enum HubApp: String, CaseIterable, Identifiable {
         case .creditTrack: return "Track payments and pay off debt"
         case .bingBot: return "Build queries and track Bing searches"
         case .textReader: return "Turn text and articles into read-along audio"
+        case .pointsTrack: return "Track reward points and project future value"
         }
     }
     var icon: String {
-        switch self { case .reloCalc: return "globe.americas.fill"; case .creditTrack: return "creditcard.fill"; case .bingBot: return "magnifyingglass"; case .textReader: return "text.book.closed.fill" }
+        switch self { case .reloCalc: return "globe.americas.fill"; case .creditTrack: return "creditcard.fill"; case .bingBot: return "magnifyingglass"; case .textReader: return "text.book.closed.fill"; case .pointsTrack: return "star.circle.fill" }
     }
 }
 
@@ -58,7 +60,7 @@ private final class HubPurchases: ObservableObject {
         }
     }
     func owns(_ app: HubApp) -> Bool {
-        if app == .textReader { return true }
+        if !app.requiresPurchase { return true }
         #if DEBUG
         if debugAccess { return true }
         #endif
@@ -94,7 +96,7 @@ private final class HubPurchases: ObservableObject {
         await refreshDeveloperAccess()
         await refreshEntitlements()
         do {
-            let available = try await Product.products(for: HubApp.allCases.filter { $0 != .textReader }.map(\.productID))
+            let available = try await Product.products(for: HubApp.allCases.filter { $0.requiresPurchase }.map(\.productID))
             products = Dictionary(uniqueKeysWithValues: available.filter { $0.type == .nonConsumable }.map { ($0.id, $0) })
         } catch {
             message = "Purchase options could not load. Check your connection and try again."
@@ -149,6 +151,7 @@ struct AppsView: View {
                 case .creditTrack: CreditTrackView { selectedApp = nil }
                 case .bingBot: BingBotView { selectedApp = nil }
                 case .textReader: TextReaderView { selectedApp = nil }
+                case .pointsTrack: PointsTrackView { selectedApp = nil }
                 }
             } else {
                 VStack(alignment: .leading, spacing: 20) {
@@ -168,34 +171,36 @@ struct AppsView: View {
                         Label("Developer account · All apps unlocked", systemImage: "checkmark.shield.fill")
                             .font(.caption).foregroundStyle(.green)
                     }
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(HubApp.allCases) { app in
-                            Button {
-                                if purchases.owns(app) { selectedApp = app } else { purchaseApp = app }
-                            } label: {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Image(systemName: app.icon)
-                                        .font(.system(size: 28, weight: .medium)).foregroundStyle(.white)
-                                        .frame(width: 56, height: 56)
-                                        .background((app == .reloCalc ? Color.teal : Color.blue).gradient, in: RoundedRectangle(cornerRadius: 16))
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(app.title).font(.headline).foregroundStyle(.primary)
-                                        Text(app.subtitle).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(HubApp.allCases) { app in
+                                Button {
+                                    if purchases.owns(app) { selectedApp = app } else { purchaseApp = app }
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 14) {
+                                        Image(systemName: app.icon)
+                                            .font(.system(size: 28, weight: .medium)).foregroundStyle(.white)
+                                            .frame(width: 56, height: 56)
+                                            .background((app == .reloCalc ? Color.teal : Color.blue).gradient, in: RoundedRectangle(cornerRadius: 16))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(app.title).font(.headline).foregroundStyle(.primary)
+                                            Text(app.subtitle).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+                                        }
+                                        Spacer(minLength: 0)
+                                        Label(purchases.owns(app) ? "Open" : (purchases.products[app.productID]?.displayPrice ?? "$2.99 USD"),
+                                              systemImage: purchases.owns(app) ? "checkmark.circle" : "lock.fill")
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(purchases.owns(app) ? Color.green : Color.blue)
+                                        if !purchases.owns(app) {
+                                            Text("One-time purchase").font(.caption2).foregroundStyle(.secondary)
+                                        }
                                     }
-                                    Spacer(minLength: 0)
-                                    Label(purchases.owns(app) ? "Open" : (purchases.products[app.productID]?.displayPrice ?? "$2.99 USD"),
-                                          systemImage: purchases.owns(app) ? "checkmark.circle" : "lock.fill")
-                                        .font(.subheadline.bold())
-                                        .foregroundStyle(purchases.owns(app) ? Color.green : Color.blue)
-                                    if !purchases.owns(app) {
-                                        Text("One-time purchase").font(.caption2).foregroundStyle(.secondary)
-                                    }
+                                    .frame(maxWidth: .infinity, minHeight: 170, alignment: .leading).padding(16)
+                                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
                                 }
-                                .frame(maxWidth: .infinity, minHeight: 170, alignment: .leading).padding(16)
-                                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                                .buttonStyle(.plain).disabled(purchases.checking && app.requiresPurchase)
+                                .accessibilityLabel(purchases.owns(app) ? "Open \(app.title)" : "Unlock \(app.title)")
                             }
-                            .buttonStyle(.plain).disabled(purchases.checking && app != .textReader)
-                            .accessibilityLabel(purchases.owns(app) ? "Open \(app.title)" : "Unlock \(app.title)")
                         }
                     }
                     if purchases.checking { ProgressView("Checking purchases…") }

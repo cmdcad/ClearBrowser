@@ -60,6 +60,9 @@
 		D40000012F90000100000004 /* ReaderAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000003 /* ReaderAudioService.swift */; };
 		D40000012F90000100000006 /* TextReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000005 /* TextReaderModel.swift */; };
 		D40000012F90000100000008 /* TextReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000012F90000100000007 /* TextReaderView.swift */; };
+		D50000012F90000100000002 /* PointsCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50000012F90000100000001 /* PointsCategory.swift */; };
+		D50000012F90000100000004 /* PointsTrackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50000012F90000100000003 /* PointsTrackModel.swift */; };
+		D50000012F90000100000006 /* PointsTrackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50000012F90000100000005 /* PointsTrackView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -116,6 +119,9 @@
 		D40000012F90000100000003 /* ReaderAudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReaderAudioService.swift; path = ClearBrowser/Views/TextReader/ReaderAudioService.swift; sourceTree = SOURCE_ROOT; };
 		D40000012F90000100000005 /* TextReaderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextReaderModel.swift; path = ClearBrowser/Views/TextReader/TextReaderModel.swift; sourceTree = SOURCE_ROOT; };
 		D40000012F90000100000007 /* TextReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextReaderView.swift; path = ClearBrowser/Views/TextReader/TextReaderView.swift; sourceTree = SOURCE_ROOT; };
+		D50000012F90000100000001 /* PointsCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PointsCategory.swift; path = ClearBrowser/Views/PointsTrack/PointsCategory.swift; sourceTree = SOURCE_ROOT; };
+		D50000012F90000100000003 /* PointsTrackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PointsTrackModel.swift; path = ClearBrowser/Views/PointsTrack/PointsTrackModel.swift; sourceTree = SOURCE_ROOT; };
+		D50000012F90000100000005 /* PointsTrackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PointsTrackView.swift; path = ClearBrowser/Views/PointsTrack/PointsTrackView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -234,6 +240,9 @@
 				C1B7E6A62F8A000100000001 /* BrowserControlsView.swift */,
 				AB652DE12F7EC67C00816346 /* HomeView.swift */,
 				D10000012F90000100000001 /* AppsView.swift */,
+				D50000012F90000100000005 /* PointsTrackView.swift */,
+				D50000012F90000100000003 /* PointsTrackModel.swift */,
+				D50000012F90000100000001 /* PointsCategory.swift */,
 				D40000012F90000100000007 /* TextReaderView.swift */,
 				D40000012F90000100000005 /* TextReaderModel.swift */,
 				D40000012F90000100000003 /* ReaderAudioService.swift */,
@@ -383,6 +392,9 @@
 				8125D2402F7EC12000A5937E /* ClearBrowserApp.swift in Sources */,
 				5B6293082F89EBAC00272F64 /* ActionButton.swift in Sources */,
 				D10000012F90000100000002 /* AppsView.swift in Sources */,
+				D50000012F90000100000006 /* PointsTrackView.swift in Sources */,
+				D50000012F90000100000004 /* PointsTrackModel.swift in Sources */,
+				D50000012F90000100000002 /* PointsCategory.swift in Sources */,
 				D40000012F90000100000008 /* TextReaderView.swift in Sources */,
 				D40000012F90000100000006 /* TextReaderModel.swift in Sources */,
 				D40000012F90000100000004 /* ReaderAudioService.swift in Sources */,
