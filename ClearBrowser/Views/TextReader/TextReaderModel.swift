@@ -71,11 +71,12 @@ final class TextReaderModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func importText(_ text: String, title: String, sourceURL: String? = nil) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let cleanedText = ReaderText.cleanImported(text)
+        guard !cleanedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             message = "Paste or import some readable text first."
             return
         }
-        let doc = ReaderDocument(title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled document" : title, sourceURL: sourceURL, pages: ReaderText.chunks(text))
+        let doc = ReaderDocument(title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled document" : title, sourceURL: sourceURL, pages: ReaderText.chunks(cleanedText))
         do {
             try FileManager.default.createDirectory(at: folder(doc.id), withIntermediateDirectories: true)
             try JSONEncoder().encode(doc).write(to: folder(doc.id).appendingPathComponent("document.json"), options: .atomic)
@@ -83,6 +84,59 @@ final class TextReaderModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
             open(doc)
             play()
         } catch { message = "Could not save this document: \(error.localizedDescription)" }
+    }
+
+    func updateDocument(title: String, text: String) -> Bool {
+        guard var doc = document else { return false }
+        let cleanedText = ReaderText.cleanImported(text)
+        guard !cleanedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            message = "A document must contain readable text."
+            return false
+        }
+
+        let newPages = ReaderText.chunks(cleanedText)
+        let textChanged = newPages != doc.pages
+        if textChanged {
+            pause()
+            revision = UUID()
+            generationRevision = UUID()
+            loadTask?.cancel()
+            generation.values.forEach { $0.cancel() }
+            generation.removeAll()
+            player = nil
+            isLoading = false
+            duration = 0
+            sentences = []
+            activeSentence = nil
+            doc.pages = newPages
+            doc.page = 0
+            doc.position = 0
+            time = 0
+        }
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        doc.title = trimmedTitle.isEmpty ? "Untitled document" : trimmedTitle
+        doc.updated = Date()
+
+        do {
+            if textChanged {
+                for page in doc.pages.indices {
+                    for file in [audioURL(doc, page), timingURL(doc, page)] where FileManager.default.fileExists(atPath: file.path) {
+                        try FileManager.default.removeItem(at: file)
+                    }
+                }
+                let positionFile = folder(doc.id).appendingPathComponent("position.json")
+                if FileManager.default.fileExists(atPath: positionFile.path) {
+                    try FileManager.default.removeItem(at: positionFile)
+                }
+            }
+            try JSONEncoder().encode(doc).write(to: folder(doc.id).appendingPathComponent("document.json"), options: .atomic)
+            document = doc
+            if let index = documents.firstIndex(where: { $0.id == doc.id }) { documents[index] = doc }
+            return true
+        } catch {
+            message = "Could not save this document: \(error.localizedDescription)"
+            return false
+        }
     }
 
     func importURL(_ value: String, title: String) async -> Bool {

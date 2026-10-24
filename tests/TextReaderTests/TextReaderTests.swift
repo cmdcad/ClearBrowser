@@ -22,6 +22,11 @@ final class TextReaderTests: XCTestCase {
         XCTAssertEqual(ReaderText.chunks(input), [input])
     }
 
+    func testImportCleanerRemovesCommonMarkdownFormatting() {
+        let input = "# **A title**\n\nThis is **bold**, *italic*, and `code`.\n\n- [Read more](https://example.com)"
+        XCTAssertEqual(ReaderText.cleanImported(input), "A title\n\nThis is bold, italic, and code.\n\nRead more")
+    }
+
     func testPrefersSentenceBoundaryOverLaterWhitespace() {
         let input = "First sentence. More words to follow here"
         let pages = ReaderText.chunks(input, limit: 25)

@@ -12,6 +12,26 @@ struct ReaderDocument: Codable, Identifiable {
 }
 
 enum ReaderText {
+    static func cleanImported(_ text: String) -> String {
+        var cleaned = text
+        let replacements: [(String, String)] = [
+            ("(?m)^[ \\t]*(```|~~~)[^\\n]*\\n?", ""),
+            ("!\\[([^\\]]*)\\]\\([^)]*\\)", "$1"),
+            ("\\[([^\\]]+)\\]\\([^)]*\\)", "$1"),
+            ("(?m)^[ \\t]{0,3}#{1,6}[ \\t]+", ""),
+            ("(?m)^[ \\t]*>[ \\t]?", ""),
+            ("(?m)^[ \\t]*[-+*][ \\t]+", ""),
+            ("(?m)^[ \\t]*\\d+[.)][ \\t]+", ""),
+            ("(?m)^[ \\t]*(?:(?:\\*[ \\t]*){3,}|(?:-[ \\t]*){3,}|(?:_[ \\t]*){3,})[ \\t]*$", ""),
+            ("(?<!\\\\)(\\*{1,3}|_{1,2}|~~)(?=\\S)(.+?)(?<=\\S)\\1", "$2"),
+            ("(?<!\\\\)`([^`]+)`", "$1")
+        ]
+        for (pattern, replacement) in replacements {
+            cleaned = cleaned.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
+        }
+        return cleaned
+    }
+
     /// Preserve every character; prefer sentence endings, then whitespace.
     static func chunks(_ text: String, limit: Int = 3_000) -> [String] {
         precondition(limit > 0)

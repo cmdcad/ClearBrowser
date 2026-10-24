@@ -2,7 +2,7 @@
 
 Text Reader is a self-contained reading tool in ClearBrowser's Apps hub. It currently opens without a StoreKit purchase; no new product or price has been configured.
 
-Paste text or import a static HTTP(S) HTML article, text file, or JSON document. Login and JavaScript-rendered pages may require pasting their text. Imports have no explicit total-length cap; available memory, storage, and service capacity still apply. HTML imports currently require UTF-8.
+Paste text or import a static HTTP(S) HTML article, text file, or JSON document. Common Markdown formatting such as headings, bold, italics, code markers, and list prefixes is stripped automatically. Tap the document title or reading text to edit the title and content; changing the content regenerates its audio. Login and JavaScript-rendered pages may require pasting their text. Imports have no explicit total-length cap; available memory, storage, and service capacity still apply. HTML imports currently require UTF-8.
 
 Documents split into pages of at most 3,000 Swift characters. Splitting prefers sentence endings and whitespace, preserving the complete source text. An individual token longer than the limit splits at a character boundary.
 

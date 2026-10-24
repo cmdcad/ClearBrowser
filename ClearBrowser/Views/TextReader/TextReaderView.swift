@@ -6,7 +6,10 @@ struct TextReaderView: View {
     @StateObject private var model = TextReaderModel()
     @Environment(\.scenePhase) private var scenePhase
     @State private var importing = false
+    @State private var editing = false
     @State private var title = ""
+    @State private var editedTitle = ""
+    @State private var editedText = ""
     @State private var pastedText = ""
     @State private var url = ""
     @State private var useURL = false
@@ -32,6 +35,7 @@ struct TextReaderView: View {
             if model.document != nil { miniPlayer }
         }
         .sheet(isPresented: $importing) { importSheet }
+        .sheet(isPresented: $editing) { editSheet }
         .alert("Text Reader", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
             Button("OK") { model.message = nil }
         } message: { Text(model.message ?? "") }
@@ -70,14 +74,16 @@ struct TextReaderView: View {
     private func reader(_ doc: ReaderDocument) -> some View {
         VStack(spacing: 0) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(doc.title).font(.title3.bold()).lineLimit(2)
-                    Text("Page \(doc.page + 1) of \(doc.pages.count)").font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
+                Button { beginEditing(doc) } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(doc.title).font(.title3.bold()).lineLimit(2)
+                        Text("Page \(doc.page + 1) of \(doc.pages.count)").font(.caption).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }.buttonStyle(.plain).accessibilityHint("Tap to edit the title or text")
                 Menu {
                     Toggle("Sentence highlighting", isOn: $model.highlighting)
                     Toggle("Follow reading", isOn: $model.followReading)
+                    Button("Edit text") { beginEditing(doc) }
                     Button("Library") { model.close() }
                 } label: { Image(systemName: "ellipsis.circle").font(.title2) }
                     .accessibilityLabel("Reading options")
@@ -93,6 +99,7 @@ struct TextReaderView: View {
                         if model.sentences.isEmpty {
                             Text(model.pageText).frame(maxWidth: .infinity, alignment: .leading)
                                 .textSelection(.enabled)
+                                .onTapGesture { beginEditing(doc) }
                         } else {
                             ForEach(segments) { segment in
                                 Text(segment.text)
@@ -102,6 +109,7 @@ struct TextReaderView: View {
                                                 in: RoundedRectangle(cornerRadius: 6))
                                     .id(segment.id)
                                     .textSelection(.enabled)
+                                    .onTapGesture { beginEditing(doc) }
                             }
                         }
                     }.font(.system(size: 20)).lineSpacing(7).padding(20)
@@ -217,6 +225,37 @@ struct TextReaderView: View {
                 Button("OK") { model.message = nil }
             } message: { Text(model.message ?? "") }
         }
+    }
+
+    private var editSheet: some View {
+        NavigationStack {
+            Form {
+                TextField("Document title", text: $editedTitle)
+                TextEditor(text: $editedText)
+                    .frame(minHeight: 300)
+                    .accessibilityLabel("Document text")
+            }
+            .navigationTitle("Edit document")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { editing = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if model.updateDocument(title: editedTitle, text: editedText) { editing = false }
+                    }
+                }
+            }
+            .alert("Edit document", isPresented: Binding(get: { model.message != nil }, set: { if !$0 { model.message = nil } })) {
+                Button("OK") { model.message = nil }
+            } message: { Text(model.message ?? "") }
+        }
+    }
+
+    private func beginEditing(_ doc: ReaderDocument) {
+        editedTitle = doc.title
+        editedText = doc.pages.joined()
+        editing = true
     }
 
     private func resetImport() { importing = false; pastedText = ""; title = ""; url = "" }
