@@ -6,22 +6,30 @@ final class PointsTrackTests: XCTestCase {
         let category = PointsCategory(name: "Hotmail")
         XCTAssertTrue(category.isValid)
         XCTAssertEqual(category.dailyPoints, 280)
-        XCTAssertEqual(category.points(after: 365), 102_200)
-        XCTAssertEqual(NSDecimalNumber(decimal: category.value(after: 365)).doubleValue, 78.6153846154, accuracy: 0.0000001)
-        XCTAssertEqual(category.redeemable(after: 365), 75)
+        XCTAssertEqual(category.monthlyBonusPoints, 1_250)
+        XCTAssertEqual(category.points(after: 365), 117_200)
+        XCTAssertEqual(NSDecimalNumber(decimal: category.value(after: 365)).doubleValue, 90.1538461538, accuracy: 0.0000001)
+        XCTAssertEqual(category.redeemable(after: 365), 90)
     }
 
     func testProjectionIncludesExistingBalance() {
         let category = PointsCategory(name: "Hotmail", currentPoints: 6_500)
         XCTAssertEqual(category.value(), 5)
-        XCTAssertEqual(category.points(after: 365), 108_700)
-        XCTAssertEqual(category.redeemable(after: 365), 80)
+        XCTAssertEqual(category.points(after: 365), 123_700)
+        XCTAssertEqual(category.redeemable(after: 365), 95)
+    }
+
+    func testMonthlyBonusCountsOnlyCompletedThirtyDayPeriods() {
+        let category = PointsCategory(name: "Hotmail", dailyPoints: 0)
+        XCTAssertEqual(category.points(after: 29), 0)
+        XCTAssertEqual(category.points(after: 30), 1_250)
+        XCTAssertEqual(category.points(after: 90), 3_750)
     }
 
     func testDifferentRatesAreConvertedBeforeSumming() {
         let categories = [
-            PointsCategory(name: "Hotmail", currentPoints: 6_500),
-            PointsCategory(name: "Other", currentPoints: 1_000, dailyPoints: 10, pointsPerReward: 1_000, rewardDollars: 2)
+            PointsCategory(name: "Hotmail", currentPoints: 6_500, monthlyBonusPoints: 0),
+            PointsCategory(name: "Other", currentPoints: 1_000, dailyPoints: 10, monthlyBonusPoints: 0, pointsPerReward: 1_000, rewardDollars: 2)
         ]
         XCTAssertEqual(PointsCategory.totalValue(categories), 7)
         XCTAssertEqual(PointsCategory.totalRedeemable(categories), 7)
@@ -35,7 +43,7 @@ final class PointsTrackTests: XCTestCase {
     }
 
     func testZeroDaysAndNoDailyEarningsKeepBalance() {
-        let category = PointsCategory(name: "Paused", currentPoints: 6_500, dailyPoints: 0)
+        let category = PointsCategory(name: "Paused", currentPoints: 6_500, dailyPoints: 0, monthlyBonusPoints: 0)
         XCTAssertEqual(category.value(after: 365), 5)
         XCTAssertEqual(category.value(after: 0), 5)
         XCTAssertEqual(category.points(after: -1), 6_500)
@@ -46,10 +54,17 @@ final class PointsTrackTests: XCTestCase {
         XCTAssertFalse(PointsCategory(name: "  ").isValid)
         XCTAssertFalse(PointsCategory(name: "Test", currentPoints: -1).isValid)
         XCTAssertFalse(PointsCategory(name: "Test", dailyPoints: -1).isValid)
+        XCTAssertFalse(PointsCategory(name: "Test", monthlyBonusPoints: -1).isValid)
         XCTAssertFalse(PointsCategory(name: "Test", pointsPerReward: 0).isValid)
         XCTAssertFalse(PointsCategory(name: "Test", rewardDollars: 0).isValid)
         XCTAssertFalse(PointsCategory(name: "Test", currentPoints: .nan).isValid)
         XCTAssertFalse(PointsCategory(name: "Test", pointsPerReward: Decimal(string: "0.00000001")!).isValid)
+    }
+
+    func testLegacyCategoryGetsDefaultMonthlyBonus() throws {
+        let data = Data(#"{"id":"00000000-0000-0000-0000-000000000001","name":"Hotmail","currentPoints":0,"dailyPoints":280,"pointsPerReward":6500,"rewardDollars":5}"#.utf8)
+        let category = try JSONDecoder().decode(PointsCategory.self, from: data)
+        XCTAssertEqual(category.monthlyBonusPoints, 1_250)
     }
 
     func testParserRejectsTrailingJunkAndAcceptsLocaleDecimal() {

@@ -88,7 +88,7 @@ struct PointsTrackView: View {
             metric("Projected total", PointsFormat.money(projected), prominent: true)
             metric("Additional value", PointsFormat.money(projected - PointsCategory.totalValue(model.categories)))
             metric("Whole rewards available", PointsFormat.money(PointsCategory.totalRedeemable(model.categories, days: days)))
-            Text("Assumes you earn each category’s daily maximum every day, with unchanged conversion rates and no redemptions or expiry. One year means 365 days. Updating the projection does not change your saved balances.")
+            Text("Assumes you earn each category’s daily maximum every day and its monthly bonus for each completed 30-day period, with unchanged conversion rates and no redemptions or expiry. One year means 365 days. Updating the projection does not change your saved balances.")
                 .font(.caption).foregroundStyle(.secondary)
         }.padding(20).background(.background, in: RoundedRectangle(cornerRadius: 20))
     }
@@ -107,7 +107,7 @@ struct PointsTrackView: View {
             metric("Current points", PointsFormat.number(category.currentPoints))
             metric("Current value", PointsFormat.money(category.value()))
             metric("Redeemable now", PointsFormat.money(category.redeemable()))
-            Text("\(PointsFormat.number(category.pointsPerReward)) points = \(PointsFormat.money(category.rewardDollars)) · Up to \(PointsFormat.number(category.dailyPoints)) points/day")
+            Text("\(PointsFormat.number(category.pointsPerReward)) points = \(PointsFormat.money(category.rewardDollars)) · Up to \(PointsFormat.number(category.dailyPoints))/day + \(PointsFormat.number(category.monthlyBonusPoints))/month")
                 .font(.caption).foregroundStyle(.secondary)
             Divider()
             metric("In \(days) days", PointsFormat.money(category.value(after: days)), prominent: true)
@@ -133,6 +133,7 @@ private struct PointsCategoryEditor: View {
     @State private var name: String
     @State private var balance: String
     @State private var daily: String
+    @State private var monthlyBonus: String
     @State private var units: String
     @State private var dollars: String
     @State private var saveError: String?
@@ -141,19 +142,22 @@ private struct PointsCategoryEditor: View {
         original = category
         self.onSave = onSave
         _name = State(initialValue: category.name)
-        _balance = State(initialValue: PointsFormat.input(category.currentPoints))
-        _daily = State(initialValue: PointsFormat.input(category.dailyPoints))
+        _balance = State(initialValue: category.currentPoints == 0 ? "" : PointsFormat.input(category.currentPoints))
+        _daily = State(initialValue: category.dailyPoints == 0 ? "" : PointsFormat.input(category.dailyPoints))
+        _monthlyBonus = State(initialValue: category.monthlyBonusPoints == 0 ? "" : PointsFormat.input(category.monthlyBonusPoints))
         _units = State(initialValue: PointsFormat.input(category.pointsPerReward))
         _dollars = State(initialValue: PointsFormat.input(category.rewardDollars))
     }
 
     private var draft: PointsCategory? {
-        guard let balance = PointsFormat.parse(balance), let daily = PointsFormat.parse(daily),
+        guard let balance = parseZeroAllowed(balance), let daily = parseZeroAllowed(daily),
+              let monthlyBonus = parseZeroAllowed(monthlyBonus),
               let units = PointsFormat.parse(units), let dollars = PointsFormat.parse(dollars) else { return nil }
         var category = original
         category.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         category.currentPoints = balance
         category.dailyPoints = daily
+        category.monthlyBonusPoints = monthlyBonus
         category.pointsPerReward = units
         category.rewardDollars = dollars
         return category.isValid ? category : nil
@@ -166,11 +170,12 @@ private struct PointsCategoryEditor: View {
                 Section("Points") {
                     field("Currently earned", value: $balance)
                     field("Maximum per day", value: $daily)
+                    field("Monthly search bonus", value: $monthlyBonus)
                 }
                 Section {
                     field("Points per reward", value: $units)
                     field("Reward value (USD)", value: $dollars)
-                } header: { Text("Conversion") } footer: { Text("Default: 6,500 points = $5. Each category can use a different conversion.") }
+                } header: { Text("Conversion") } footer: { Text("Default: 6,500 points = $5. Each category can use a different conversion. The default monthly search bonus is 1,250 points.") }
                 if let draft {
                     Section("Current balance value") {
                         LabeledContent("Estimated value", value: PointsFormat.money(draft.value()))
@@ -200,8 +205,13 @@ private struct PointsCategoryEditor: View {
         HStack {
             Text(label)
             Spacer()
-            TextField(label, text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+            TextField(label, text: value, prompt: Text("0")).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
                 .frame(maxWidth: 150).accessibilityLabel(label)
         }
+    }
+
+    private func parseZeroAllowed(_ input: String) -> Decimal? {
+        if input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return 0 }
+        return PointsFormat.parse(input)
     }
 }
